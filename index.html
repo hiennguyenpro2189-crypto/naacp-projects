@@ -365,6 +365,12 @@ window._fbReady = true;
         Ví dụ: <code>[NAACP] [260506-MAIN-02] Thiết Kế CT-WPS-05</code>
       </div>
     </div>
+    <div style="margin-top:14px;padding:10px 14px;background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);border-radius:8px;font-size:12px;line-height:1.7;color:#7b241c;">
+      <b>⚠️ Lưu ý khi nhập Project ID:</b><br>
+      · Nếu Project ID bị trùng với dự án đã có — ô sẽ <b>viền đỏ</b> và hiện thông báo <b>"⚠️ Project ID đã tồn tại!"</b><br>
+      · Hệ thống sẽ <b>không lưu</b> dữ liệu cho đến khi bạn sửa thành ID khác không trùng<br>
+      · Khi sửa thành ID hợp lệ → viền đỏ tự mất và dữ liệu được lưu bình thường
+    </div>
   </div>
 
   <!-- LOẠI DEFINITION -->
@@ -605,13 +611,34 @@ function onCellChange(el) {
   let val = el.value;
   if (col===7||col===8) val = fromInputDate(val);
   projectData[idx][col] = val;
+
+  // Check duplicate Project ID (col 0)
+  if (col === 0) {
+    const newId = val.trim();
+    const allData = (window.projectData && window.projectData.length) ? window.projectData : projectData;
+    const duplicate = newId && allData.some((r, i) => i !== idx && (r[0]||'').trim() === newId);
+    const td = el.closest('td');
+    // Remove old error if any
+    const oldErr = td.querySelector('.id-error');
+    if (oldErr) oldErr.remove();
+    el.style.outline = '';
+    if (duplicate) {
+      el.style.outline = '2px solid #c0392b';
+      const err = document.createElement('div');
+      err.className = 'id-error';
+      err.style.cssText = 'color:#c0392b;font-size:10px;margin-top:2px;line-height:1.3;';
+      err.textContent = '⚠️ Project ID đã tồn tại!';
+      td.appendChild(err);
+      return; // Don't save if duplicate
+    }
+  }
+
   // Auto-generate fullname if col 0 or 1 and fullname is empty/matches auto pattern
   if (col===0||col===1) {
     const id = projectData[idx][0], name = projectData[idx][1];
     const fn = projectData[idx][2];
     if (!fn || fn.startsWith('[NAACP]')) {
       projectData[idx][2] = autoFullName(id, name);
-      // update fullname input in same row
       const row = document.querySelector(`tr[data-idx="${idx}"]`) || el.closest('tr');
       if (row) {
         const fnInput = row.querySelectorAll('input')[2];
