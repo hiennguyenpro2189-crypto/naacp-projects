@@ -8,7 +8,7 @@
 <script type="module">
 // ====== FIREBASE CONFIG ======
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBq4GpPN9TO2AmPWtsnGhaN_HOHFVAVQns",
@@ -24,25 +24,44 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const dbRef = ref(db, 'projects');
 
-// Expose Firebase functions to global scope for use outside module
-window._fbSet = (data) => set(dbRef, data);
-window._fbListen = (cb) => onValue(dbRef, snap => {
-  const val = snap.val();
-  cb(val ? Object.values(val) : []);
-});
-window._fbReady = true;
+// Save entire projectData array to Firebase
+window._fbSave = (data) => {
+  const obj = {};
+  data.forEach((row, i) => { obj[i] = row; });
+  return set(dbRef, obj);
+};
 
-// Start listening — update UI whenever data changes in Firebase
-window._fbListen((rows) => {
+// Listen for remote changes — but only update UI if user is NOT actively editing
+window._lastSaveTime = 0;
+onValue(dbRef, (snap) => {
+  const val = snap.val();
+  const rows = val ? Object.values(val) : [];
+
+  // If this update came within 2s of our own save, it's our own echo — skip UI refresh
+  const now = Date.now();
+  const isSelfEcho = (now - window._lastSaveTime) < 2000;
+
+  // Always update the data array
   window.projectData = rows;
+
   if (typeof renderTable === 'function') {
-    renderTable(rows);
-    updateStats();
-    updateTimestamp();
+    // Only re-render if no input is focused (user not actively typing)
+    const activeEl = document.activeElement;
+    const userEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#projectTable');
+
+    if (!isSelfEcho && !userEditing) {
+      renderTable(rows);
+      if (typeof updateStats === 'function') updateStats();
+    }
+
+    // Always update status indicator
     const s = document.getElementById('sync-status');
     if (s) s.textContent = '🟢 Đã kết nối · Realtime';
+    updateTimestamp();
   }
 });
+
+window._fbReady = true;
 </script>
 <style>
   :root {
@@ -498,14 +517,10 @@ function loadData() {
 }
 
 function saveData() {
-  // Save to Firebase (realtime, syncs to all users)
-  if (window._fbSet) {
-    // Convert array to object with numeric keys for Firebase
-    const obj = {};
-    projectData.forEach((row, i) => { obj[i] = row; });
-    window._fbSet(obj).catch(e => console.error('Firebase save error:', e));
+  if (window._fbSave) {
+    window._lastSaveTime = Date.now();
+    window._fbSave(projectData).catch(e => console.error('Firebase save error:', e));
   } else {
-    // Fallback to localStorage if Firebase not ready
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projectData)); } catch(e) {}
   }
   updateTimestamp();
