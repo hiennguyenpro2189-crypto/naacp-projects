@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bảng Mã Dự Án – Team NAACP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script type="module">
+// ====== FIREBASE CONFIG ======
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBq4GpPN9TO2AmPWtsnGhaN_HOHFVAVQns",
+  authDomain: "naacp-projects.firebaseapp.com",
+  databaseURL: "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "naacp-projects",
+  storageBucket: "naacp-projects.firebasestorage.app",
+  messagingSenderId: "218174774842",
+  appId: "1:218174774842:web:71f549d14bfcc661a89f03"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const dbRef = ref(db, 'projects');
+
+// Expose Firebase functions to global scope for use outside module
+window._fbSet = (data) => set(dbRef, data);
+window._fbListen = (cb) => onValue(dbRef, snap => {
+  const val = snap.val();
+  cb(val ? Object.values(val) : []);
+});
+window._fbReady = true;
+
+// Start listening — update UI whenever data changes in Firebase
+window._fbListen((rows) => {
+  window.projectData = rows;
+  if (typeof renderTable === 'function') {
+    renderTable(rows);
+    updateStats();
+    updateTimestamp();
+    const s = document.getElementById('sync-status');
+    if (s) s.textContent = '🟢 Đã kết nối · Realtime';
+  }
+});
+</script>
+<style>
+  :root {
+    --purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-600:#534AB7;--purple-800:#3C3489;--purple-900:#26215C;
+    --teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-600:#0F6E56;--teal-800:#085041;
+    --amber-50:#FAEEDA;--amber-100:#FAC775;--amber-600:#854F0B;--amber-800:#633806;
+    --coral-50:#FAECE7;--coral-100:#F5C4B3;--coral-600:#993C1D;--coral-800:#712B13;
+    --blue-50:#E6F1FB;--blue-600:#185FA5;--blue-800:#0C447C;
+    --green-50:#EAF3DE;--green-600:#3B6D11;--green-800:#27500A;
+    --gray-50:#F1EFE8;--gray-100:#D3D1C7;--gray-400:#888780;--gray-800:#444441;
+    --bg:#f8f7f4;--surface:#ffffff;--border:#e0ddd6;--text:#1a1918;--text-muted:#6b6a66;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+
+  .page-header{background:var(--purple-900);color:#fff;padding:24px 32px 20px;display:flex;align-items:flex-end;justify-content:space-between;}
+  .page-header h1{font-size:22px;font-weight:600;letter-spacing:0.5px;}
+  .page-header .meta{font-size:12px;opacity:0.7;margin-top:4px;}
+  .updated-badge{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;font-size:12px;white-space:nowrap;}
+
+  .tabs{display:flex;background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 32px;}
+  .tab{padding:12px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);transition:all 0.15s;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--purple-800);border-bottom-color:var(--purple-600);}
+
+  .main{padding:24px 32px;}
+
+  /* STATS */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;}
+  .stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .stat-card.total::before{background:var(--purple-600);}
+  .stat-card.main::before{background:var(--blue-600);}
+  .stat-card.supp::before{background:var(--amber-600);}
+  .stat-card.oper::before{background:var(--teal-600);}
+  .stat-card.done::before{background:var(--green-600);}
+  .stat-card.inprog::before{background:var(--coral-600);}
+  .stat-card.pending::before{background:var(--gray-400);}
+  .stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
+  .stat-value{font-size:28px;font-weight:600;line-height:1;}
+  .stat-card.total .stat-value{color:var(--purple-800);}
+  .stat-card.main .stat-value{color:var(--blue-800);}
+  .stat-card.supp .stat-value{color:var(--amber-800);}
+  .stat-card.oper .stat-value{color:var(--teal-800);}
+  .stat-card.done .stat-value{color:var(--green-800);}
+  .stat-card.inprog .stat-value{color:var(--coral-800);}
+  .stat-card.pending .stat-value{color:var(--gray-800);}
+  .stat-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
+
+  /* CHARTS */
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+  .chart-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:16px 20px;}
+  .chart-card h4{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;}
+  .chart-card canvas{max-height:220px;}
+
+  /* PERSONNEL */
+  .section-title{font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;}
+  .person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:28px;}
+  .person-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+  .person-avatar{width:32px;height:32px;border-radius:50%;background:var(--purple-50);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--purple-800);flex-shrink:0;}
+  .person-name{font-size:12px;font-weight:500;}
+  .person-count{font-size:11px;color:var(--text-muted);}
+
+  /* CONTROLS */
+  .controls{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+  .search-box{flex:1;min-width:200px;max-width:320px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);}
+  .search-box:focus{outline:none;border-color:var(--purple-600);}
+  .filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;}
+  .btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;}
+  .btn-primary{background:var(--purple-600);color:#fff;}
+  .btn-primary:hover{background:var(--purple-800);}
+  .btn-import{background:var(--teal-600);color:#fff;border:none;}
+  .btn-import:hover{background:var(--teal-800);}
+  .btn-outline{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+  .btn-outline:hover{background:var(--gray-50);}
+
+  /* TABLE */
+  .table-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:auto;}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:1100px;}
+  thead tr{background:var(--purple-900);}
+  thead th{padding:10px 10px;text-align:left;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:0.4px;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.1);}
+  thead th:last-child{border-right:none;}
+  tbody tr{border-bottom:0.5px solid var(--border);transition:background 0.1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--purple-50);}
+  tbody tr.new-row{background:#fffbe6;}
+  td{padding:8px 10px;font-size:12px;vertical-align:top;word-break:break-word;}
+  td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--text);padding:0;}
+  td input:focus,td select:focus{outline:1px solid var(--purple-600);border-radius:3px;background:#fff;}
+  td select{cursor:pointer;}
+
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .badge-main{background:var(--blue-50);color:var(--blue-800);}
+  .badge-supp{background:var(--amber-50);color:var(--amber-800);}
+  .badge-oper{background:var(--teal-50);color:var(--teal-800);}
+
+  .del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;}
+  .del-btn:hover{color:#c0392b;background:#fdf0ef;}
+
+  /* GUIDE */
+  .guide-panel{background:var(--blue-50);border:1px solid #b5d4f4;border-radius:10px;padding:16px 20px;margin-bottom:24px;}
+  .guide-panel h3{font-size:13px;font-weight:600;color:var(--blue-800);margin-bottom:10px;}
+  .guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+  .guide-item{font-size:12px;line-height:1.6;}
+  .guide-item strong{color:var(--blue-800);display:block;margin-bottom:2px;}
+  .guide-item code{background:rgba(0,0,0,0.07);padding:0 4px;border-radius:3px;font-family:monospace;font-size:11px;}
+
+  /* Loại definition boxes */
+  .type-def-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 20px;}
+  .type-def{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6;}
+  .type-def.main{background:var(--blue-50);border:1px solid #b5d4f4;}
+  .type-def.supp{background:var(--amber-50);border:1px solid var(--amber-100);}
+  .type-def.oper{background:var(--teal-50);border:1px solid var(--teal-100);}
+  .type-def .type-name{font-size:13px;font-weight:700;margin-bottom:6px;}
+  .type-def.main .type-name{color:var(--blue-800);}
+  .type-def.supp .type-name{color:var(--amber-800);}
+  .type-def.oper .type-name{color:var(--teal-800);}
+  .type-def ul{padding-left:14px;margin-top:4px;}
+  .type-def li{margin-bottom:2px;}
+
+  .progress-wrap{background:#e8e6e0;border-radius:4px;height:5px;margin-top:4px;overflow:hidden;width:100%;}
+  .progress-bar{height:100%;border-radius:4px;background:var(--green-600);}
+
+  #section-table,#section-stats,#section-guide{display:none;}
+  #section-table.active,#section-stats.active,#section-guide.active{display:block;}
+  .export-row{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;}
+
+  @media print{
+    .tabs,.controls,.export-row,.del-btn,.btn{display:none!important;}
+    .main{padding:0;}
+    table{font-size:10px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>📋 BẢNG MÃ DỰ ÁN – TEAM NAACP</h1>
+    <div class="meta">Đơn vị thực hiện: NAACP · Quản lý dự án nội bộ</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+    <div class="updated-badge" id="last-updated">Đang kết nối...</div>
+    <div id="sync-status" style="font-size:11px;opacity:0.7;">⏳ Đang tải dữ liệu...</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('table')">📊 Danh sách dự án</div>
+  <div class="tab" onclick="switchTab('stats')">📈 Thống kê</div>
+  <div class="tab" onclick="switchTab('guide')">📖 Hướng dẫn</div>
+</div>
+
+<div class="main">
+
+<!-- ===== TABLE TAB ===== -->
+<div id="section-table" class="active">
+  <div class="controls">
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 Tìm theo mã, tên dự án, nhân sự..." oninput="filterTable()">
+    <select class="filter-select" id="filterType" onchange="filterTable()">
+      <option value="">Tất cả loại</option>
+      <option value="MAIN">MAIN</option>
+      <option value="SUPP">SUPP</option>
+      <option value="OPER">OPER</option>
+      <option value="">-- Chưa phân loại</option>
+    </select>
+    <select class="filter-select" id="filterDept" onchange="filterTable()">
+      <option value="">Tất cả phòng/bộ phận</option>
+    </select>
+    <select class="filter-select" id="filterStatus" onchange="filterTable()">
+      <option value="">Tất cả trạng thái</option>
+      <option value="Đang thực hiện">Đang thực hiện</option>
+      <option value="Hoàn thành">Hoàn thành</option>
+      <option value="Chờ xử lý">Chờ xử lý</option>
+      <option value="Tạm dừng">Tạm dừng</option>
+    </select>
+    <button class="btn btn-primary" onclick="addRow()">+ Thêm dự án</button>
+    <button class="btn btn-outline" onclick="exportCSV()">⬇ Xuất CSV</button>
+    <button class="btn btn-import" onclick="document.getElementById('csvFileInput').click()">⬆ Nhập CSV</button>
+    <input type="file" id="csvFileInput" accept=".csv" multiple style="display:none" onchange="handleCSVImport(this)">
+    <button class="btn btn-outline" onclick="window.print()">🖨 In</button>
+  </div>
+  <div id="importToast" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.7;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div id="importToastMsg" style="flex:1;"></div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button class="btn" style="font-size:12px;padding:5px 12px;background:var(--coral-50);color:var(--coral-800);border:1px solid var(--coral-100);" onclick="confirmImport(true)">Ghi đè dòng trùng</button>
+        <button class="btn" style="font-size:12px;padding:5px 12px;background:var(--green-50);color:var(--green-800);border:1px solid var(--teal-100);" onclick="confirmImport(false)">Giữ dòng cũ</button>
+        <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;" onclick="cancelImport()">Hủy</button>
+      </div>
+    </div>
+  </div>
+  <div class="export-row">
+    <span id="row-count" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
+  </div>
+  <div class="table-wrap">
+    <table id="projectTable">
+      <colgroup>
+        <col style="width:38px">
+        <col style="width:140px">
+        <col style="width:160px">
+        <col style="width:220px">
+        <col style="width:62px">
+        <col style="width:105px">
+        <col style="width:105px">
+        <col style="width:105px">
+        <col style="width:85px">
+        <col style="width:85px">
+        <col style="width:105px">
+        <col style="width:32px">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Project ID</th>
+          <th>Project Name</th>
+          <th>Full Name</th>
+          <th>Loại</th>
+          <th>Quản lý DA</th>
+          <th>Người thực hiện</th>
+          <th>Phòng / Bộ phận</th>
+          <th>Ngày bắt đầu</th>
+          <th>Dự kiến kết thúc</th>
+          <th>Trạng thái</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== STATS TAB ===== -->
+<div id="section-stats">
+  <div class="section-title">Tổng quan dự án</div>
+  <div class="stats-grid">
+    <div class="stat-card total"><div class="stat-label">Tổng dự án</div><div class="stat-value" id="s-total">0</div><div class="stat-sub">tất cả loại</div></div>
+    <div class="stat-card main"><div class="stat-label">MAIN</div><div class="stat-value" id="s-main">0</div><div class="stat-sub">dự án chính</div></div>
+    <div class="stat-card supp"><div class="stat-label">SUPP</div><div class="stat-value" id="s-supp">0</div><div class="stat-sub">hỗ trợ</div></div>
+    <div class="stat-card oper"><div class="stat-label">OPER</div><div class="stat-value" id="s-oper">0</div><div class="stat-sub">vận hành</div></div>
+    <div class="stat-card done"><div class="stat-label">Hoàn thành</div><div class="stat-value" id="s-done">0</div><div class="stat-sub" id="s-done-pct"></div></div>
+    <div class="stat-card inprog"><div class="stat-label">Đang thực hiện</div><div class="stat-value" id="s-inprog">0</div><div class="stat-sub" id="s-inprog-pct"></div></div>
+    <div class="stat-card pending"><div class="stat-label">Chờ / Tạm dừng</div><div class="stat-value" id="s-pending">0</div><div class="stat-sub" id="s-pending-pct"></div></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h4>Phân bổ theo loại dự án</h4>
+      <canvas id="chartType"></canvas>
+    </div>
+    <div class="chart-card">
+      <h4>Phân bổ theo trạng thái</h4>
+      <canvas id="chartStatus"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:28px;">
+    <h4>Số dự án theo loại & trạng thái (biểu đồ cột)</h4>
+    <canvas id="chartBar" style="max-height:200px;"></canvas>
+  </div>
+
+  <div class="section-title">Tiến độ tổng thể</div>
+  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+      <span>Tỷ lệ hoàn thành</span><span id="pct-text">0%</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="pct-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="section-title">Thống kê theo nhân sự</div>
+  <div class="person-grid" id="personGrid"></div>
+</div>
+
+<!-- ===== GUIDE TAB ===== -->
+<div id="section-guide">
+  <div class="guide-panel">
+    <h3>📌 Quy tắc đặt mã Project ID</h3>
+    <div class="guide-grid">
+      <div class="guide-item">
+        <strong>Cấu trúc mã</strong>
+        <code>YYMMDD-LOẠI-SỐ</code><br>
+        Ví dụ: <code>260506-MAIN-02</code><br>
+        · <b>YY</b> = năm (26 = 2026)<br>
+        · <b>MM</b> = tháng (05 = tháng 5)<br>
+        · <b>DD</b> = ngày tạo (06 = ngày 6)
+      </div>
+      <div class="guide-item">
+        <strong>Số thứ tự</strong>
+        Đánh từ <code>01</code> tăng dần trong cùng ngày.<br>
+        Ví dụ: <code>-01</code>, <code>-02</code>, <code>-03</code>...<br>
+        Nếu chưa xác định loại, có thể để trống cột Loại và điền sau.
+      </div>
+      <div class="guide-item">
+        <strong>Full Name</strong>
+        Format đầy đủ: <code>[NAACP] [ProjectID] Tên dự án</code><br>
+        Ví dụ: <code>[NAACP] [260506-MAIN-02] Thiết Kế CT-WPS-05</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOẠI DEFINITION -->
+  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:6px;">🗂 Định nghĩa các loại dự án</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Mỗi dự án thuộc một trong ba loại dưới đây. Nếu chưa xác định, có thể để trống và cập nhật sau.</p>
+    <div class="type-def-grid">
+      <div class="type-def main">
+        <div class="type-name">🔵 MAIN – Dự án chính</div>
+        <div>Các dự án nghiên cứu, thiết kế, phát triển sản phẩm/hệ thống mang tính cốt lõi, có đầu ra kỹ thuật cụ thể.</div>
+        <ul>
+          <li>Thiết kế model UAV mới</li>
+          <li>Nghiên cứu & phát triển hệ thống</li>
+          <li>Chế tạo linh kiện, cơ cấu đặc thù</li>
+          <li>Dự án hợp tác kỹ thuật dài hạn</li>
+        </ul>
+      </div>
+      <div class="type-def supp">
+        <div class="type-name">🟡 SUPP – Hỗ trợ</div>
+        <div>Các hoạt động hỗ trợ kỹ thuật, sự kiện, đón tiếp, chuẩn bị demo — không tạo ra sản phẩm mới nhưng phục vụ hoạt động chung.</div>
+        <ul>
+          <li>Chuẩn bị kỹ thuật cho bay demo</li>
+          <li>Đón tiếp đoàn khách, đối tác</li>
+          <li>Hỗ trợ sự kiện triển lãm, hội thảo</li>
+          <li>Trang bị, cấp phát thiết bị phục vụ</li>
+        </ul>
+      </div>
+      <div class="type-def oper">
+        <div class="type-name">🟢 OPER – Vận hành</div>
+        <div>Các công việc định kỳ, vận hành phòng lab, đào tạo nội bộ — mang tính lặp lại theo tháng hoặc theo chu kỳ.</div>
+        <ul>
+          <li>Lab Daily Task hàng tháng</li>
+          <li>Daily Task / công việc thường nhật</li>
+          <li>Lập trình đào tạo nội bộ</li>
+          <li>Quy trình vận hành định kỳ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">📝 Hướng dẫn điền từng cột</h3>
+    <div class="guide-grid">
+      <div class="guide-item">
+        <strong>Project ID</strong>
+        Nhập đúng format <code>YYMMDD-LOẠI-SỐ</code>.<br>
+        Không trùng với mã đã có trong bảng.
+      </div>
+      <div class="guide-item">
+        <strong>Project Name</strong>
+        Tên ngắn gọn, rõ ý. Không cần prefix [NAACP].
+      </div>
+      <div class="guide-item">
+        <strong>Full Name</strong>
+        Tên đầy đủ theo format chuẩn:<br>
+        <code>[NAACP] [ID] Tên dự án</code>
+      </div>
+      <div class="guide-item">
+        <strong>Loại</strong>
+        Chọn MAIN / SUPP / OPER hoặc để trống nếu chưa xác định. Xem định nghĩa ở trên.
+      </div>
+      <div class="guide-item">
+        <strong>Quản lý dự án</strong>
+        Người phụ trách quản lý tiến độ, ra quyết định.<br>
+        Ví dụ: <code>Nguyễn Văn A</code>
+      </div>
+      <div class="guide-item">
+        <strong>Người thực hiện chính</strong>
+        Kỹ sư/nhân sự trực tiếp thực hiện.<br>
+        Nhiều người: <code>A, B, C</code>
+      </div>
+      <div class="guide-item">
+        <strong>Ngày bắt đầu / Kết thúc</strong>
+        Chọn từ lịch. Cập nhật nếu kế hoạch thay đổi.
+      </div>
+      <div class="guide-item">
+        <strong>Phòng / Bộ phận</strong>
+        Phòng hoặc bộ phận chủ trì dự án.<br>
+        Ví dụ: <code>Phòng Kỹ thuật</code>, <code>Bộ phận R&D</code>, <code>Phòng Sản xuất</code>.<br>
+        Dùng tên thống nhất để lọc được theo bộ phận.
+      </div>
+      <div class="guide-item">
+        <strong>Trạng thái</strong>
+        · <b>Chờ xử lý</b>: Chưa bắt đầu<br>
+        · <b>Đang thực hiện</b>: Đang triển khai<br>
+        · <b>Tạm dừng</b>: Chờ input / vướng mắc<br>
+        · <b>Hoàn thành</b>: Đã bàn giao/kết thúc
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--teal-50);border:1px solid var(--teal-100);border-radius:10px;padding:16px 20px;">
+    <h3 style="font-size:13px;font-weight:600;color:var(--teal-800);margin-bottom:10px;">✅ Ví dụ điền đầy đủ</h3>
+    <table style="font-size:12px;width:100%;border-collapse:collapse;color:var(--teal-600);">
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;width:160px;">Project ID</td>
+        <td style="padding:4px 8px;">260506-MAIN-02</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Project Name</td>
+        <td style="padding:4px 8px;">Thiết Kế CT-WPS-05</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Full Name</td>
+        <td style="padding:4px 8px;">[NAACP] [260506-MAIN-02] Thiết Kế CT-WPS-05</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Loại</td>
+        <td style="padding:4px 8px;">MAIN</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Quản lý DA</td>
+        <td style="padding:4px 8px;">Trần Văn B</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Người thực hiện</td>
+        <td style="padding:4px 8px;">Nguyễn Văn A, Lê Thị C</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Phòng / Bộ phận</td>
+        <td style="padding:4px 8px;">Phòng Kỹ thuật</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Ngày bắt đầu</td>
+        <td style="padding:4px 8px;">06/05/2026</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--teal-100);">
+        <td style="padding:4px 8px;font-weight:600;">Dự kiến kết thúc</td>
+        <td style="padding:4px 8px;">30/06/2026</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px;font-weight:600;">Trạng thái</td>
+        <td style="padding:4px 8px;">Đang thực hiện</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+const STORAGE_KEY = 'naacp_projects_v1'; // fallback only
+
+// data structure: [id, name, fullname, type, pm, exec, dept, start, end, status]
+let projectData = [];
+
+function loadData() {
+  // Data now comes from Firebase via _fbListen — this is fallback only
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [];
+}
+
+function saveData() {
+  // Save to Firebase (realtime, syncs to all users)
+  if (window._fbSet) {
+    // Convert array to object with numeric keys for Firebase
+    const obj = {};
+    projectData.forEach((row, i) => { obj[i] = row; });
+    window._fbSet(obj).catch(e => console.error('Firebase save error:', e));
+  } else {
+    // Fallback to localStorage if Firebase not ready
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projectData)); } catch(e) {}
+  }
+  updateTimestamp();
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  document.getElementById('last-updated').textContent = 'Cập nhật: ' +
+    now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  // Show online indicator
+  const badge = document.getElementById('last-updated');
+  badge.style.background = window._fbReady ? 'rgba(59,109,17,0.25)' : 'rgba(255,255,255,0.12)';
+}
+
+function autoFullName(id, name) {
+  if (!id && !name) return '';
+  return '[NAACP]' + (id ? ' ['+id+']' : '') + (name ? ' '+name : '');
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  data.forEach((row, idx) => {
+    const [id, name, fullname, type, pm, exec, dept, start, end, status] = row;
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    tr.innerHTML = `
+      <td style="color:var(--text-muted);text-align:center;font-size:11px;">${idx+1}</td>
+      <td><input value="${esc(id)}" placeholder="VD: 260506-MAIN-01" data-col="0" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td><input value="${esc(name)}" placeholder="Tên ngắn dự án..." data-col="1" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td><input value="${esc(fullname)}" placeholder="[NAACP] [ID] Tên..." data-col="2" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td>
+        <select data-col="3" data-idx="${idx}" onchange="onCellChange(this)">
+          <option value="" ${!type?'selected':''}>—</option>
+          <option value="MAIN" ${type==='MAIN'?'selected':''}>MAIN</option>
+          <option value="SUPP" ${type==='SUPP'?'selected':''}>SUPP</option>
+          <option value="OPER" ${type==='OPER'?'selected':''}>OPER</option>
+        </select>
+      </td>
+      <td><input value="${esc(pm)}" placeholder="Họ tên QL..." data-col="4" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td><input value="${esc(exec)}" placeholder="A, B, C..." data-col="5" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td><input value="${esc(dept)}" placeholder="Tên phòng/bộ phận..." data-col="6" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td><input type="date" value="${toInputDate(start)}" data-col="7" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td><input type="date" value="${toInputDate(end)}" data-col="8" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td>
+        <select data-col="9" data-idx="${idx}" onchange="onCellChange(this)">
+          <option value="Chờ xử lý" ${status==='Chờ xử lý'?'selected':''}>⬜ Chờ xử lý</option>
+          <option value="Đang thực hiện" ${status==='Đang thực hiện'?'selected':''}>🔵 Đang TH</option>
+          <option value="Tạm dừng" ${status==='Tạm dừng'?'selected':''}>🟡 Tạm dừng</option>
+          <option value="Hoàn thành" ${status==='Hoàn thành'?'selected':''}>✅ Hoàn thành</option>
+        </select>
+      </td>
+      <td><button class="del-btn" onclick="deleteRow(${idx})" title="Xóa">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('row-count').textContent = `Hiển thị ${data.length} dự án`;
+}
+
+function esc(v){ return (v||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function toInputDate(str) {
+  if (!str) return '';
+  const p = str.split('/');
+  if (p.length===3) return `${p[2]}-${p[1]}-${p[0]}`;
+  return str;
+}
+function fromInputDate(str) {
+  if (!str) return '';
+  const p = str.split('-');
+  if (p.length===3) return `${p[2]}/${p[1]}/${p[0]}`;
+  return str;
+}
+
+function onCellChange(el) {
+  const idx = parseInt(el.dataset.idx);
+  const col = parseInt(el.dataset.col);
+  let val = el.value;
+  if (col===7||col===8) val = fromInputDate(val);
+  projectData[idx][col] = val;
+  // Auto-generate fullname if col 0 or 1 and fullname is empty/matches auto pattern
+  if (col===0||col===1) {
+    const id = projectData[idx][0], name = projectData[idx][1];
+    const fn = projectData[idx][2];
+    if (!fn || fn.startsWith('[NAACP]')) {
+      projectData[idx][2] = autoFullName(id, name);
+      // update fullname input in same row
+      const row = document.querySelector(`tr[data-idx="${idx}"]`) || el.closest('tr');
+      if (row) {
+        const fnInput = row.querySelectorAll('input')[2];
+        if (fnInput) fnInput.value = projectData[idx][2];
+      }
+    }
+  }
+  saveData();
+  updateStats();
+}
+
+function addRow() {
+  projectData.unshift(['','','','','','','','','','Chờ xử lý']);
+  renderTable(projectData);
+  updateStats();
+  saveData();
+  const firstRow = document.querySelector('#tableBody tr');
+  if (firstRow) {
+    firstRow.classList.add('new-row');
+    firstRow.querySelector('input').focus();
+  }
+}
+
+function deleteRow(idx) {
+  if (!confirm('Xóa dự án này?')) return;
+  projectData.splice(idx,1);
+  renderTable(projectData);
+  updateStats();
+  saveData();
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const ft = document.getElementById('filterType').value;
+  const fd = document.getElementById('filterDept').value;
+  const fs = document.getElementById('filterStatus').value;
+  const filtered = projectData.filter(r => {
+    const match = (r[0]+r[1]+r[2]+r[4]+r[5]+r[6]).toLowerCase().includes(q);
+    const typeOk = !ft || r[3]===ft;
+    const deptOk = !fd || r[6]===fd;
+    const statusOk = !fs || r[9]===fs;
+    return match&&typeOk&&deptOk&&statusOk;
+  });
+  renderTable(filtered);
+  document.getElementById('row-count').textContent = `Hiển thị ${filtered.length} / ${projectData.length} dự án`;
+}
+
+function refreshDeptFilter() {
+  const depts = [...new Set(projectData.map(r=>r[6]).filter(d=>d))].sort();
+  const sel = document.getElementById('filterDept');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tất cả phòng/bộ phận</option>' +
+    depts.map(d=>`<option value="${esc(d)}" ${cur===d?'selected':''}>${d}</option>`).join('');
+}
+
+// CHARTS
+let chartType=null, chartStatus=null, chartBar=null;
+
+function drawCharts(main,supp,oper,done,inprog,pending,total) {
+  const typeLabels = ['MAIN','SUPP','OPER'];
+  const typeData = [main,supp,oper];
+  const typeColors = ['#185FA5','#854F0B','#0F6E56'];
+
+  const statusLabels = ['Hoàn thành','Đang thực hiện','Chờ xử lý / Tạm dừng'];
+  const statusData = [done,inprog,pending];
+  const statusColors = ['#3B6D11','#993C1D','#888780'];
+
+  if (chartType) chartType.destroy();
+  if (chartStatus) chartStatus.destroy();
+  if (chartBar) chartBar.destroy();
+
+  const ctxType = document.getElementById('chartType').getContext('2d');
+  chartType = new Chart(ctxType, {
+    type: 'doughnut',
+    data: { labels: typeLabels, datasets:[{ data: typeData, backgroundColor: typeColors, borderWidth:2, borderColor:'#fff' }] },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{size:11}, padding:12 } },
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} dự án (${total?Math.round(ctx.raw/total*100):0}%)` } }
+      }
+    }
+  });
+
+  const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+  chartStatus = new Chart(ctxStatus, {
+    type: 'pie',
+    data: { labels: statusLabels, datasets:[{ data: statusData, backgroundColor: statusColors, borderWidth:2, borderColor:'#fff' }] },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{size:11}, padding:12 } },
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} (${total?Math.round(ctx.raw/total*100):0}%)` } }
+      }
+    }
+  });
+
+  // Bar chart: each type broken down by status
+  const types = ['MAIN','SUPP','OPER'];
+  const barDone  = types.map(t => projectData.filter(r=>r[3]===t&&r[9]==='Hoàn thành').length);
+  const barInprog= types.map(t => projectData.filter(r=>r[3]===t&&r[9]==='Đang thực hiện').length);
+  const barPend  = types.map(t => projectData.filter(r=>r[3]===t&&(r[9]==='Chờ xử lý'||r[9]==='Tạm dừng')).length);
+
+  const ctxBar = document.getElementById('chartBar').getContext('2d');
+  chartBar = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: types,
+      datasets: [
+        { label:'Hoàn thành', data:barDone, backgroundColor:'#3B6D11', borderRadius:4 },
+        { label:'Đang thực hiện', data:barInprog, backgroundColor:'#993C1D', borderRadius:4 },
+        { label:'Chờ / Tạm dừng', data:barPend, backgroundColor:'#888780', borderRadius:4 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:10 } } },
+      scales:{
+        x:{ stacked:true, grid:{display:false} },
+        y:{ stacked:true, beginAtZero:true, ticks:{ precision:0, font:{size:11} }, grid:{ color:'#f0ede6' } }
+      }
+    }
+  });
+}
+
+function updateStats() {
+  const data = projectData;
+  const total = data.length;
+  const main  = data.filter(r=>r[3]==='MAIN').length;
+  const supp  = data.filter(r=>r[3]==='SUPP').length;
+  const oper  = data.filter(r=>r[3]==='OPER').length;
+  const done  = data.filter(r=>r[9]==='Hoàn thành').length;
+  const inprog= data.filter(r=>r[9]==='Đang thực hiện').length;
+  const pending=data.filter(r=>r[9]==='Chờ xử lý'||r[9]==='Tạm dừng').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-main').textContent=main;
+  document.getElementById('s-supp').textContent=supp;
+  document.getElementById('s-oper').textContent=oper;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-inprog').textContent=inprog;
+  document.getElementById('s-pending').textContent=pending;
+  document.getElementById('s-done-pct').textContent=total?pct+'% tổng số':'';
+  document.getElementById('s-inprog-pct').textContent=total?Math.round(inprog/total*100)+'% tổng số':'';
+  document.getElementById('s-pending-pct').textContent=total?Math.round(pending/total*100)+'% tổng số':'';
+  document.getElementById('pct-text').textContent=pct+'%';
+  document.getElementById('pct-bar').style.width=pct+'%';
+
+  drawCharts(main,supp,oper,done,inprog,pending,total);
+
+  // Personnel
+  const personMap={};
+  data.forEach(r=>{
+    const people=(r[4]+','+(r[5]||'')).split(',').map(p=>p.trim()).filter(p=>p);
+    people.forEach(p=>{if(p) personMap[p]=(personMap[p]||0)+1;});
+  });
+  const persons=Object.entries(personMap).sort((a,b)=>b[1]-a[1]);
+  const pg=document.getElementById('personGrid');
+  if(persons.length===0){
+    pg.innerHTML='<p style="font-size:12px;color:var(--text-muted);">Chưa có thông tin nhân sự. Điền cột Quản lý DA và Người thực hiện để xem thống kê.</p>';
+  } else {
+    pg.innerHTML=persons.map(([name,count])=>{
+      const initials=name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
+      return `<div class="person-card"><div class="person-avatar">${initials}</div><div><div class="person-name">${name}</div><div class="person-count">${count} dự án</div></div></div>`;
+    }).join('');
+  }
+  refreshDeptFilter();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('active',['table','stats','guide'][i]===tab);
+  });
+  ['table','stats','guide'].forEach(t=>{
+    document.getElementById('section-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='stats') setTimeout(()=>updateStats(),50);
+}
+
+function exportCSV() {
+  const headers=['STT','Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
+  const rows=projectData.map((r,i)=>[i+1,...r]);
+  const csv=[headers,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='bang_ma_du_an_NAACP_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// CSV IMPORT
+let pendingImportRows = [];
+
+function parseCSV(text) {
+  // Remove BOM if present
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  // Parse header to find column indices
+  const header = splitCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+  const idxMap = {
+    id:     findCol(header, ['project id','projectid','mã','id']),
+    name:   findCol(header, ['project name','projectname','tên ngắn','tên dự án','name']),
+    full:   findCol(header, ['full name','fullname','tên đầy đủ','full']),
+    type:   findCol(header, ['loại','type','loai']),
+    pm:     findCol(header, ['quản lý da','quản lý','pm','quan ly']),
+    exec:   findCol(header, ['người thực hiện','thực hiện','exec','nguoi thuc hien']),
+    dept:   findCol(header, ['phòng/bộ phận','phòng','bộ phận','dept','department','phong']),
+    start:  findCol(header, ['ngày bắt đầu','bắt đầu','start','ngay bat dau']),
+    end:    findCol(header, ['dự kiến kết thúc','kết thúc','end','ngay ket thuc']),
+    status: findCol(header, ['trạng thái','status','trang thai']),
+  };
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    if (!cols.length) continue;
+    const get = (k) => (idxMap[k] >= 0 ? (cols[idxMap[k]] || '').trim() : '');
+    // Skip header-like rows or empty rows
+    const id = get('id');
+    if (!id || id.toLowerCase() === 'project id' || id === 'STT') continue;
+    rows.push([
+      id, get('name'), get('full'), get('type'),
+      get('pm'), get('exec'), get('dept'),
+      get('start'), get('end'), get('status') || 'Chờ xử lý'
+    ]);
+  }
+  return rows;
+}
+
+function findCol(header, candidates) {
+  for (const c of candidates) {
+    const i = header.findIndex(h => h.includes(c));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else cur += ch;
+  }
+  result.push(cur);
+  return result;
+}
+
+function handleCSVImport(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  input.value = '';
+  let allRows = [];
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const rows = parseCSV(e.target.result);
+      allRows = allRows.concat(rows);
+      loaded++;
+      if (loaded === files.length) processImport(allRows, files.length);
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
+// normalize: lowercase + trim + collapse spaces for comparison
+function normName(s) { return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+
+function resolveIdConflicts(rows) {
+  // Track all IDs already committed (existing + already assigned in this batch)
+  const usedIds = new Set(projectData.map(r => r[0]).filter(Boolean));
+  return rows.map(r => {
+    let id = r[0];
+    if (!id) return r;
+    if (!usedIds.has(id)) { usedIds.add(id); return r; }
+    // ID already taken — increment the numeric suffix
+    // Format: YYMMDD-TYPE-NN  e.g. 260506-MAIN-01
+    const match = id.match(/^(.+-)(\d+)$/);
+    if (match) {
+      const prefix = match[1];
+      let num = parseInt(match[2], 10);
+      let newId;
+      do {
+        num++;
+        newId = prefix + String(num).padStart(2, '0');
+      } while (usedIds.has(newId));
+      usedIds.add(newId);
+      return [newId, ...r.slice(1)];
+    }
+    // Fallback: append -02, -03... if no numeric suffix found
+    let suffix = 2;
+    let newId;
+    do { newId = `${id}-${String(suffix).padStart(2,'0')}`; suffix++; }
+    while (usedIds.has(newId));
+    usedIds.add(newId);
+    return [newId, ...r.slice(1)];
+  });
+}
+
+function rowsIdentical(a, b) {
+  for (let i = 0; i < 10; i++) {
+    if ((a[i]||'').trim() !== (b[i]||'').trim()) return false;
+  }
+  return true;
+}
+
+function processImport(newRows, fileCount) {
+  if (!newRows.length) {
+    showToast(`<span style="color:var(--coral-800);">⚠️ Không tìm thấy dữ liệu hợp lệ trong ${fileCount} file.</span>`, false);
+    return;
+  }
+
+  // Step 1: resolve ID conflicts — auto-increment suffix, keep both
+  const originalIds = newRows.map(r => r[0]);
+  const resolved = resolveIdConflicts(newRows);
+  const renamedIds = resolved
+    .map((r,i) => r[0] !== originalIds[i] ? `${originalIds[i]} → ${r[0]}` : null)
+    .filter(Boolean);
+
+  // Step 2: deduplicate within imported rows by Project Name
+  const seenNames = new Map();
+  const withinDupes = [];
+  const deduped = [];
+  for (const r of resolved) {
+    const key = normName(r[1]);
+    if (!key) { deduped.push(r); continue; }
+    if (seenNames.has(key)) withinDupes.push(r[1]);
+    else { seenNames.set(key, r); deduped.push(r); }
+  }
+
+  // Step 3: classify vs existing — fresh / changed / identical
+  const existingByName = new Map(projectData.map(r => [normName(r[1]), r]));
+  const freshRows     = [];
+  const changedRows   = [];
+  const identicalRows = [];
+
+  for (const r of deduped) {
+    const key = normName(r[1]);
+    if (!key || !existingByName.has(key)) {
+      freshRows.push(r);
+    } else {
+      const ex = existingByName.get(key);
+      if (rowsIdentical(ex, r)) identicalRows.push(r);
+      else changedRows.push(r);
+    }
+  }
+
+  pendingImportRows = { fresh: freshRows, changed: changedRows, identical: identicalRows };
+
+  // Build message
+  const fieldNames = ['Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
+  let msg = `<b>📂 ${fileCount} file — ${deduped.length} dòng hợp lệ</b><br>`;
+  msg += `🆕 <b>${freshRows.length} dòng mới</b> &nbsp;·&nbsp; `;
+  msg += `✅ <b>${identicalRows.length} dòng không đổi</b> — tự động bỏ qua`;
+
+  if (renamedIds.length) {
+    msg += `<br><span style="color:var(--blue-800);">🔄 ${renamedIds.length} Project ID trùng đã đổi số tự động:</span>`;
+    msg += `<ul style="margin:3px 0 0 14px;font-size:11px;color:var(--blue-800);">` +
+      renamedIds.slice(0,5).map(s=>`<li>${s}</li>`).join('') +
+      (renamedIds.length>5?`<li>...và ${renamedIds.length-5} ID khác</li>`:'') + `</ul>`;
+  }
+  if (withinDupes.length) {
+    msg += `<br><span style="color:var(--amber-800);">⚠️ ${withinDupes.length} dòng trùng tên trong các file — đã loại bỏ.</span>`;
+  }
+
+  if (changedRows.length) {
+    msg += `<br><span style="color:var(--amber-800);">✏️ <b>${changedRows.length} dòng có thay đổi</b> so với dữ liệu hiện có:</span>`;
+    msg += `<div style="margin:5px 0 6px;font-size:11px;border:1px solid var(--amber-100);border-radius:6px;overflow:hidden;">`;
+    changedRows.slice(0,4).forEach(r => {
+      const ex = existingByName.get(normName(r[1]));
+      const diffs = fieldNames.filter((_,i) => (ex[i]||'').trim() !== (r[i]||'').trim());
+      msg += `<div style="padding:5px 10px;border-bottom:1px solid var(--amber-100);background:var(--amber-50);">
+        <b style="color:var(--amber-800);">${r[1]}</b>
+        <span style="color:var(--text-muted);margin-left:6px;">→ thay đổi: ${diffs.join(', ')}</span>
+      </div>`;
+    });
+    if (changedRows.length>4)
+      msg += `<div style="padding:5px 10px;color:var(--text-muted);">...và ${changedRows.length-4} dòng khác</div>`;
+    msg += `</div><span style="font-size:12px;">Ghi đè các dòng đã thay đổi, hay giữ dữ liệu cũ?</span>`;
+    showToast(msg, true);
+  } else {
+    showToast(msg, false);
+    confirmImport(false);
+  }
+}
+
+function showToast(msg, showButtons) {
+  document.getElementById('importToastMsg').innerHTML = msg;
+  document.querySelectorAll('#importToast .btn').forEach(b => {
+    b.style.display = showButtons ? '' : 'none';
+  });
+  if (!showButtons) {
+    document.querySelector('#importToast .btn-outline').style.display = '';
+    document.querySelector('#importToast .btn-outline').textContent = 'Đóng';
+  } else {
+    document.querySelector('#importToast .btn-outline').textContent = 'Hủy';
+  }
+  document.getElementById('importToast').style.display = 'block';
+}
+
+function confirmImport(overwrite) {
+  const batch = pendingImportRows;
+  if (!batch) { cancelImport(); return; }
+  let added = 0, updated = 0, kept = 0;
+
+  // Add fresh rows
+  for (const row of (batch.fresh||[])) { projectData.push(row); added++; }
+
+  // Handle changed rows based on user choice
+  for (const row of (batch.changed||[])) {
+    if (overwrite) {
+      const i = projectData.findIndex(r => normName(r[1]) === normName(row[1]));
+      if (i >= 0) { projectData[i] = row; updated++; }
+    } else kept++;
+  }
+
+  // Identical rows: always skip silently (no counter needed)
+  pendingImportRows = null;
+  saveData();
+  renderTable(projectData);
+  updateStats();
+  document.getElementById('importToast').style.display = 'none';
+
+  const parts = [];
+  if (added)   parts.push(`🆕 <b>${added} dòng mới</b> đã thêm`);
+  if (updated) parts.push(`✏️ <b>${updated} dòng</b> đã cập nhật`);
+  if ((batch.identical||[]).length) parts.push(`✅ <b>${(batch.identical||[]).length} dòng</b> không đổi — bỏ qua`);
+  if (kept)    parts.push(`⏭ <b>${kept} dòng thay đổi</b> — giữ dữ liệu cũ`);
+  showToast(parts.join('<br>'), false);
+  setTimeout(() => { document.getElementById('importToast').style.display='none'; }, 6000);
+}
+
+function cancelImport() {
+  pendingImportRows = null;
+  document.getElementById('importToast').style.display = 'none';
+}
+
+// INIT — Firebase listener in <script type="module"> handles data loading
+// Show loading state until Firebase delivers data
+document.getElementById('row-count').textContent = 'Đang kết nối Firebase...';
+updateTimestamp();
+// Fallback: if Firebase takes too long, load from localStorage
+setTimeout(() => {
+  if (!projectData.length) {
+    projectData = loadData();
+    renderTable(projectData);
+    updateStats();
+  }
+}, 3000);
+</script>
+</body>
+</html>
