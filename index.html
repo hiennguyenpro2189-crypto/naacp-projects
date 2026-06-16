@@ -711,9 +711,10 @@ function drawCharts(main,supp,oper,done,inprog,pending,total) {
 
   // Bar chart: each type broken down by status
   const types = ['MAIN','SUPP','OPER'];
-  const barDone  = types.map(t => projectData.filter(r=>r[3]===t&&r[9]==='Hoàn thành').length);
-  const barInprog= types.map(t => projectData.filter(r=>r[3]===t&&r[9]==='Đang thực hiện').length);
-  const barPend  = types.map(t => projectData.filter(r=>r[3]===t&&(r[9]==='Chờ xử lý'||r[9]==='Tạm dừng')).length);
+  const _d = (window.projectData && window.projectData.length) ? window.projectData : projectData;
+  const barDone  = types.map(t => _d.filter(r=>r[3]===t&&r[9]==='Hoàn thành').length);
+  const barInprog= types.map(t => _d.filter(r=>r[3]===t&&r[9]==='Đang thực hiện').length);
+  const barPend  = types.map(t => _d.filter(r=>r[3]===t&&(r[9]==='Chờ xử lý'||r[9]==='Tạm dừng')).length);
 
   const ctxBar = document.getElementById('chartBar').getContext('2d');
   chartBar = new Chart(ctxBar, {
@@ -738,7 +739,7 @@ function drawCharts(main,supp,oper,done,inprog,pending,total) {
 }
 
 function updateStats() {
-  const data = projectData;
+  const data = (window.projectData && window.projectData.length) ? window.projectData : projectData;
   const total = data.length;
   const main  = data.filter(r=>r[3]==='MAIN').length;
   const supp  = data.filter(r=>r[3]==='SUPP').length;
