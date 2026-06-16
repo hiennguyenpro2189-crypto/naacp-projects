@@ -51,7 +51,11 @@ onValue(dbRef, (snap) => {
 
     if (!isSelfEcho && !userEditing) {
       renderTable(rows);
-      if (typeof updateStats === 'function') updateStats();
+      updateStats();
+      // If stats tab is active, redraw charts
+      if (document.getElementById('section-stats').classList.contains('active')) {
+        setTimeout(() => updateStats(), 100);
+      }
     }
 
     // Always update status indicator
@@ -785,7 +789,13 @@ function switchTab(tab) {
   ['table','stats','guide'].forEach(t=>{
     document.getElementById('section-'+t).classList.toggle('active',t===tab);
   });
-  if(tab==='stats') setTimeout(()=>updateStats(),50);
+  if(tab==='stats') {
+    // Destroy existing charts first to avoid canvas reuse error
+    if(chartType) { chartType.destroy(); chartType=null; }
+    if(chartStatus) { chartStatus.destroy(); chartStatus=null; }
+    if(chartBar) { chartBar.destroy(); chartBar=null; }
+    setTimeout(()=>updateStats(), 50);
+  }
 }
 
 function exportCSV() {
