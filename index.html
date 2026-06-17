@@ -59,6 +59,8 @@ onValue(dbRef, (snap) => {
   const rows = val ? Object.values(val) : [];
 
   window.projectData = rows;
+  // Always keep local projectData in sync too
+  if (typeof projectData !== 'undefined') projectData = rows;
 
   // Skip re-render if this is our own echo (within 3s of our save)
   const isSelfEcho = (Date.now() - window._lastSaveTime) < 3000;
@@ -691,6 +693,7 @@ function fromInputDate(str) {
 }
 
 function onCellChange(el) {
+  syncLocal();
   const idx = parseInt(el.dataset.idx);
   const col = parseInt(el.dataset.col);
   let val = el.value;
@@ -757,8 +760,17 @@ function onCellChange(el) {
   updateStats();
 }
 
+// ── Luôn đồng bộ projectData từ Firebase trước khi thao tác ──
+function syncLocal() {
+  if (window.projectData && window.projectData.length) {
+    projectData = window.projectData;
+  }
+}
+
 function addRow() {
+  syncLocal();
   projectData.unshift(['','','','','','','','','','Chờ xử lý']);
+  window.projectData = projectData;
   renderTable(projectData);
   updateStats();
   saveData();
@@ -771,13 +783,16 @@ function addRow() {
 
 function deleteRow(idx) {
   if (!confirm('Xóa dự án này?')) return;
+  syncLocal();
   projectData.splice(idx,1);
+  window.projectData = projectData;
   renderTable(projectData);
   updateStats();
   saveData();
 }
 
 function filterTable() {
+  syncLocal();
   const q = document.getElementById('searchInput').value.toLowerCase();
   const ft = document.getElementById('filterType').value;
   const fd = document.getElementById('filterDept').value;
