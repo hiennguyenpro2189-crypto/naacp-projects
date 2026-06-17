@@ -5,226 +5,169 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bảng Mã Dự Án – Team NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script type="module">
-// ====== FIREBASE CONFIG ======
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBq4GpPN9TO2AmPWtsnGhaN_HOHFVAVQns",
-  authDomain: "naacp-projects.firebaseapp.com",
-  databaseURL: "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "naacp-projects",
-  storageBucket: "naacp-projects.firebasestorage.app",
-  messagingSenderId: "218174774842",
-  appId: "1:218174774842:web:71f549d14bfcc661a89f03"
-};
-
-const DB_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app/projects.json";
-
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
-const dbRef = ref(db, 'projects');
-
-// ── Save via fetch (async, normal usage) ──
-window._fbSave = async (data) => {
-  const obj = {};
-  data.forEach((row, i) => { obj[i] = row; });
-  await fetch(DB_URL, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(obj)
-  });
-};
-
-// ── Emergency save via sendBeacon (fires reliably on tab close) ──
-window._fbBeaconSave = (data) => {
-  const obj = {};
-  data.forEach((row, i) => { obj[i] = row; });
-  // sendBeacon does not support PUT, so we use a workaround:
-  // Firebase REST supports POST to push, but we need PUT.
-  // Use keepalive fetch instead which works on page unload.
-  fetch(DB_URL, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(obj),
-    keepalive: true   // <-- KEY: this survives tab/window close
-  });
-};
-
-// ── Listen for remote changes ──
-window._lastSaveTime = 0;
-onValue(dbRef, (snap) => {
-  const val  = snap.val();
-  const rows = val ? Object.values(val) : [];
-
-  window.projectData = rows;
-  // Always keep local projectData in sync too
-  if (typeof projectData !== 'undefined') projectData = rows;
-
-  // Skip re-render if this is our own echo (within 3s of our save)
-  const isSelfEcho = (Date.now() - window._lastSaveTime) < 3000;
-  const activeEl   = document.activeElement;
-  const userEditing = activeEl &&
-    (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') &&
-    activeEl.closest('#projectTable');
-
-  if (typeof renderTable === 'function') {
-    if (!isSelfEcho && !userEditing) {
-      renderTable(rows);
-      if (typeof updateStats === 'function') updateStats();
-    }
-    const s = document.getElementById('sync-status');
-    if (s) s.textContent = '🟢 Đã kết nối · Realtime';
-    if (typeof updateTimestamp === 'function') updateTimestamp();
-  }
-});
-
-window._fbReady = true;
-</script>
 <style>
-  :root {
-    --purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-600:#534AB7;--purple-800:#3C3489;--purple-900:#26215C;
-    --teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-600:#0F6E56;--teal-800:#085041;
-    --amber-50:#FAEEDA;--amber-100:#FAC775;--amber-600:#854F0B;--amber-800:#633806;
-    --coral-50:#FAECE7;--coral-100:#F5C4B3;--coral-600:#993C1D;--coral-800:#712B13;
-    --blue-50:#E6F1FB;--blue-600:#185FA5;--blue-800:#0C447C;
-    --green-50:#EAF3DE;--green-600:#3B6D11;--green-800:#27500A;
-    --gray-50:#F1EFE8;--gray-100:#D3D1C7;--gray-400:#888780;--gray-800:#444441;
-    --bg:#f8f7f4;--surface:#ffffff;--border:#e0ddd6;--text:#1a1918;--text-muted:#6b6a66;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+:root{
+  --p50:#EEEDFE;--p100:#CECBF6;--p600:#534AB7;--p800:#3C3489;--p900:#26215C;
+  --t50:#E1F5EE;--t100:#9FE1CB;--t600:#0F6E56;--t800:#085041;
+  --a50:#FAEEDA;--a100:#FAC775;--a600:#854F0B;--a800:#633806;
+  --c50:#FAECE7;--c100:#F5C4B3;--c600:#993C1D;--c800:#712B13;
+  --b50:#E6F1FB;--b600:#185FA5;--b800:#0C447C;
+  --g50:#EAF3DE;--g600:#3B6D11;--g800:#27500A;
+  --s50:#F1EFE8;--s100:#D3D1C7;--s400:#888780;--s800:#444441;
+  --bg:#f8f7f4;--sur:#fff;--bdr:#e0ddd6;--txt:#1a1918;--muted:#6b6a66;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;}
 
-  .page-header{background:var(--purple-900);color:#fff;padding:24px 32px 20px;display:flex;align-items:flex-end;justify-content:space-between;}
-  .page-header h1{font-size:22px;font-weight:600;letter-spacing:0.5px;}
-  .page-header .meta{font-size:12px;opacity:0.7;margin-top:4px;}
-  .updated-badge{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;font-size:12px;white-space:nowrap;}
+/* HEADER */
+.hdr{background:var(--p900);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
+.hdr h1{font-size:20px;font-weight:600;}
+.hdr .meta{font-size:11px;opacity:.65;margin-top:3px;}
+.badge-conn{border-radius:20px;padding:4px 12px;font-size:11px;white-space:nowrap;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);}
 
-  .tabs{display:flex;background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 32px;}
-  .tab{padding:12px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);transition:all 0.15s;}
-  .tab:hover{color:var(--text);}
-  .tab.active{color:var(--purple-800);border-bottom-color:var(--purple-600);}
+/* TABS */
+.tabs{display:flex;background:var(--sur);border-bottom:1.5px solid var(--bdr);padding:0 28px;}
+.tab{padding:11px 18px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);transition:.15s;}
+.tab:hover{color:var(--txt);}
+.tab.active{color:var(--p800);border-bottom-color:var(--p600);}
 
-  .main{padding:24px 32px;}
+/* LAYOUT */
+.main{padding:20px 28px;}
+.section{display:none;}.section.active{display:block;}
 
-  /* STATS */
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;}
-  .stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
-  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-  .stat-card.total::before{background:var(--purple-600);}
-  .stat-card.main::before{background:var(--blue-600);}
-  .stat-card.supp::before{background:var(--amber-600);}
-  .stat-card.oper::before{background:var(--teal-600);}
-  .stat-card.done::before{background:var(--green-600);}
-  .stat-card.inprog::before{background:var(--coral-600);}
-  .stat-card.pending::before{background:var(--gray-400);}
-  .stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
-  .stat-value{font-size:28px;font-weight:600;line-height:1;}
-  .stat-card.total .stat-value{color:var(--purple-800);}
-  .stat-card.main .stat-value{color:var(--blue-800);}
-  .stat-card.supp .stat-value{color:var(--amber-800);}
-  .stat-card.oper .stat-value{color:var(--teal-800);}
-  .stat-card.done .stat-value{color:var(--green-800);}
-  .stat-card.inprog .stat-value{color:var(--coral-800);}
-  .stat-card.pending .stat-value{color:var(--gray-800);}
-  .stat-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
+/* CONTROLS */
+.ctrl{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.search{flex:1;min-width:180px;max-width:300px;padding:7px 11px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;}
+.search:focus{outline:none;border-color:var(--p600);}
+.fsel{padding:7px 11px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;background:var(--sur);cursor:pointer;}
+.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:.15s;}
+.btn-p{background:var(--p600);color:#fff;}.btn-p:hover{background:var(--p800);}
+.btn-t{background:var(--t600);color:#fff;}.btn-t:hover{background:var(--t800);}
+.btn-o{background:var(--sur);color:var(--txt);border:1px solid var(--bdr);}.btn-o:hover{background:var(--s50);}
+.btn-r{background:var(--c50);color:var(--c800);border:1px solid var(--c100);}.btn-r:hover{background:var(--c100);}
+.btn-sm{padding:4px 10px;font-size:11px;}
 
-  /* CHARTS */
-  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
-  .chart-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:16px 20px;}
-  .chart-card h4{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;}
-  .chart-card canvas{max-height:220px;}
+/* FILTER BADGE */
+.filter-active{background:var(--p50);border:1px solid var(--p100);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--p800);display:flex;align-items:center;gap:4px;}
 
-  /* PERSONNEL */
-  .section-title{font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;}
-  .person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:28px;}
-  .person-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
-  .person-avatar{width:32px;height:32px;border-radius:50%;background:var(--purple-50);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--purple-800);flex-shrink:0;}
-  .person-name{font-size:12px;font-weight:500;}
-  .person-count{font-size:11px;color:var(--text-muted);}
+/* TABLE */
+.tbl-wrap{background:var(--sur);border:0.5px solid var(--bdr);border-radius:10px;overflow:auto;}
+table{width:100%;border-collapse:collapse;min-width:1050px;}
+thead tr{background:var(--p900);}
+thead th{padding:9px 10px;text-align:left;font-size:11px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;border-right:1px solid rgba(255,255,255,.1);}
+thead th:last-child{border-right:none;}
+tbody tr.proj-row{border-bottom:.5px solid var(--bdr);transition:background .1s;}
+tbody tr.proj-row:hover{background:var(--p50);}
+tbody tr.task-row{background:#fafaf8;border-bottom:.5px solid var(--bdr);}
+tbody tr.task-row:hover{background:var(--s50);}
+tbody tr.task-row td{font-size:11px;padding:5px 10px;}
+td{padding:7px 10px;font-size:12px;vertical-align:middle;word-break:break-word;}
+td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--txt);padding:0;}
+td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;}
+td select{cursor:pointer;}
+.expand-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px;color:var(--muted);transition:.15s;}
+.expand-btn:hover{color:var(--p600);}
+.del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;}
+.del-btn:hover{color:#c0392b;background:#fdf0ef;}
 
-  /* CONTROLS */
-  .controls{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
-  .search-box{flex:1;min-width:200px;max-width:320px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);}
-  .search-box:focus{outline:none;border-color:var(--purple-600);}
-  .filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;}
-  .btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;}
-  .btn-primary{background:var(--purple-600);color:#fff;}
-  .btn-primary:hover{background:var(--purple-800);}
-  .btn-import{background:var(--teal-600);color:#fff;border:none;}
-  .btn-import:hover{background:var(--teal-800);}
-  .btn-outline{background:var(--surface);color:var(--text);border:1px solid var(--border);}
-  .btn-outline:hover{background:var(--gray-50);}
+/* TASK ROW */
+.task-indent{padding-left:24px;display:flex;align-items:center;gap:6px;}
+.task-line{width:12px;height:1px;background:var(--s100);flex-shrink:0;}
+.add-task-btn{font-size:11px;color:var(--t600);background:none;border:1px dashed var(--t100);border-radius:5px;padding:2px 8px;cursor:pointer;}
+.add-task-btn:hover{background:var(--t50);}
 
-  /* TABLE */
-  .table-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:auto;}
-  table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:1100px;}
-  thead tr{background:var(--purple-900);}
-  thead th{padding:10px 10px;text-align:left;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:0.4px;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.1);}
-  thead th:last-child{border-right:none;}
-  tbody tr{border-bottom:0.5px solid var(--border);transition:background 0.1s;}
-  tbody tr:last-child{border-bottom:none;}
-  tbody tr:hover{background:var(--purple-50);}
-  tbody tr.new-row{background:#fffbe6;}
-  td{padding:8px 10px;font-size:12px;vertical-align:top;word-break:break-word;}
-  td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--text);padding:0;}
-  td input:focus,td select:focus{outline:1px solid var(--purple-600);border-radius:3px;background:#fff;}
-  td select{cursor:pointer;}
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
+.bm{background:var(--b50);color:var(--b800);}
+.bs{background:var(--a50);color:var(--a800);}
+.bo{background:var(--t50);color:var(--t800);}
+.bd{background:var(--g50);color:var(--g800);}
+.bi{background:var(--c50);color:var(--c800);}
+.bp{background:var(--s50);color:var(--s800);}
 
-  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
-  .badge-main{background:var(--blue-50);color:var(--blue-800);}
-  .badge-supp{background:var(--amber-50);color:var(--amber-800);}
-  .badge-oper{background:var(--teal-50);color:var(--teal-800);}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:22px;}
+.sc{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:13px 15px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc.total::before{background:var(--p600);}.sc.main::before{background:var(--b600);}
+.sc.supp::before{background:var(--a600);}.sc.oper::before{background:var(--t600);}
+.sc.done::before{background:var(--g600);}.sc.inprog::before{background:var(--c600);}
+.sc.pend::before{background:var(--s400);}
+.sc-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.sc-val{font-size:26px;font-weight:600;line-height:1;}
+.sc.total .sc-val{color:var(--p800);}.sc.main .sc-val{color:var(--b800);}
+.sc.supp .sc-val{color:var(--a800);}.sc.oper .sc-val{color:var(--t800);}
+.sc.done .sc-val{color:var(--g800);}.sc.inprog .sc-val{color:var(--c800);}
+.sc.pend .sc-val{color:var(--s800);}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;}
+.cc{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:14px 18px;}
+.cc h4{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.cc canvas{max-height:200px;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:22px;}
+.pcard{background:var(--sur);border:.5px solid var(--bdr);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:9px;}
+.pavatar{width:30px;height:30px;border-radius:50%;background:var(--p50);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--p800);flex-shrink:0;}
+.pname{font-size:12px;font-weight:500;}.pcount{font-size:10px;color:var(--muted);}
+.sec-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;}
+.prog-wrap{background:#e8e6e0;border-radius:4px;height:5px;overflow:hidden;}
+.prog-bar{height:100%;border-radius:4px;background:var(--g600);}
 
-  .del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;}
-  .del-btn:hover{color:#c0392b;background:#fdf0ef;}
+/* DATA TAB */
+.data-panel{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:16px 18px;}
+.data-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--p50);border-radius:7px;margin-bottom:5px;}
+.data-item input{flex:1;border:none;background:transparent;font-size:13px;font-weight:500;}
+.data-item .role-inp{font-size:11px;color:var(--muted);flex:1;}
 
-  /* GUIDE */
-  .guide-panel{background:var(--blue-50);border:1px solid #b5d4f4;border-radius:10px;padding:16px 20px;margin-bottom:24px;}
-  .guide-panel h3{font-size:13px;font-weight:600;color:var(--blue-800);margin-bottom:10px;}
-  .guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
-  .guide-item{font-size:12px;line-height:1.6;}
-  .guide-item strong{color:var(--blue-800);display:block;margin-bottom:2px;}
-  .guide-item code{background:rgba(0,0,0,0.07);padding:0 4px;border-radius:3px;font-family:monospace;font-size:11px;}
+/* GUIDE */
+.guide-box{background:var(--b50);border:1px solid #b5d4f4;border-radius:10px;padding:14px 18px;margin-bottom:18px;}
+.guide-box h3{font-size:13px;font-weight:600;color:var(--b800);margin-bottom:10px;}
+.gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+.gi{font-size:12px;line-height:1.65;}
+.gi strong{color:var(--b800);display:block;margin-bottom:2px;}
+.gi code{background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;font-family:monospace;font-size:11px;}
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 18px;}
+.tdef{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6;}
+.tdef.m{background:var(--b50);border:1px solid #b5d4f4;}
+.tdef.s{background:var(--a50);border:1px solid var(--a100);}
+.tdef.o{background:var(--t50);border:1px solid var(--t100);}
+.tdef .tn{font-size:13px;font-weight:700;margin-bottom:6px;}
+.tdef.m .tn{color:var(--b800);}.tdef.s .tn{color:var(--a800);}.tdef.o .tn{color:var(--t800);}
+.tdef ul{padding-left:13px;margin-top:4px;}
 
-  /* Loại definition boxes */
-  .type-def-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 20px;}
-  .type-def{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6;}
-  .type-def.main{background:var(--blue-50);border:1px solid #b5d4f4;}
-  .type-def.supp{background:var(--amber-50);border:1px solid var(--amber-100);}
-  .type-def.oper{background:var(--teal-50);border:1px solid var(--teal-100);}
-  .type-def .type-name{font-size:13px;font-weight:700;margin-bottom:6px;}
-  .type-def.main .type-name{color:var(--blue-800);}
-  .type-def.supp .type-name{color:var(--amber-800);}
-  .type-def.oper .type-name{color:var(--teal-800);}
-  .type-def ul{padding-left:14px;margin-top:4px;}
-  .type-def li{margin-bottom:2px;}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:14px;padding:22px 26px;min-width:340px;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:16px;}
+.form-row{margin-bottom:12px;}
+.form-row label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+.form-row input,.form-row select{width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;font-family:inherit;}
+.form-row input:focus,.form-row select:focus{outline:none;border-color:var(--p600);}
+.modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+.id-preview{background:var(--p50);border:1px solid var(--p100);border-radius:6px;padding:8px 12px;font-family:monospace;font-size:14px;font-weight:600;color:var(--p800);text-align:center;margin-bottom:12px;}
 
-  .progress-wrap{background:#e8e6e0;border-radius:4px;height:5px;margin-top:4px;overflow:hidden;width:100%;}
-  .progress-bar{height:100%;border-radius:4px;background:var(--green-600);}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:12px 18px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:2000;max-width:400px;display:none;}
+.toast.show{display:block;}
 
-  #section-table,#section-stats,#section-guide,#section-data{display:none;}
-  #section-table.active,#section-stats.active,#section-guide.active,#section-data.active{display:block;}
-  .export-row{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;}
-
-  @media print{
-    .tabs,.controls,.export-row,.del-btn,.btn{display:none!important;}
-    .main{padding:0;}
-    table{font-size:10px;}
-  }
+@media print{
+  .tabs,.ctrl,.btn,.del-btn,.expand-btn,.add-task-btn,.modal-bg,.toast{display:none!important;}
+  .main{padding:0;}
+  table{font-size:10px;}
+  .section{display:block!important;}
+}
 </style>
 </head>
 <body>
 
-<div class="page-header">
+<div class="hdr">
   <div>
     <h1>📋 BẢNG MÃ DỰ ÁN – TEAM NAACP</h1>
     <div class="meta">Đơn vị thực hiện: NAACP · Quản lý dự án nội bộ</div>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-    <div class="updated-badge" id="last-updated">Đang kết nối...</div>
-    <div id="sync-status" style="font-size:11px;opacity:0.7;">⏳ Đang tải dữ liệu...</div>
+  <div style="text-align:right">
+    <div class="badge-conn" id="connBadge">⏳ Đang kết nối...</div>
+    <div id="syncStatus" style="font-size:11px;opacity:.7;margin-top:5px;color:#fff;"></div>
   </div>
 </div>
 
@@ -237,1374 +180,1049 @@ window._fbReady = true;
 
 <div class="main">
 
-<!-- ===== TABLE TAB ===== -->
-<div id="section-table" class="active">
-  <div class="controls">
-    <input type="text" class="search-box" id="searchInput" placeholder="🔍 Tìm theo mã, tên dự án, nhân sự..." oninput="filterTable()">
-    <select class="filter-select" id="filterType" onchange="filterTable()">
+<!-- ========== TABLE ========== -->
+<div id="section-table" class="section active">
+  <div class="ctrl">
+    <input class="search" id="searchQ" placeholder="🔍 Tìm mã, tên, nhân sự..." oninput="applyFilters()">
+    <select class="fsel" id="fType" onchange="applyFilters()">
       <option value="">Tất cả loại</option>
-      <option value="MAIN">MAIN</option>
-      <option value="SUPP">SUPP</option>
-      <option value="OPER">OPER</option>
-      <option value="">-- Chưa phân loại</option>
+      <option value="MAIN">MAIN</option><option value="SUPP">SUPP</option><option value="OPER">OPER</option>
     </select>
-    <select class="filter-select" id="filterDept" onchange="filterTable()">
+    <select class="fsel" id="fDept" onchange="applyFilters()">
       <option value="">Tất cả phòng/bộ phận</option>
     </select>
-    <select class="filter-select" id="filterStatus" onchange="filterTable()">
+    <select class="fsel" id="fPerson" onchange="applyFilters()">
+      <option value="">Tất cả nhân sự</option>
+    </select>
+    <select class="fsel" id="fStatus" onchange="applyFilters()">
       <option value="">Tất cả trạng thái</option>
       <option value="Đang thực hiện">Đang thực hiện</option>
       <option value="Hoàn thành">Hoàn thành</option>
       <option value="Chờ xử lý">Chờ xử lý</option>
       <option value="Tạm dừng">Tạm dừng</option>
     </select>
-    <button class="btn btn-primary" onclick="addRow()">+ Thêm dự án</button>
-    <button class="btn btn-outline" onclick="openExportModal('csv')">⬇ Xuất CSV</button>
-    <button class="btn btn-import" onclick="document.getElementById('csvFileInput').click()">⬆ Nhập CSV</button>
-    <input type="file" id="csvFileInput" accept=".csv" multiple style="display:none" onchange="handleCSVImport(this)">
-    <button class="btn btn-outline" onclick="openExportModal('print')">🖨 In</button>
+    <button class="btn btn-p" onclick="openAddProject()">+ Thêm dự án</button>
+    <button class="btn btn-t" onclick="document.getElementById('csvIn').click()">⬆ Nhập CSV</button>
+    <input type="file" id="csvIn" accept=".csv" multiple style="display:none" onchange="handleCSVImport(this)">
+    <button class="btn btn-o" onclick="openExportModal('csv')">⬇ Xuất CSV</button>
+    <button class="btn btn-o" onclick="openExportModal('print')">🖨 In</button>
   </div>
-
-  <!-- DATALIST for dept suggestions -->
-  <datalist id="deptList">
-    <option value="R&D">
-    <option value="Bảo trì">
-    <option value="Sản xuất">
-    <option value="Tự động hoá">
-    <option value="Tổng vụ">
-    <option value="Kho">
-    <option value="CNC">
-  </datalist>
-
-  <!-- EXPORT/PRINT MODAL -->
-  <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:14px;padding:24px 28px;min-width:360px;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.18);">
-      <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;" id="exportModalTitle">Xuất CSV</h3>
-      <div style="font-size:13px;font-weight:500;margin-bottom:8px;color:var(--text-muted);">Lọc theo:</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div>
-          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Phòng / Bộ phận</label>
-          <select id="expDept" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
-            <option value="">Tất cả</option>
-            <option value="R&D">R&D</option>
-            <option value="Bảo trì">Bảo trì</option>
-            <option value="Sản xuất">Sản xuất</option>
-            <option value="Tự động hoá">Tự động hoá</option>
-            <option value="Tổng vụ">Tổng vụ</option>
-            <option value="Kho">Kho</option>
-            <option value="CNC">CNC</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Trạng thái</label>
-          <select id="expStatus" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
-            <option value="">Tất cả</option>
-            <option value="Đang thực hiện">Đang thực hiện</option>
-            <option value="Hoàn thành">Hoàn thành</option>
-            <option value="Chờ xử lý">Chờ xử lý</option>
-            <option value="Tạm dừng">Tạm dừng</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Loại dự án</label>
-          <select id="expType" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
-            <option value="">Tất cả</option>
-            <option value="MAIN">MAIN</option>
-            <option value="SUPP">SUPP</option>
-            <option value="OPER">OPER</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Người thực hiện</label>
-          <input id="expPerson" placeholder="Tên cá nhân..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
-        </div>
-      </div>
-      <div id="expCount" style="font-size:12px;color:var(--text-muted);margin-bottom:16px;"></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;">
-        <button class="btn btn-outline" onclick="closeExportModal()">Hủy</button>
-        <button class="btn btn-primary" id="expConfirmBtn" onclick="confirmExport()">Xuất CSV</button>
-      </div>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span id="rowCount" style="font-size:12px;color:var(--muted);"></span>
+    <span id="filterBadge"></span>
   </div>
-  <div id="importToast" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.7;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-      <div id="importToastMsg" style="flex:1;"></div>
-      <div style="display:flex;gap:8px;flex-shrink:0;">
-        <button class="btn" style="font-size:12px;padding:5px 12px;background:var(--coral-50);color:var(--coral-800);border:1px solid var(--coral-100);" onclick="confirmImport(true)">Ghi đè dòng trùng</button>
-        <button class="btn" style="font-size:12px;padding:5px 12px;background:var(--green-50);color:var(--green-800);border:1px solid var(--teal-100);" onclick="confirmImport(false)">Giữ dòng cũ</button>
-        <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;" onclick="cancelImport()">Hủy</button>
-      </div>
-    </div>
-  </div>
-  <div class="export-row">
-    <span id="row-count" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
-  </div>
-  <div class="table-wrap">
-    <table id="projectTable">
+  <div class="tbl-wrap">
+    <table>
       <colgroup>
-        <col style="width:38px">
-        <col style="width:140px">
-        <col style="width:160px">
-        <col style="width:220px">
-        <col style="width:62px">
-        <col style="width:105px">
-        <col style="width:105px">
-        <col style="width:105px">
-        <col style="width:85px">
-        <col style="width:85px">
-        <col style="width:105px">
-        <col style="width:32px">
+        <col style="width:36px"><col style="width:26px"><col style="width:145px">
+        <col style="width:170px"><col style="width:230px"><col style="width:58px">
+        <col style="width:108px"><col style="width:108px"><col style="width:98px">
+        <col style="width:82px"><col style="width:82px"><col style="width:100px"><col style="width:30px">
       </colgroup>
-      <thead>
-        <tr>
-          <th>STT</th>
-          <th>Project ID</th>
-          <th>Project Name</th>
-          <th>Full Name</th>
-          <th>Loại</th>
-          <th>Quản lý DA</th>
-          <th>Người thực hiện</th>
-          <th>Phòng / Bộ phận</th>
-          <th>Ngày bắt đầu</th>
-          <th>Dự kiến kết thúc</th>
-          <th>Trạng thái</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
+      <thead><tr>
+        <th>STT</th><th></th><th>Project ID</th><th>Project Name</th>
+        <th>Full Name</th><th>Loại</th><th>Quản lý DA</th>
+        <th>Người thực hiện</th><th>Phòng/Bộ phận</th>
+        <th>Bắt đầu</th><th>Kết thúc DK</th><th>Trạng thái</th><th></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
     </table>
   </div>
 </div>
 
-<!-- ===== STATS TAB ===== -->
-<div id="section-stats">
-  <div class="section-title">Tổng quan dự án</div>
+<!-- ========== STATS ========== -->
+<div id="section-stats" class="section">
+  <div id="statsFilterNote" style="display:none;margin-bottom:12px;"></div>
+  <div class="sec-title">Tổng quan</div>
   <div class="stats-grid">
-    <div class="stat-card total"><div class="stat-label">Tổng dự án</div><div class="stat-value" id="s-total">0</div><div class="stat-sub">tất cả loại</div></div>
-    <div class="stat-card main"><div class="stat-label">MAIN</div><div class="stat-value" id="s-main">0</div><div class="stat-sub">dự án chính</div></div>
-    <div class="stat-card supp"><div class="stat-label">SUPP</div><div class="stat-value" id="s-supp">0</div><div class="stat-sub">hỗ trợ</div></div>
-    <div class="stat-card oper"><div class="stat-label">OPER</div><div class="stat-value" id="s-oper">0</div><div class="stat-sub">vận hành</div></div>
-    <div class="stat-card done"><div class="stat-label">Hoàn thành</div><div class="stat-value" id="s-done">0</div><div class="stat-sub" id="s-done-pct"></div></div>
-    <div class="stat-card inprog"><div class="stat-label">Đang thực hiện</div><div class="stat-value" id="s-inprog">0</div><div class="stat-sub" id="s-inprog-pct"></div></div>
-    <div class="stat-card pending"><div class="stat-label">Chờ / Tạm dừng</div><div class="stat-value" id="s-pending">0</div><div class="stat-sub" id="s-pending-pct"></div></div>
+    <div class="sc total"><div class="sc-lbl">Tổng dự án</div><div class="sc-val" id="sTotal">0</div><div class="sc-sub">tất cả loại</div></div>
+    <div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val" id="sMain">0</div><div class="sc-sub">dự án chính</div></div>
+    <div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val" id="sSupp">0</div><div class="sc-sub">hỗ trợ</div></div>
+    <div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val" id="sOper">0</div><div class="sc-sub">vận hành</div></div>
+    <div class="sc done"><div class="sc-lbl">Hoàn thành</div><div class="sc-val" id="sDone">0</div><div class="sc-sub" id="sDonePct"></div></div>
+    <div class="sc inprog"><div class="sc-lbl">Đang thực hiện</div><div class="sc-val" id="sInprog">0</div><div class="sc-sub" id="sInprogPct"></div></div>
+    <div class="sc pend"><div class="sc-lbl">Chờ / Tạm dừng</div><div class="sc-val" id="sPend">0</div><div class="sc-sub" id="sPendPct"></div></div>
   </div>
-
-  <!-- CHARTS -->
   <div class="charts-row">
-    <div class="chart-card">
-      <h4>Phân bổ theo loại dự án</h4>
-      <canvas id="chartType"></canvas>
-    </div>
-    <div class="chart-card">
-      <h4>Phân bổ theo trạng thái</h4>
-      <canvas id="chartStatus"></canvas>
-    </div>
+    <div class="cc"><h4>Phân bổ theo loại</h4><canvas id="chartType"></canvas></div>
+    <div class="cc"><h4>Phân bổ theo trạng thái</h4><canvas id="chartStatus"></canvas></div>
   </div>
-
-  <div class="chart-card" style="margin-bottom:28px;">
-    <h4>Số dự án theo loại & trạng thái (biểu đồ cột)</h4>
-    <canvas id="chartBar" style="max-height:200px;"></canvas>
+  <div class="cc" style="margin-bottom:22px;">
+    <h4>Dự án theo loại &amp; trạng thái</h4>
+    <canvas id="chartBar" style="max-height:180px;"></canvas>
   </div>
-
-  <div class="section-title">Tiến độ tổng thể</div>
-  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-      <span>Tỷ lệ hoàn thành</span><span id="pct-text">0%</span>
+  <div class="sec-title">Tiến độ tổng thể</div>
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:14px 18px;margin-bottom:22px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">
+      <span>Tỷ lệ hoàn thành</span><span id="pctText">0%</span>
     </div>
-    <div class="progress-wrap"><div class="progress-bar" id="pct-bar" style="width:0%"></div></div>
+    <div class="prog-wrap"><div class="prog-bar" id="pctBar" style="width:0%"></div></div>
   </div>
-
-  <div class="section-title">Thống kê theo nhân sự</div>
-  <div class="person-grid" id="personGrid"></div>
-
-  <div class="section-title">Thống kê theo phòng / bộ phận</div>
-  <div class="chart-card" style="margin-bottom:28px;">
+  <div class="sec-title">Theo nhân sự</div>
+  <div class="pgrid" id="personGrid"></div>
+  <div class="sec-title">Theo phòng / bộ phận</div>
+  <div class="cc" style="margin-bottom:22px;">
     <h4>Số dự án theo phòng / bộ phận</h4>
-    <canvas id="chartDept" style="max-height:240px;"></canvas>
+    <canvas id="chartDept" style="max-height:220px;"></canvas>
   </div>
 </div>
 
-<!-- ===== DATA TAB ===== -->
-<div id="section-data">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
-
-    <!-- NHÂN SỰ -->
-    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:18px 20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h3 style="font-size:14px;font-weight:600;">👤 Danh sách nhân sự</h3>
-        <button class="btn btn-primary" style="font-size:12px;padding:5px 12px;" onclick="addPerson()">+ Thêm</button>
+<!-- ========== DATA ========== -->
+<div id="section-data" class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+    <div class="data-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="font-size:14px;font-weight:600;">👤 Nhân sự</h3>
+        <button class="btn btn-p btn-sm" onclick="addStaff()">+ Thêm</button>
       </div>
-      <div id="personList" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="staffList"></div>
     </div>
-
-    <!-- PHÒNG BAN -->
-    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:18px 20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h3 style="font-size:14px;font-weight:600;">🏢 Danh sách phòng / bộ phận</h3>
-        <button class="btn btn-primary" style="font-size:12px;padding:5px 12px;" onclick="addDeptData()">+ Thêm</button>
+    <div class="data-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="font-size:14px;font-weight:600;">🏢 Phòng / Bộ phận</h3>
+        <button class="btn btn-p btn-sm" onclick="addDept()">+ Thêm</button>
       </div>
-      <div id="deptList2" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="deptList"></div>
     </div>
-
   </div>
-  <div style="background:var(--blue-50);border:1px solid #b5d4f4;border-radius:8px;padding:12px 16px;font-size:12px;color:var(--blue-800);">
-    💡 Dữ liệu nhân sự và phòng ban sẽ được dùng để gợi ý khi điền cột <b>Quản lý DA</b>, <b>Người thực hiện</b> và <b>Phòng/Bộ phận</b>. Điền <code>all</code> vào cột Người thực hiện hoặc Phòng/Bộ phận để chọn tất cả.
+  <div style="background:var(--b50);border:1px solid #b5d4f4;border-radius:8px;padding:11px 14px;font-size:12px;color:var(--b800);">
+    💡 Nhân sự và phòng/bộ phận sẽ được gợi ý khi điền dự án. Điền <code style="background:rgba(0,0,0,.07);padding:0 3px;border-radius:3px;">all</code> vào Người thực hiện hoặc Phòng/Bộ phận để chọn tất cả.
   </div>
 </div>
 
-<!-- ===== GUIDE TAB ===== -->
-<div id="section-guide">
-  <div class="guide-panel">
+<!-- ========== GUIDE ========== -->
+<div id="section-guide" class="section">
+  <div class="guide-box">
     <h3>📌 Quy tắc đặt mã Project ID</h3>
-    <div class="guide-grid">
-      <div class="guide-item">
-        <strong>Cấu trúc mã</strong>
-        <code>YYMMDD-LOẠI-SỐ</code><br>
-        Ví dụ: <code>260506-MAIN-02</code><br>
-        · <b>YY</b> = năm (26 = 2026)<br>
-        · <b>MM</b> = tháng (05 = tháng 5)<br>
-        · <b>DD</b> = ngày tạo (06 = ngày 6)
+    <div class="gg">
+      <div class="gi">
+        <strong>Cấu trúc mã (tự động sinh)</strong>
+        Hệ thống tự tạo ID theo format: <code>YYMMDD-LOẠI-SỐ</code><br>
+        Bạn chỉ cần chọn <b>Loại</b> và <b>ngày tạo</b> — số thứ tự tự tăng.<br>
+        Ví dụ: <code>260506-MAIN-01</code>, <code>260506-MAIN-02</code>
       </div>
-      <div class="guide-item">
-        <strong>Số thứ tự</strong>
-        Đánh từ <code>01</code> tăng dần trong cùng ngày.<br>
-        Ví dụ: <code>-01</code>, <code>-02</code>, <code>-03</code>...<br>
-        Nếu chưa xác định loại, có thể để trống cột Loại và điền sau.
+      <div class="gi">
+        <strong>Số thứ tự — đánh riêng theo ngày &amp; loại</strong>
+        · <code>260506-MAIN-01</code>, <code>260506-MAIN-02</code> (MAIN ngày 06/05)<br>
+        · <code>260506-SUPP-01</code> (SUPP cùng ngày, đánh riêng từ 01)<br>
+        · <code>260507-MAIN-01</code> (sang ngày mới → bắt đầu lại từ 01)<br>
+        · <b>Không có khoảng cách</b> trong ID — chỉ dùng dấu <code>-</code>
       </div>
-      <div class="guide-item">
+      <div class="gi">
         <strong>Full Name</strong>
-        Format đầy đủ: <code>[NAACP] [ProjectID] Tên dự án</code><br>
+        Tự động tạo theo format:<br>
+        <code>[NAACP] [ID] Tên dự án</code><br>
         Ví dụ: <code>[NAACP] [260506-MAIN-02] Thiết Kế CT-WPS-05</code>
       </div>
     </div>
-    <div style="margin-top:14px;padding:10px 14px;background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);border-radius:8px;font-size:12px;line-height:1.7;color:#7b241c;">
-      <b>⚠️ Lưu ý khi nhập Project ID:</b><br>
-      · Nếu Project ID bị trùng với dự án đã có — ô sẽ <b>viền đỏ</b> và hiện thông báo <b>"⚠️ Project ID đã tồn tại!"</b><br>
-      · Hệ thống sẽ <b>không lưu</b> dữ liệu cho đến khi bạn sửa thành ID khác không trùng<br>
-      · Khi sửa thành ID hợp lệ → viền đỏ tự mất và dữ liệu được lưu bình thường
+    <div style="margin-top:12px;padding:9px 13px;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25);border-radius:7px;font-size:12px;line-height:1.7;color:#7b241c;">
+      <b>⚠️ Lưu ý:</b> ID được sinh tự động khi thêm dự án — không cần tự đặt số, tránh trùng lặp khi nhiều người điền cùng lúc.
     </div>
   </div>
 
-  <!-- LOẠI DEFINITION -->
-  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:6px;">🗂 Định nghĩa các loại dự án</h3>
-    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Mỗi dự án thuộc một trong ba loại dưới đây. Nếu chưa xác định, có thể để trống và cập nhật sau.</p>
-    <div class="type-def-grid">
-      <div class="type-def main">
-        <div class="type-name">🔵 MAIN – Dự án chính</div>
-        <div>Các dự án nghiên cứu, thiết kế, phát triển sản phẩm/hệ thống mang tính cốt lõi, có đầu ra kỹ thuật cụ thể.</div>
-        <ul>
-          <li>Thiết kế model UAV mới</li>
-          <li>Nghiên cứu & phát triển hệ thống</li>
-          <li>Chế tạo linh kiện, cơ cấu đặc thù</li>
-          <li>Dự án hợp tác kỹ thuật dài hạn</li>
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:6px;">🎯 Phân biệt Project và Task</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Bảng này ghi nhận <b>Project</b>. Mỗi project có thể có nhiều <b>Task</b> bên trong (nhấn ▶ để mở rộng).</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--p50);border:1px solid var(--p100);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;">
+        <div style="font-size:13px;font-weight:700;color:var(--p800);margin-bottom:7px;">📦 Project (Dự án)</div>
+        <ul style="padding-left:13px;">
+          <li>Có mục tiêu rõ ràng, đầu ra cụ thể</li>
+          <li>Có ngày bắt đầu và kết thúc xác định</li>
+          <li>Cần phối hợp nhiều người / nhiều bước</li>
+          <li>Theo dõi trạng thái ở cấp quản lý</li>
+          <li><i>Ví dụ: Thiết kế model CT-WPS-05</i></li>
         </ul>
       </div>
-      <div class="type-def supp">
-        <div class="type-name">🟡 SUPP – Hỗ trợ</div>
-        <div>Các hoạt động hỗ trợ kỹ thuật, sự kiện, đón tiếp, chuẩn bị demo — không tạo ra sản phẩm mới nhưng phục vụ hoạt động chung.</div>
-        <ul>
-          <li>Chuẩn bị kỹ thuật cho bay demo</li>
-          <li>Đón tiếp đoàn khách, đối tác</li>
-          <li>Hỗ trợ sự kiện triển lãm, hội thảo</li>
-          <li>Trang bị, cấp phát thiết bị phục vụ</li>
-        </ul>
-      </div>
-      <div class="type-def oper">
-        <div class="type-name">🟢 OPER – Vận hành</div>
-        <div>Các công việc định kỳ, vận hành phòng lab, đào tạo nội bộ — mang tính lặp lại theo tháng hoặc theo chu kỳ.</div>
-        <ul>
-          <li>Lab Daily Task hàng tháng</li>
-          <li>Daily Task / công việc thường nhật</li>
-          <li>Lập trình đào tạo nội bộ</li>
-          <li>Quy trình vận hành định kỳ</li>
+      <div style="background:var(--s50);border:1px solid var(--s100);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;">
+        <div style="font-size:13px;font-weight:700;color:var(--s800);margin-bottom:7px;">✅ Task (Công việc)</div>
+        <ul style="padding-left:13px;">
+          <li>Bước nhỏ bên trong một project</li>
+          <li>Thường hoàn thành trong vài giờ – vài ngày</li>
+          <li>Do một người thực hiện</li>
+          <li>Quản lý trong phần mở rộng của project</li>
+          <li><i>Ví dụ: Vẽ bản phác thảo cánh, In thử mẫu</i></li>
         </ul>
       </div>
     </div>
-  </div>
-
-  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">📝 Hướng dẫn điền từng cột</h3>
-    <div class="guide-grid">
-      <div class="guide-item">
-        <strong>Project ID</strong>
-        Nhập đúng format <code>YYMMDD-LOẠI-SỐ</code>.<br>
-        Không trùng với mã đã có trong bảng.
-      </div>
-      <div class="guide-item">
-        <strong>Project Name</strong>
-        Tên ngắn gọn, rõ ý. Không cần prefix [NAACP].
-      </div>
-      <div class="guide-item">
-        <strong>Full Name</strong>
-        Tên đầy đủ theo format chuẩn:<br>
-        <code>[NAACP] [ID] Tên dự án</code>
-      </div>
-      <div class="guide-item">
-        <strong>Loại</strong>
-        Chọn MAIN / SUPP / OPER hoặc để trống nếu chưa xác định. Xem định nghĩa ở trên.
-      </div>
-      <div class="guide-item">
-        <strong>Quản lý dự án</strong>
-        Người phụ trách quản lý tiến độ, ra quyết định.<br>
-        Ví dụ: <code>Nguyễn Văn A</code>
-      </div>
-      <div class="guide-item">
-        <strong>Người thực hiện chính</strong>
-        Kỹ sư/nhân sự trực tiếp thực hiện.<br>
-        Nhiều người: <code>A, B, C</code>
-      </div>
-      <div class="guide-item">
-        <strong>Ngày bắt đầu / Kết thúc</strong>
-        Chọn từ lịch. Cập nhật nếu kế hoạch thay đổi.
-      </div>
-      <div class="guide-item">
-        <strong>Phòng / Bộ phận</strong>
-        Phòng hoặc bộ phận chủ trì dự án.<br>
-        Ví dụ: <code>Phòng Kỹ thuật</code>, <code>Bộ phận R&D</code>, <code>Phòng Sản xuất</code>.<br>
-        Dùng tên thống nhất để lọc được theo bộ phận.
-      </div>
-      <div class="guide-item">
-        <strong>Trạng thái</strong>
-        · <b>Chờ xử lý</b>: Chưa bắt đầu<br>
-        · <b>Đang thực hiện</b>: Đang triển khai<br>
-        · <b>Tạm dừng</b>: Chờ input / vướng mắc<br>
-        · <b>Hoàn thành</b>: Đã bàn giao/kết thúc
-      </div>
+    <div style="margin-top:11px;padding:9px 13px;background:var(--a50);border:1px solid var(--a100);border-radius:7px;font-size:12px;color:var(--a800);">
+      <b>🔎 Tự kiểm tra:</b> Hoàn thành trong 1 buổi, 1 người làm → <b>Task</b> (điền vào task của project). Cần theo dõi nhiều ngày, có đầu ra bàn giao → <b>Project</b>.
     </div>
   </div>
 
-  <div style="background:var(--teal-50);border:1px solid var(--teal-100);border-radius:10px;padding:16px 20px;">
-    <h3 style="font-size:13px;font-weight:600;color:var(--teal-800);margin-bottom:10px;">✅ Ví dụ điền đầy đủ</h3>
-    <table style="font-size:12px;width:100%;border-collapse:collapse;color:var(--teal-600);">
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;width:160px;">Project ID</td>
-        <td style="padding:4px 8px;">260506-MAIN-02</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Project Name</td>
-        <td style="padding:4px 8px;">Thiết Kế CT-WPS-05</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Full Name</td>
-        <td style="padding:4px 8px;">[NAACP] [260506-MAIN-02] Thiết Kế CT-WPS-05</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Loại</td>
-        <td style="padding:4px 8px;">MAIN</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Quản lý DA</td>
-        <td style="padding:4px 8px;">Trần Văn B</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Người thực hiện</td>
-        <td style="padding:4px 8px;">Nguyễn Văn A, Lê Thị C</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Phòng / Bộ phận</td>
-        <td style="padding:4px 8px;">Phòng Kỹ thuật</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Ngày bắt đầu</td>
-        <td style="padding:4px 8px;">06/05/2026</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--teal-100);">
-        <td style="padding:4px 8px;font-weight:600;">Dự kiến kết thúc</td>
-        <td style="padding:4px 8px;">30/06/2026</td>
-      </tr>
-      <tr>
-        <td style="padding:4px 8px;font-weight:600;">Trạng thái</td>
-        <td style="padding:4px 8px;">Đang thực hiện</td>
-      </tr>
-    </table>
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🗂 Định nghĩa loại dự án</h3>
+    <div class="type-grid">
+      <div class="tdef m"><div class="tn">🔵 MAIN – Dự án chính</div>Nghiên cứu, thiết kế, phát triển sản phẩm/hệ thống cốt lõi.<ul><li>Thiết kế model UAV mới</li><li>Nghiên cứu &amp; phát triển hệ thống</li><li>Hợp tác kỹ thuật dài hạn</li></ul></div>
+      <div class="tdef s"><div class="tn">🟡 SUPP – Hỗ trợ</div>Hỗ trợ kỹ thuật, sự kiện, đón tiếp — không tạo sản phẩm mới.<ul><li>Chuẩn bị kỹ thuật bay demo</li><li>Đón tiếp đoàn khách, đối tác</li><li>Hỗ trợ triển lãm, hội thảo</li></ul></div>
+      <div class="tdef o"><div class="tn">🟢 OPER – Vận hành</div>Công việc định kỳ, vận hành lab, đào tạo nội bộ.<ul><li>Lab Daily Task hàng tháng</li><li>Daily Task / công việc thường nhật</li><li>Quy trình vận hành định kỳ</li></ul></div>
+    </div>
+  </div>
+
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📝 Hướng dẫn điền từng cột</h3>
+    <div class="gg">
+      <div class="gi"><strong>Project Name</strong>Tên ngắn gọn, rõ ý. Không cần prefix [NAACP].</div>
+      <div class="gi"><strong>Loại</strong>Chọn MAIN / SUPP / OPER hoặc để trống nếu chưa xác định.</div>
+      <div class="gi"><strong>Quản lý dự án</strong>Người phụ trách tiến độ, ra quyết định.</div>
+      <div class="gi"><strong>Người thực hiện</strong>Nhập tên hoặc <code>all</code> để chỉ tất cả nhân sự trong Data.</div>
+      <div class="gi"><strong>Phòng / Bộ phận</strong>Chọn từ gợi ý hoặc nhập <code>all</code> để chỉ tất cả phòng/bộ phận.</div>
+      <div class="gi"><strong>Trạng thái</strong>Chờ xử lý → Đang thực hiện → Tạm dừng → Hoàn thành.</div>
+    </div>
   </div>
 </div>
 
 </div><!-- /main -->
 
+<!-- ===== ADD PROJECT MODAL ===== -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <h3>+ Thêm dự án mới</h3>
+    <div class="form-row">
+      <label>Ngày tạo</label>
+      <input type="date" id="mDate">
+    </div>
+    <div class="form-row">
+      <label>Loại dự án</label>
+      <select id="mType">
+        <option value="">-- Chọn loại --</option>
+        <option value="MAIN">MAIN – Dự án chính</option>
+        <option value="SUPP">SUPP – Hỗ trợ</option>
+        <option value="OPER">OPER – Vận hành</option>
+      </select>
+    </div>
+    <div class="id-preview" id="idPreview">Chọn ngày và loại để xem ID</div>
+    <div class="form-row">
+      <label>Project Name</label>
+      <input type="text" id="mName" placeholder="Tên ngắn gọn...">
+    </div>
+    <div class="form-row">
+      <label>Quản lý DA</label>
+      <input type="text" id="mPm" list="dlPerson" placeholder="Chọn hoặc nhập...">
+    </div>
+    <div class="form-row">
+      <label>Người thực hiện</label>
+      <input type="text" id="mExec" list="dlPerson" placeholder="Tên, all, hoặc A,B,C...">
+    </div>
+    <div class="form-row">
+      <label>Phòng / Bộ phận</label>
+      <input type="text" id="mDept" list="dlDept" placeholder="Chọn hoặc nhập...">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-row"><label>Ngày bắt đầu</label><input type="date" id="mStart"></div>
+      <div class="form-row"><label>Dự kiến kết thúc</label><input type="date" id="mEnd"></div>
+    </div>
+    <div class="form-row">
+      <label>Trạng thái</label>
+      <select id="mStatus">
+        <option value="Chờ xử lý">Chờ xử lý</option>
+        <option value="Đang thực hiện">Đang thực hiện</option>
+        <option value="Tạm dừng">Tạm dừng</option>
+        <option value="Hoàn thành">Hoàn thành</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-o" onclick="closeModal('addModal')">Hủy</button>
+      <button class="btn btn-p" onclick="submitAddProject()">Thêm dự án</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EXPORT MODAL ===== -->
+<div class="modal-bg" id="expModal">
+  <div class="modal">
+    <h3 id="expTitle">Xuất CSV</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-row"><label>Phòng/Bộ phận</label><select id="expDept" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;"></select></div>
+      <div class="form-row"><label>Trạng thái</label><select id="expStatus" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;"><option value="">Tất cả</option><option>Đang thực hiện</option><option>Hoàn thành</option><option>Chờ xử lý</option><option>Tạm dừng</option></select></div>
+      <div class="form-row"><label>Loại</label><select id="expType" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;"><option value="">Tất cả</option><option>MAIN</option><option>SUPP</option><option>OPER</option></select></div>
+      <div class="form-row"><label>Nhân sự</label><input id="expPerson" placeholder="Tên cá nhân..." style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;" oninput="updateExpCount()"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <input type="checkbox" id="inclStats" style="width:auto;">
+      <label for="inclStats" style="font-size:12px;cursor:pointer;">Bao gồm thống kê khi in</label>
+    </div>
+    <div id="expCount" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></div>
+    <div class="modal-btns">
+      <button class="btn btn-o" onclick="closeModal('expModal')">Hủy</button>
+      <button class="btn btn-p" id="expBtn" onclick="confirmExport()">Xuất CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- DATALISTS -->
+<datalist id="dlPerson"></datalist>
+<datalist id="dlDept"><option value="all">Tất cả phòng/bộ phận</option></datalist>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-const STORAGE_KEY = 'naacp_projects_v1'; // fallback only
+// ══════════════════════════════════════════
+// FIREBASE CONFIG
+// ══════════════════════════════════════════
+const FB_BASE = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-// data structure: [id, name, fullname, type, pm, exec, dept, start, end, status]
-let projectData = [];
-
-function loadData() {
-  // Data now comes from Firebase via _fbListen — this is fallback only
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return [];
+async function fbGet(path) {
+  const r = await fetch(`${FB_BASE}${path}.json`);
+  return r.json();
 }
-
-function saveData() {
-  if (window._fbSave) {
-    window._lastSaveTime = Date.now();
-    window._fbSave(projectData).catch(e => console.error('Firebase save error:', e));
-  } else {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projectData)); } catch(e) {}
-  }
-  // Always backup to localStorage as safety net
-  try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(projectData)); } catch(e) {}
-  updateTimestamp();
-}
-
-function updateTimestamp() {
-  const now = new Date();
-  document.getElementById('last-updated').textContent = 'Cập nhật: ' +
-    now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
-  // Show online indicator
-  const badge = document.getElementById('last-updated');
-  badge.style.background = window._fbReady ? 'rgba(59,109,17,0.25)' : 'rgba(255,255,255,0.12)';
-}
-
-function autoFullName(id, name) {
-  if (!id && !name) return '';
-  return '[NAACP]' + (id ? ' ['+id+']' : '') + (name ? ' '+name : '');
-}
-
-function renderTable(data) {
-  // Auto-sort: newest Project ID first (YYMMDD desc)
-  const sorted = [...data].sort((a,b) => {
-    const da = (a[0]||'').slice(0,6);
-    const db = (b[0]||'').slice(0,6);
-    if (db > da) return 1; if (db < da) return -1; return 0;
-  });
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
-  sorted.forEach((row, displayIdx) => {
-    const [id, name, fullname, type, pm, exec, dept, start, end, status] = row;
-    // Find real index in projectData for correct save
-    const realIdx = projectData.indexOf(row);
-    const tr = document.createElement('tr');
-    tr.dataset.idx = realIdx;
-    tr.innerHTML = `
-      <td style="color:var(--text-muted);text-align:center;font-size:11px;">${displayIdx+1}</td>
-      <td><input value="${esc(id)}" placeholder="VD: 260506-MAIN-01" data-col="0" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td><input value="${esc(name)}" placeholder="Tên ngắn dự án..." data-col="1" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td><input value="${esc(fullname)}" placeholder="[NAACP] [ID] Tên..." data-col="2" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td>
-        <select data-col="3" data-idx="${realIdx}" onchange="onCellChange(this)">
-          <option value="" ${!type?'selected':''}>—</option>
-          <option value="MAIN" ${type==='MAIN'?'selected':''}>MAIN</option>
-          <option value="SUPP" ${type==='SUPP'?'selected':''}>SUPP</option>
-          <option value="OPER" ${type==='OPER'?'selected':''}>OPER</option>
-        </select>
-      </td>
-      <td><input value="${esc(pm)}" placeholder="Chọn hoặc nhập..." list="personDatalist" data-col="4" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td><input value="${esc(exec)}" placeholder="Chọn, all, hoặc A,B,C..." list="personDatalist" data-col="5" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td>
-        <input value="${esc(dept)}" placeholder="Chọn hoặc nhập..." list="deptList" data-col="6" data-idx="${realIdx}" onchange="onCellChange(this)">
-      </td>
-      <td><input type="date" value="${toInputDate(start)}" data-col="7" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td><input type="date" value="${toInputDate(end)}" data-col="8" data-idx="${realIdx}" onchange="onCellChange(this)"></td>
-      <td>
-        <select data-col="9" data-idx="${realIdx}" onchange="onCellChange(this)">
-          <option value="Chờ xử lý" ${status==='Chờ xử lý'?'selected':''}>⬜ Chờ xử lý</option>
-          <option value="Đang thực hiện" ${status==='Đang thực hiện'?'selected':''}>🔵 Đang TH</option>
-          <option value="Tạm dừng" ${status==='Tạm dừng'?'selected':''}>🟡 Tạm dừng</option>
-          <option value="Hoàn thành" ${status==='Hoàn thành'?'selected':''}>✅ Hoàn thành</option>
-        </select>
-      </td>
-      <td><button class="del-btn" onclick="deleteRow(${realIdx})" title="Xóa">✕</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('row-count').textContent = `Hiển thị ${sorted.length} dự án`;
-}
-
-function esc(v){ return (v||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-
-function toInputDate(str) {
-  if (!str) return '';
-  const p = str.split('/');
-  if (p.length===3) return `${p[2]}-${p[1]}-${p[0]}`;
-  return str;
-}
-function fromInputDate(str) {
-  if (!str) return '';
-  const p = str.split('-');
-  if (p.length===3) return `${p[2]}/${p[1]}/${p[0]}`;
-  return str;
-}
-
-function onCellChange(el) {
-  syncLocal();
-  const idx = parseInt(el.dataset.idx);
-  const col = parseInt(el.dataset.col);
-  let val = el.value;
-  if (col===7||col===8) val = fromInputDate(val);
-  projectData[idx][col] = val;
-
-  // Check duplicate Project ID (col 0)
-  if (col === 0) {
-    const newId = val.trim();
-    const allData = (window.projectData && window.projectData.length) ? window.projectData : projectData;
-    const duplicate = newId && allData.some((r, i) => i !== idx && (r[0]||'').trim() === newId);
-    const td = el.closest('td');
-    const oldErr = td.querySelector('.id-error');
-    if (oldErr) oldErr.remove();
-    el.style.outline = '';
-    if (duplicate) {
-      el.style.outline = '2px solid #c0392b';
-      const err = document.createElement('div');
-      err.className = 'id-error';
-      err.style.cssText = 'color:#c0392b;font-size:10px;margin-top:2px;line-height:1.3;';
-      err.textContent = '⚠️ Project ID đã tồn tại!';
-      td.appendChild(err);
-      return;
-    }
-  }
-
-  // Auto-fill Loại from Project ID (col 0)
-  if (col === 0) {
-    const idUpper = val.toUpperCase();
-    let detectedType = '';
-    if (idUpper.includes('-MAIN-')) detectedType = 'MAIN';
-    else if (idUpper.includes('-SUPP-')) detectedType = 'SUPP';
-    else if (idUpper.includes('-OPER-')) detectedType = 'OPER';
-    if (detectedType) {
-      projectData[idx][3] = detectedType;
-      // Update the select dropdown in the same row
-      const row = document.querySelector(`tr[data-idx="${idx}"]`) || el.closest('tr');
-      if (row) {
-        const typeSelect = row.querySelector('select[data-col="3"]');
-        if (typeSelect) typeSelect.value = detectedType;
-      }
-    }
-  }
-
-  // Auto-generate fullname if col 0 or 1 and fullname is empty/matches auto pattern
-  if (col===0||col===1) {
-    const id = projectData[idx][0], name = projectData[idx][1];
-    const fn = projectData[idx][2];
-    if (!fn || fn.startsWith('[NAACP]')) {
-      projectData[idx][2] = autoFullName(id, name);
-      const row = document.querySelector(`tr[data-idx="${idx}"]`) || el.closest('tr');
-      if (row) {
-        const fnInput = row.querySelectorAll('input')[2];
-        if (fnInput) fnInput.value = projectData[idx][2];
-      }
-    }
-  }
-
-  // Mark as having unsaved changes (for beforeunload)
-  window._hasUnsaved = true;
-  // Save to localStorage immediately as draft backup
-  try { localStorage.setItem(STORAGE_KEY + '_draft', JSON.stringify(projectData)); } catch(e) {}
-  saveData();
-  updateStats();
-}
-
-// ── Luôn đồng bộ projectData từ Firebase trước khi thao tác ──
-function syncLocal() {
-  if (window.projectData && window.projectData.length) {
-    projectData = window.projectData;
-  }
-}
-
-function addRow() {
-  syncLocal();
-  projectData.unshift(['','','','','','','','','','Chờ xử lý']);
-  window.projectData = projectData;
-  renderTable(projectData);
-  updateStats();
-  saveData();
-  const firstRow = document.querySelector('#tableBody tr');
-  if (firstRow) {
-    firstRow.classList.add('new-row');
-    firstRow.querySelector('input').focus();
-  }
-}
-
-function deleteRow(idx) {
-  if (!confirm('Xóa dự án này?')) return;
-  syncLocal();
-  projectData.splice(idx,1);
-  window.projectData = projectData;
-  renderTable(projectData);
-  updateStats();
-  saveData();
-}
-
-function filterTable() {
-  syncLocal();
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const ft = document.getElementById('filterType').value;
-  const fd = document.getElementById('filterDept').value;
-  const fs = document.getElementById('filterStatus').value;
-  const filtered = projectData.filter(r => {
-    const match = (r[0]+r[1]+r[2]+r[4]+r[5]+r[6]).toLowerCase().includes(q);
-    const typeOk = !ft || r[3]===ft;
-    const deptOk = !fd || r[6]===fd;
-    const statusOk = !fs || r[9]===fs;
-    return match&&typeOk&&deptOk&&statusOk;
-  });
-  renderTable(filtered);
-  document.getElementById('row-count').textContent = `Hiển thị ${filtered.length} / ${projectData.length} dự án`;
-}
-
-function refreshDeptFilter() {
-  const depts = [...new Set(projectData.map(r=>r[6]).filter(d=>d))].sort();
-  const sel = document.getElementById('filterDept');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Tất cả phòng/bộ phận</option>' +
-    depts.map(d=>`<option value="${esc(d)}" ${cur===d?'selected':''}>${d}</option>`).join('');
-}
-
-// CHARTS
-let chartType=null, chartStatus=null, chartBar=null, chartDept=null;
-
-function drawCharts(main,supp,oper,done,inprog,pending,total) {
-  const typeLabels = ['MAIN','SUPP','OPER'];
-  const typeData = [main,supp,oper];
-  const typeColors = ['#185FA5','#854F0B','#0F6E56'];
-
-  const statusLabels = ['Hoàn thành','Đang thực hiện','Chờ xử lý / Tạm dừng'];
-  const statusData = [done,inprog,pending];
-  const statusColors = ['#3B6D11','#993C1D','#888780'];
-
-  if (chartType) chartType.destroy();
-  if (chartStatus) chartStatus.destroy();
-  if (chartBar) chartBar.destroy();
-
-  const ctxType = document.getElementById('chartType').getContext('2d');
-  chartType = new Chart(ctxType, {
-    type: 'doughnut',
-    data: { labels: typeLabels, datasets:[{ data: typeData, backgroundColor: typeColors, borderWidth:2, borderColor:'#fff' }] },
-    options: {
-      responsive:true, maintainAspectRatio:true,
-      plugins:{
-        legend:{ position:'bottom', labels:{ font:{size:11}, padding:12 } },
-        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} dự án (${total?Math.round(ctx.raw/total*100):0}%)` } },
-        datalabels: false
-      }
-    },
-    plugins: [{
-      id:'pctLabel',
-      afterDatasetDraw(chart) {
-        const {ctx, data} = chart;
-        chart.getDatasetMeta(0).data.forEach((arc, i) => {
-          const val = data.datasets[0].data[i];
-          if (!val) return;
-          const pct = total ? Math.round(val/total*100) : 0;
-          if (pct < 5) return;
-          const {x,y} = arc.tooltipPosition();
-          ctx.save();
-          ctx.font = 'bold 11px sans-serif';
-          ctx.fillStyle = '#fff';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(pct+'%', x, y);
-          ctx.restore();
-        });
-      }
-    }]
-  });
-
-  const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-  chartStatus = new Chart(ctxStatus, {
-    type: 'pie',
-    data: { labels: statusLabels, datasets:[{ data: statusData, backgroundColor: statusColors, borderWidth:2, borderColor:'#fff' }] },
-    options: {
-      responsive:true, maintainAspectRatio:true,
-      plugins:{
-        legend:{ position:'bottom', labels:{ font:{size:11}, padding:12 } },
-        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw} (${total?Math.round(ctx.raw/total*100):0}%)` } }
-      }
-    },
-    plugins: [{
-      id:'pctLabelPie',
-      afterDatasetDraw(chart) {
-        const {ctx, data} = chart;
-        chart.getDatasetMeta(0).data.forEach((arc, i) => {
-          const val = data.datasets[0].data[i];
-          if (!val) return;
-          const pct = total ? Math.round(val/total*100) : 0;
-          if (pct < 5) return;
-          const {x,y} = arc.tooltipPosition();
-          ctx.save();
-          ctx.font = 'bold 11px sans-serif';
-          ctx.fillStyle = '#fff';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(pct+'%', x, y);
-          ctx.restore();
-        });
-      }
-    }]
-  });
-
-  // Bar chart: each type broken down by status
-  const types = ['MAIN','SUPP','OPER'];
-  const _d = (window.projectData && window.projectData.length) ? window.projectData : projectData;
-  const barDone  = types.map(t => _d.filter(r=>r[3]===t&&r[9]==='Hoàn thành').length);
-  const barInprog= types.map(t => _d.filter(r=>r[3]===t&&r[9]==='Đang thực hiện').length);
-  const barPend  = types.map(t => _d.filter(r=>r[3]===t&&(r[9]==='Chờ xử lý'||r[9]==='Tạm dừng')).length);
-
-  const ctxBar = document.getElementById('chartBar').getContext('2d');
-  chartBar = new Chart(ctxBar, {
-    type: 'bar',
-    data: {
-      labels: types,
-      datasets: [
-        { label:'Hoàn thành', data:barDone, backgroundColor:'#3B6D11', borderRadius:4 },
-        { label:'Đang thực hiện', data:barInprog, backgroundColor:'#993C1D', borderRadius:4 },
-        { label:'Chờ / Tạm dừng', data:barPend, backgroundColor:'#888780', borderRadius:4 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:true,
-      plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:10 } } },
-      scales:{
-        x:{ stacked:true, grid:{display:false} },
-        y:{ stacked:true, beginAtZero:true, ticks:{ precision:0, font:{size:11} }, grid:{ color:'#f0ede6' } }
-      }
-    }
-  });
-
-  // Dept chart
-  if (chartDept) chartDept.destroy();
-  const deptMap = {};
-  _d.forEach(r => { const d = r[6]||'Chưa phân loại'; deptMap[d] = (deptMap[d]||0)+1; });
-  const deptLabels = Object.keys(deptMap).sort();
-  const deptCounts = deptLabels.map(d => deptMap[d]);
-  const deptColors = ['#534AB7','#185FA5','#0F6E56','#854F0B','#993C1D','#3B6D11','#888780','#26215C','#085041'];
-  const ctxDept = document.getElementById('chartDept').getContext('2d');
-  chartDept = new Chart(ctxDept, {
-    type: 'bar',
-    data: {
-      labels: deptLabels,
-      datasets: [{ label:'Số dự án', data:deptCounts, backgroundColor: deptLabels.map((_,i)=>deptColors[i%deptColors.length]), borderRadius:5, borderSkipped:false }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive:true, maintainAspectRatio:true,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>`${ctx.raw} dự án` } } },
-      scales:{
-        x:{ beginAtZero:true, ticks:{ precision:0, font:{size:11} }, grid:{ color:'#f0ede6' } },
-        y:{ grid:{display:false}, ticks:{ font:{size:12} } }
-      }
-    }
+async function fbSet(path, data) {
+  return fetch(`${FB_BASE}${path}.json`, {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data), keepalive:true
   });
 }
-
-function updateStats() {
-  const data = (window.projectData && window.projectData.length) ? window.projectData : projectData;
-  const total = data.length;
-  const main  = data.filter(r=>r[3]==='MAIN').length;
-  const supp  = data.filter(r=>r[3]==='SUPP').length;
-  const oper  = data.filter(r=>r[3]==='OPER').length;
-  const done  = data.filter(r=>r[9]==='Hoàn thành').length;
-  const inprog= data.filter(r=>r[9]==='Đang thực hiện').length;
-  const pending=data.filter(r=>r[9]==='Chờ xử lý'||r[9]==='Tạm dừng').length;
-  const pct = total ? Math.round(done/total*100) : 0;
-
-  document.getElementById('s-total').textContent=total;
-  document.getElementById('s-main').textContent=main;
-  document.getElementById('s-supp').textContent=supp;
-  document.getElementById('s-oper').textContent=oper;
-  document.getElementById('s-done').textContent=done;
-  document.getElementById('s-inprog').textContent=inprog;
-  document.getElementById('s-pending').textContent=pending;
-  document.getElementById('s-done-pct').textContent=total?pct+'% tổng số':'';
-  document.getElementById('s-inprog-pct').textContent=total?Math.round(inprog/total*100)+'% tổng số':'';
-  document.getElementById('s-pending-pct').textContent=total?Math.round(pending/total*100)+'% tổng số':'';
-  document.getElementById('pct-text').textContent=pct+'%';
-  document.getElementById('pct-bar').style.width=pct+'%';
-
-  drawCharts(main,supp,oper,done,inprog,pending,total);
-
-  // Personnel — show ALL staff from Data, merge with project counts
-  const personMap={};
-  data.forEach(r=>{
-    let execVal = (r[5]||'').trim().toLowerCase()==='all'
-      ? staffData.map(s=>s.name).join(',')
-      : (r[5]||'');
-    const people=((r[4]||'')+','+execVal).split(',').map(p=>p.trim()).filter(p=>p);
-    people.forEach(p=>{ if(p) personMap[p]=(personMap[p]||0)+1; });
+async function fbPatch(path, data) {
+  return fetch(`${FB_BASE}${path}.json`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data), keepalive:true
   });
-  // Add all staff from Data even if 0 projects
-  staffData.forEach(s=>{ if(s.name && !(s.name in personMap)) personMap[s.name]=0; });
-  const persons=Object.entries(personMap).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  const pg=document.getElementById('personGrid');
-  if(persons.length===0){
-    pg.innerHTML='<p style="font-size:12px;color:var(--text-muted);">Chưa có thông tin nhân sự. Thêm nhân sự trong tab Data.</p>';
-  } else {
-    pg.innerHTML=persons.map(([name,count])=>{
-      const initials=name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
-      const role = (staffData.find(s=>s.name===name)||{}).role||'';
-      return `<div class="person-card">
-        <div class="person-avatar">${initials}</div>
-        <div>
-          <div class="person-name">${name}</div>
-          <div class="person-count">${count > 0 ? count+' dự án' : 'Chưa có dự án'}${role?' · '+role:''}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-  refreshDeptFilter();
+}
+async function fbDelete(path) {
+  return fetch(`${FB_BASE}${path}.json`, { method:'DELETE', keepalive:true });
+}
+// Push new item (Firebase generates key)
+async function fbPush(path, data) {
+  const r = await fetch(`${FB_BASE}${path}.json`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+  });
+  return r.json(); // returns {name: "-Nabc..."}
 }
 
-function switchTab(tab) {
-  const tabNames = ['table','stats','data','guide'];
-  document.querySelectorAll('.tab').forEach((el,i)=>{
-    el.classList.toggle('active', tabNames[i]===tab);
-  });
-  tabNames.forEach(t=>{
-    const el = document.getElementById('section-'+t);
-    if (el) el.classList.toggle('active', t===tab);
-  });
-  if(tab==='stats') {
-    if(chartType) { chartType.destroy(); chartType=null; }
-    if(chartStatus) { chartStatus.destroy(); chartStatus=null; }
-    if(chartBar) { chartBar.destroy(); chartBar=null; }
-    if(chartDept) { chartDept.destroy(); chartDept=null; }
-    setTimeout(()=>updateStats(), 50);
-  }
-  if(tab==='data') renderDataTab();
-}
-
-function exportCSV() {
-  const headers=['STT','Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
-  const rows=projectData.map((r,i)=>[i+1,...r]);
-  const csv=[headers,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='bang_ma_du_an_NAACP_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
-
-// CSV IMPORT
-let pendingImportRows = [];
-
-function parseCSV(text) {
-  // Remove BOM if present
-  text = text.replace(/^\uFEFF/, '');
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) return [];
-  // Parse header to find column indices
-  const header = splitCSVLine(lines[0]).map(h => h.toLowerCase().trim());
-  const idxMap = {
-    id:     findCol(header, ['project id','projectid','mã','id']),
-    name:   findCol(header, ['project name','projectname','tên ngắn','tên dự án','name']),
-    full:   findCol(header, ['full name','fullname','tên đầy đủ','full']),
-    type:   findCol(header, ['loại','type','loai']),
-    pm:     findCol(header, ['quản lý da','quản lý','pm','quan ly']),
-    exec:   findCol(header, ['người thực hiện','thực hiện','exec','nguoi thuc hien']),
-    dept:   findCol(header, ['phòng/bộ phận','phòng','bộ phận','dept','department','phong']),
-    start:  findCol(header, ['ngày bắt đầu','bắt đầu','start','ngay bat dau']),
-    end:    findCol(header, ['dự kiến kết thúc','kết thúc','end','ngay ket thuc']),
-    status: findCol(header, ['trạng thái','status','trang thai']),
+// ── Realtime listener via SSE / polling ──
+let _listeners = {}; // path -> interval
+function fbListen(path, cb) {
+  // Poll every 3 seconds
+  const poll = async () => {
+    try {
+      const val = await fbGet(path);
+      cb(val);
+    } catch(e) {}
   };
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = splitCSVLine(lines[i]);
-    if (!cols.length) continue;
-    const get = (k) => (idxMap[k] >= 0 ? (cols[idxMap[k]] || '').trim() : '');
-    // Skip header-like rows or empty rows
-    const id = get('id');
-    if (!id || id.toLowerCase() === 'project id' || id === 'STT') continue;
-    rows.push([
-      id, get('name'), get('full'), get('type'),
-      get('pm'), get('exec'), get('dept'),
-      get('start'), get('end'), get('status') || 'Chờ xử lý'
-    ]);
-  }
-  return rows;
-}
-
-function findCol(header, candidates) {
-  for (const c of candidates) {
-    const i = header.findIndex(h => h.includes(c));
-    if (i >= 0) return i;
-  }
-  return -1;
-}
-
-function splitCSVLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
-    } else if (ch === ',' && !inQ) {
-      result.push(cur); cur = '';
-    } else cur += ch;
-  }
-  result.push(cur);
-  return result;
-}
-
-function handleCSVImport(input) {
-  const files = Array.from(input.files);
-  if (!files.length) return;
-  input.value = '';
-  let allRows = [];
-  let loaded = 0;
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const rows = parseCSV(e.target.result);
-      allRows = allRows.concat(rows);
-      loaded++;
-      if (loaded === files.length) processImport(allRows, files.length);
-    };
-    reader.readAsText(file, 'UTF-8');
-  });
-}
-
-// normalize: lowercase + trim + collapse spaces for comparison
-function normName(s) { return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
-
-function resolveIdConflicts(rows) {
-  // Track all IDs already committed (existing + already assigned in this batch)
-  const usedIds = new Set(projectData.map(r => r[0]).filter(Boolean));
-  return rows.map(r => {
-    let id = r[0];
-    if (!id) return r;
-    if (!usedIds.has(id)) { usedIds.add(id); return r; }
-    // ID already taken — increment the numeric suffix
-    // Format: YYMMDD-TYPE-NN  e.g. 260506-MAIN-01
-    const match = id.match(/^(.+-)(\d+)$/);
-    if (match) {
-      const prefix = match[1];
-      let num = parseInt(match[2], 10);
-      let newId;
-      do {
-        num++;
-        newId = prefix + String(num).padStart(2, '0');
-      } while (usedIds.has(newId));
-      usedIds.add(newId);
-      return [newId, ...r.slice(1)];
-    }
-    // Fallback: append -02, -03... if no numeric suffix found
-    let suffix = 2;
-    let newId;
-    do { newId = `${id}-${String(suffix).padStart(2,'0')}`; suffix++; }
-    while (usedIds.has(newId));
-    usedIds.add(newId);
-    return [newId, ...r.slice(1)];
-  });
-}
-
-function rowsIdentical(a, b) {
-  for (let i = 0; i < 10; i++) {
-    if ((a[i]||'').trim() !== (b[i]||'').trim()) return false;
-  }
-  return true;
-}
-
-function processImport(newRows, fileCount) {
-  if (!newRows.length) {
-    showToast(`<span style="color:var(--coral-800);">⚠️ Không tìm thấy dữ liệu hợp lệ trong ${fileCount} file.</span>`, false);
-    return;
-  }
-
-  // Step 1: resolve ID conflicts — auto-increment suffix, keep both
-  const originalIds = newRows.map(r => r[0]);
-  const resolved = resolveIdConflicts(newRows);
-  const renamedIds = resolved
-    .map((r,i) => r[0] !== originalIds[i] ? `${originalIds[i]} → ${r[0]}` : null)
-    .filter(Boolean);
-
-  // Step 2: deduplicate within imported rows by Project Name
-  const seenNames = new Map();
-  const withinDupes = [];
-  const deduped = [];
-  for (const r of resolved) {
-    const key = normName(r[1]);
-    if (!key) { deduped.push(r); continue; }
-    if (seenNames.has(key)) withinDupes.push(r[1]);
-    else { seenNames.set(key, r); deduped.push(r); }
-  }
-
-  // Step 3: classify vs existing — fresh / changed / identical
-  const existingByName = new Map(projectData.map(r => [normName(r[1]), r]));
-  const freshRows     = [];
-  const changedRows   = [];
-  const identicalRows = [];
-
-  for (const r of deduped) {
-    const key = normName(r[1]);
-    if (!key || !existingByName.has(key)) {
-      freshRows.push(r);
-    } else {
-      const ex = existingByName.get(key);
-      if (rowsIdentical(ex, r)) identicalRows.push(r);
-      else changedRows.push(r);
-    }
-  }
-
-  pendingImportRows = { fresh: freshRows, changed: changedRows, identical: identicalRows };
-
-  // Build message
-  const fieldNames = ['Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
-  let msg = `<b>📂 ${fileCount} file — ${deduped.length} dòng hợp lệ</b><br>`;
-  msg += `🆕 <b>${freshRows.length} dòng mới</b> &nbsp;·&nbsp; `;
-  msg += `✅ <b>${identicalRows.length} dòng không đổi</b> — tự động bỏ qua`;
-
-  if (renamedIds.length) {
-    msg += `<br><span style="color:var(--blue-800);">🔄 ${renamedIds.length} Project ID trùng đã đổi số tự động:</span>`;
-    msg += `<ul style="margin:3px 0 0 14px;font-size:11px;color:var(--blue-800);">` +
-      renamedIds.slice(0,5).map(s=>`<li>${s}</li>`).join('') +
-      (renamedIds.length>5?`<li>...và ${renamedIds.length-5} ID khác</li>`:'') + `</ul>`;
-  }
-  if (withinDupes.length) {
-    msg += `<br><span style="color:var(--amber-800);">⚠️ ${withinDupes.length} dòng trùng tên trong các file — đã loại bỏ.</span>`;
-  }
-
-  if (changedRows.length) {
-    msg += `<br><span style="color:var(--amber-800);">✏️ <b>${changedRows.length} dòng có thay đổi</b> so với dữ liệu hiện có:</span>`;
-    msg += `<div style="margin:5px 0 6px;font-size:11px;border:1px solid var(--amber-100);border-radius:6px;overflow:hidden;">`;
-    changedRows.slice(0,4).forEach(r => {
-      const ex = existingByName.get(normName(r[1]));
-      const diffs = fieldNames.filter((_,i) => (ex[i]||'').trim() !== (r[i]||'').trim());
-      msg += `<div style="padding:5px 10px;border-bottom:1px solid var(--amber-100);background:var(--amber-50);">
-        <b style="color:var(--amber-800);">${r[1]}</b>
-        <span style="color:var(--text-muted);margin-left:6px;">→ thay đổi: ${diffs.join(', ')}</span>
-      </div>`;
-    });
-    if (changedRows.length>4)
-      msg += `<div style="padding:5px 10px;color:var(--text-muted);">...và ${changedRows.length-4} dòng khác</div>`;
-    msg += `</div><span style="font-size:12px;">Ghi đè các dòng đã thay đổi, hay giữ dữ liệu cũ?</span>`;
-    showToast(msg, true);
-  } else {
-    showToast(msg, false);
-    confirmImport(false);
-  }
-}
-
-function showToast(msg, showButtons) {
-  document.getElementById('importToastMsg').innerHTML = msg;
-  document.querySelectorAll('#importToast .btn').forEach(b => {
-    b.style.display = showButtons ? '' : 'none';
-  });
-  if (!showButtons) {
-    document.querySelector('#importToast .btn-outline').style.display = '';
-    document.querySelector('#importToast .btn-outline').textContent = 'Đóng';
-  } else {
-    document.querySelector('#importToast .btn-outline').textContent = 'Hủy';
-  }
-  document.getElementById('importToast').style.display = 'block';
-}
-
-function confirmImport(overwrite) {
-  const batch = pendingImportRows;
-  if (!batch) { cancelImport(); return; }
-  let added = 0, updated = 0, kept = 0;
-
-  // Add fresh rows
-  for (const row of (batch.fresh||[])) { projectData.push(row); added++; }
-
-  // Handle changed rows based on user choice
-  for (const row of (batch.changed||[])) {
-    if (overwrite) {
-      const i = projectData.findIndex(r => normName(r[1]) === normName(row[1]));
-      if (i >= 0) { projectData[i] = row; updated++; }
-    } else kept++;
-  }
-
-  // Identical rows: always skip silently (no counter needed)
-  pendingImportRows = null;
-  saveData();
-  renderTable(projectData);
-  updateStats();
-  document.getElementById('importToast').style.display = 'none';
-
-  const parts = [];
-  if (added)   parts.push(`🆕 <b>${added} dòng mới</b> đã thêm`);
-  if (updated) parts.push(`✏️ <b>${updated} dòng</b> đã cập nhật`);
-  if ((batch.identical||[]).length) parts.push(`✅ <b>${(batch.identical||[]).length} dòng</b> không đổi — bỏ qua`);
-  if (kept)    parts.push(`⏭ <b>${kept} dòng thay đổi</b> — giữ dữ liệu cũ`);
-  showToast(parts.join('<br>'), false);
-  setTimeout(() => { document.getElementById('importToast').style.display='none'; }, 6000);
+  poll();
+  const id = setInterval(poll, 3000);
+  _listeners[path] = id;
+  return () => clearInterval(id);
 }
 
 // ══════════════════════════════════════════
-// DATA TAB — Nhân sự & Phòng ban (Firebase)
+// STATE
 // ══════════════════════════════════════════
-const DB_STAFF_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app/staff.json";
-const DB_DEPTS_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app/depts.json";
+let projects  = {}; // {fbKey: {id, name, fullName, type, pm, exec, dept, start, end, status, tasks:{...}}}
+let staffData = {}; // {fbKey: {name, role}}
+let deptsData = {}; // {fbKey: {name}}
+let expanded  = {}; // {fbKey: bool}
+let activeFilters = { q:'', type:'', dept:'', person:'', status:'' };
+let _expMode  = 'csv';
+let _charts   = {};
 
-let staffData = []; // [{name, role}]
-let deptsData = []; // [{name}]
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Set today's date in add modal
+  document.getElementById('mDate').value = todayStr();
 
-async function loadStaffData() {
-  try {
-    const res = await fetch(DB_STAFF_URL);
-    const val = await res.json();
-    staffData = val ? Object.values(val) : [];
-  } catch(e) { staffData = []; }
-  refreshDatalistSuggestions();
+  // Listen to projects
+  fbListen('/projects', val => {
+    projects = val || {};
+    renderTable();
+    renderStats();
+    refreshFilters();
+  });
+
+  // Listen to staff
+  fbListen('/staff', val => {
+    staffData = val || {};
+    renderDataTab();
+    refreshSuggestions();
+  });
+
+  // Listen to depts
+  fbListen('/depts', val => {
+    deptsData = val || {};
+    renderDataTab();
+    refreshSuggestions();
+  });
+
+  document.getElementById('connBadge').textContent = '🟢 Đã kết nối · Realtime';
+  document.getElementById('connBadge').style.background = 'rgba(59,109,17,0.3)';
+
+  // Modal date/type → auto-preview ID
+  ['mDate','mType'].forEach(id => {
+    document.getElementById(id).addEventListener('change', previewId);
+  });
+
+  // Export modal listeners
+  ['expDept','expStatus','expType'].forEach(id => {
+    document.getElementById(id).addEventListener('change', updateExpCount);
+  });
+});
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
 }
-
-async function loadDeptsData() {
-  try {
-    const res = await fetch(DB_DEPTS_URL);
-    const val = await res.json();
-    deptsData = val ? Object.values(val) : [];
-  } catch(e) {
-    deptsData = [{name:'R&D'},{name:'Bảo trì'},{name:'Sản xuất'},{name:'Tự động hoá'},{name:'Tổng vụ'},{name:'Kho'},{name:'CNC'}];
-  }
-  refreshDatalistSuggestions();
+function esc(v) { return (v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function fmtDate(iso) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
 }
-
-async function saveStaffData() {
-  const obj = {}; staffData.forEach((s,i)=>{ obj[i]=s; });
-  await fetch(DB_STAFF_URL, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(obj), keepalive:true });
-  refreshDatalistSuggestions();
+function showToast(msg, dur=4000) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
 }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
 
-async function saveDeptsData() {
-  const obj = {}; deptsData.forEach((d,i)=>{ obj[i]=d; });
-  await fetch(DB_DEPTS_URL, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(obj), keepalive:true });
-  refreshDatalistSuggestions();
-}
-
-function refreshDatalistSuggestions() {
-  // Person datalist (Quản lý DA + Người thực hiện)
-  let dl = document.getElementById('personDatalist');
-  if (!dl) { dl = document.createElement('datalist'); dl.id='personDatalist'; document.body.appendChild(dl); }
-  dl.innerHTML = '<option value="all">Tất cả nhân sự</option>' +
-    staffData.map(s=>`<option value="${esc(s.name)}">${s.role?s.name+' – '+s.role:s.name}</option>`).join('');
-
-  // Dept datalist
-  const dld = document.getElementById('deptList');
-  if (dld) {
-    dld.innerHTML = '<option value="all">Tất cả phòng/bộ phận</option>' +
-      deptsData.map(d=>`<option value="${esc(d.name)}">`).join('');
-  }
-
-  // Update export dept dropdown
-  const expDept = document.getElementById('expDept');
-  if (expDept) {
-    const cur = expDept.value;
-    expDept.innerHTML = '<option value="">Tất cả</option>' +
-      deptsData.map(d=>`<option value="${esc(d.name)}" ${cur===d.name?'selected':''}>${d.name}</option>`).join('');
-  }
-
-  // Re-render data tab if active
-  if (document.getElementById('section-data').classList.contains('active')) renderDataTab();
-}
-
+// Expand/collapse "all" keyword
 function resolveAll(val, type) {
-  // Expand "all" keyword to full list
-  if ((val||'').trim().toLowerCase() !== 'all') return val;
-  if (type === 'person') return staffData.map(s=>s.name).join(', ') || 'all';
-  if (type === 'dept')   return deptsData.map(d=>d.name).join(', ') || 'all';
+  if ((val||'').trim().toLowerCase() !== 'all') return val||'';
+  if (type==='person') return Object.values(staffData).map(s=>s.name).filter(Boolean).join(', ') || 'all';
+  if (type==='dept')   return Object.values(deptsData).map(d=>d.name).filter(Boolean).join(', ') || 'all';
   return val;
 }
 
-function renderDataTab() {
-  // Render staff list
-  const pl = document.getElementById('personList');
-  if (pl) {
-    if (!staffData.length) {
-      pl.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Chưa có nhân sự. Nhấn "+ Thêm" để thêm.</p>';
-    } else {
-      pl.innerHTML = staffData.map((s,i)=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--purple-50);border-radius:7px;">
-          <div style="width:30px;height:30px;border-radius:50%;background:var(--purple-600);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;">
-            ${s.name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase()}
-          </div>
-          <div style="flex:1;">
-            <input value="${esc(s.name)}" placeholder="Họ tên..." style="border:none;background:transparent;font-size:13px;font-weight:500;width:100%;color:var(--text);" onchange="staffData[${i}].name=this.value;saveStaffData();">
-            <input value="${esc(s.role||'')}" placeholder="Chức vụ / vai trò..." style="border:none;background:transparent;font-size:11px;color:var(--text-muted);width:100%;" onchange="staffData[${i}].role=this.value;saveStaffData();">
-          </div>
-          <button onclick="staffData.splice(${i},1);saveStaffData();renderDataTab();" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:16px;" title="Xóa">✕</button>
-        </div>`).join('');
-    }
+// ── Auto-generate next Project ID ──
+async function genProjectId(dateStr, type) {
+  if (!dateStr || !type) return null;
+  const yy = dateStr.slice(2,4), mm = dateStr.slice(5,7), dd = dateStr.slice(8,10);
+  const prefix = `${yy}${mm}${dd}-${type}-`;
+  // Find max existing number for this prefix
+  const existing = Object.values(projects)
+    .map(p => p.id||'')
+    .filter(id => id.startsWith(prefix))
+    .map(id => parseInt(id.replace(prefix,''),10))
+    .filter(n => !isNaN(n));
+  const next = existing.length ? Math.max(...existing)+1 : 1;
+  return `${prefix}${String(next).padStart(2,'0')}`;
+}
+
+async function previewId() {
+  const d = document.getElementById('mDate').value;
+  const t = document.getElementById('mType').value;
+  const el = document.getElementById('idPreview');
+  if (!d || !t) { el.textContent='Chọn ngày và loại để xem ID'; return; }
+  const id = await genProjectId(d, t);
+  el.textContent = id || 'Đang tính...';
+}
+
+// ══════════════════════════════════════════
+// SUGGESTIONS (datalists)
+// ══════════════════════════════════════════
+function refreshSuggestions() {
+  const dl = document.getElementById('dlPerson');
+  const persons = Object.values(staffData).map(s=>s.name).filter(Boolean);
+  dl.innerHTML = '<option value="all">Tất cả nhân sự</option>' +
+    persons.map(n=>`<option value="${esc(n)}">`).join('');
+
+  const dd = document.getElementById('dlDept');
+  const depts = Object.values(deptsData).map(d=>d.name).filter(Boolean);
+  dd.innerHTML = '<option value="all">Tất cả phòng/bộ phận</option>' +
+    depts.map(n=>`<option value="${esc(n)}">`).join('');
+
+  // Update filter dropdowns
+  refreshFilters();
+}
+
+function refreshFilters() {
+  const depts = [...new Set(Object.values(projects).map(p=>p.dept).filter(Boolean))].sort();
+  const fd = document.getElementById('fDept');
+  const curD = fd.value;
+  fd.innerHTML = '<option value="">Tất cả phòng/bộ phận</option>' +
+    depts.map(d=>`<option value="${esc(d)}" ${curD===d?'selected':''}>${d}</option>`).join('');
+
+  const persons = [...new Set(
+    Object.values(projects).flatMap(p=>[p.pm, ...(p.exec||'').split(',')].map(x=>(x||'').trim())).filter(Boolean)
+  )].sort();
+  const fp = document.getElementById('fPerson');
+  const curP = fp.value;
+  fp.innerHTML = '<option value="">Tất cả nhân sự</option>' +
+    persons.map(n=>`<option value="${esc(n)}" ${curP===n?'selected':''}>${n}</option>`).join('');
+
+  // Export dept dropdown
+  const ed = document.getElementById('expDept');
+  if (ed) {
+    const curE = ed.value;
+    ed.innerHTML = '<option value="">Tất cả</option>' +
+      depts.map(d=>`<option value="${esc(d)}" ${curE===d?'selected':''}>${d}</option>`).join('');
   }
-
-  // Render dept list
-  const dl2 = document.getElementById('deptList2');
-  if (dl2) {
-    if (!deptsData.length) {
-      dl2.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Chưa có phòng ban. Nhấn "+ Thêm" để thêm.</p>';
-    } else {
-      dl2.innerHTML = deptsData.map((d,i)=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--teal-50);border-radius:7px;">
-          <span style="font-size:16px;">🏢</span>
-          <input value="${esc(d.name)}" placeholder="Tên phòng/bộ phận..." style="flex:1;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text);" onchange="deptsData[${i}].name=this.value;saveDeptsData();">
-          <button onclick="deptsData.splice(${i},1);saveDeptsData();renderDataTab();" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:16px;" title="Xóa">✕</button>
-        </div>`).join('');
-    }
-  }
 }
 
-function addPerson() {
-  staffData.unshift({name:'', role:''});
-  saveStaffData();
-  renderDataTab();
-  setTimeout(()=>{ const inp = document.querySelector('#personList input'); if(inp) inp.focus(); }, 50);
+// ══════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════
+function applyFilters() {
+  activeFilters.q      = document.getElementById('searchQ').value.toLowerCase();
+  activeFilters.type   = document.getElementById('fType').value;
+  activeFilters.dept   = document.getElementById('fDept').value;
+  activeFilters.person = document.getElementById('fPerson').value;
+  activeFilters.status = document.getElementById('fStatus').value;
+  renderTable();
+  renderStats();
+  updateFilterBadge();
 }
 
-function addDeptData() {
-  deptsData.unshift({name:''});
-  saveDeptsData();
-  renderDataTab();
-  setTimeout(()=>{ const inp = document.querySelector('#deptList2 input'); if(inp) inp.focus(); }, 50);
+function updateFilterBadge() {
+  const active = Object.values(activeFilters).filter(Boolean);
+  const el = document.getElementById('filterBadge');
+  if (active.length) {
+    el.innerHTML = `<span class="filter-active">🔍 Đang lọc (${active.length}) <button onclick="clearFilters()" style="background:none;border:none;cursor:pointer;color:var(--c800);font-size:12px;">✕</button></span>`;
+  } else el.innerHTML = '';
 }
 
-// Load on startup
-loadStaffData();
-loadDeptsData();
-let _exportMode = 'csv';
+function clearFilters() {
+  ['searchQ','fType','fDept','fPerson','fStatus'].forEach(id => document.getElementById(id).value='');
+  activeFilters = {q:'',type:'',dept:'',person:'',status:''};
+  renderTable();
+  renderStats();
+  updateFilterBadge();
+}
 
-function openExportModal(mode) {
-  _exportMode = mode;
-  const modal = document.getElementById('exportModal');
-  document.getElementById('exportModalTitle').textContent = mode === 'csv' ? '⬇ Xuất CSV' : '🖨 Chọn nội dung in';
-  document.getElementById('expConfirmBtn').textContent = mode === 'csv' ? 'Xuất CSV' : 'In';
-  modal.style.display = 'flex';
-  updateExpCount();
-  ['expDept','expStatus','expType','expPerson'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateExpCount);
-    document.getElementById(id).addEventListener('change', updateExpCount);
+function filterProjects() {
+  return Object.entries(projects).filter(([k,p]) => {
+    const {q,type,dept,person,status} = activeFilters;
+    const execResolved = resolveAll(p.exec,'person');
+    const deptResolved = resolveAll(p.dept,'dept');
+    const matchQ = !q || (p.id+p.name+p.pm+execResolved+deptResolved).toLowerCase().includes(q);
+    const matchT = !type   || p.type===type;
+    const matchD = !dept   || deptResolved.toLowerCase().includes(dept.toLowerCase()) || p.dept===dept;
+    const matchP = !person || (p.pm||'').toLowerCase().includes(person.toLowerCase()) ||
+                              execResolved.toLowerCase().includes(person.toLowerCase());
+    const matchS = !status || p.status===status;
+    return matchQ && matchT && matchD && matchP && matchS;
+  }).sort((a,b) => {
+    // Sort by date desc (from Project ID prefix YYMMDD)
+    const da=(a[1].id||'').slice(0,6), db=(b[1].id||'').slice(0,6);
+    return db>da?1:db<da?-1:0;
   });
 }
 
-function getExportData() {
+// ══════════════════════════════════════════
+// RENDER TABLE
+// ══════════════════════════════════════════
+function renderTable() {
+  const filtered = filterProjects();
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  document.getElementById('rowCount').textContent =
+    `Hiển thị ${filtered.length} / ${Object.keys(projects).length} dự án`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--muted);">Không có dự án nào. Nhấn "+ Thêm dự án" để bắt đầu.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(([key,p], i) => {
+    const isExp = expanded[key];
+    const tasks = p.tasks ? Object.entries(p.tasks) : [];
+    const typeBadge = {MAIN:'bm',SUPP:'bs',OPER:'bo'}[p.type]||'bp';
+    const statusBadge = {'Hoàn thành':'bd','Đang thực hiện':'bi','Tạm dừng':'bs','Chờ xử lý':'bp'}[p.status]||'bp';
+
+    // Project row
+    const tr = document.createElement('tr');
+    tr.className = 'proj-row';
+    tr.innerHTML = `
+      <td style="text-align:center;color:var(--muted);font-size:11px;">${i+1}</td>
+      <td style="text-align:center;">
+        <button class="expand-btn" onclick="toggleExpand('${key}')" title="${isExp?'Thu gọn':'Mở rộng task'}">${isExp?'▼':'▶'}</button>
+      </td>
+      <td><input value="${esc(p.id)}" data-key="${key}" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"></td>
+      <td><input value="${esc(p.name)}" data-key="${key}" data-f="name" onchange="updateField(this)"></td>
+      <td><input value="${esc(p.fullName)}" data-key="${key}" data-f="fullName" onchange="updateField(this)" style="font-size:11px;"></td>
+      <td>
+        <select data-key="${key}" data-f="type" onchange="updateField(this)">
+          <option value="" ${!p.type?'selected':''}>—</option>
+          <option value="MAIN" ${p.type==='MAIN'?'selected':''}>MAIN</option>
+          <option value="SUPP" ${p.type==='SUPP'?'selected':''}>SUPP</option>
+          <option value="OPER" ${p.type==='OPER'?'selected':''}>OPER</option>
+        </select>
+      </td>
+      <td><input value="${esc(p.pm)}" data-key="${key}" data-f="pm" list="dlPerson" onchange="updateField(this)"></td>
+      <td><input value="${esc(p.exec)}" data-key="${key}" data-f="exec" list="dlPerson" onchange="updateField(this)"></td>
+      <td><input value="${esc(p.dept)}" data-key="${key}" data-f="dept" list="dlDept" onchange="updateField(this)"></td>
+      <td><input type="date" value="${p.start||''}" data-key="${key}" data-f="start" onchange="updateField(this)"></td>
+      <td><input type="date" value="${p.end||''}" data-key="${key}" data-f="end" onchange="updateField(this)"></td>
+      <td>
+        <select data-key="${key}" data-f="status" onchange="updateField(this)">
+          <option value="Chờ xử lý" ${p.status==='Chờ xử lý'?'selected':''}>⬜ Chờ xử lý</option>
+          <option value="Đang thực hiện" ${p.status==='Đang thực hiện'?'selected':''}>🔵 Đang TH</option>
+          <option value="Tạm dừng" ${p.status==='Tạm dừng'?'selected':''}>🟡 Tạm dừng</option>
+          <option value="Hoàn thành" ${p.status==='Hoàn thành'?'selected':''}>✅ Hoàn thành</option>
+        </select>
+      </td>
+      <td><button class="del-btn" onclick="deleteProject('${key}')" title="Xóa dự án">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+
+    // Task rows (expanded)
+    if (isExp) {
+      tasks.forEach(([tk, task]) => {
+        const ttr = document.createElement('tr');
+        ttr.className = 'task-row';
+        ttr.innerHTML = `
+          <td></td><td></td>
+          <td colspan="2">
+            <div class="task-indent">
+              <div class="task-line"></div>
+              <span style="color:var(--muted);font-size:10px;">TASK</span>
+              <input value="${esc(task.name)}" data-pk="${key}" data-tk="${tk}" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;">
+            </div>
+          </td>
+          <td><input value="${esc(task.exec)}" data-pk="${key}" data-tk="${tk}" data-f="exec" list="dlPerson" onchange="updateTask(this)" placeholder="Người thực hiện..."></td>
+          <td></td>
+          <td colspan="2"></td>
+          <td></td>
+          <td><input type="date" value="${task.start||''}" data-pk="${key}" data-tk="${tk}" data-f="start" onchange="updateTask(this)"></td>
+          <td><input type="date" value="${task.end||''}" data-pk="${key}" data-tk="${tk}" data-f="end" onchange="updateTask(this)"></td>
+          <td>
+            <select data-pk="${key}" data-tk="${tk}" data-f="status" onchange="updateTask(this)">
+              <option value="Chờ xử lý" ${task.status==='Chờ xử lý'?'selected':''}>⬜ Chờ</option>
+              <option value="Đang thực hiện" ${task.status==='Đang thực hiện'?'selected':''}>🔵 Đang TH</option>
+              <option value="Tạm dừng" ${task.status==='Tạm dừng'?'selected':''}>🟡 Tạm dừng</option>
+              <option value="Hoàn thành" ${task.status==='Hoàn thành'?'selected':''}>✅ Xong</option>
+            </select>
+          </td>
+          <td><button class="del-btn" onclick="deleteTask('${key}','${tk}')" title="Xóa task">✕</button></td>
+        `;
+        tbody.appendChild(ttr);
+      });
+      // Add task button row
+      const atr = document.createElement('tr');
+      atr.className = 'task-row';
+      atr.innerHTML = `
+        <td></td><td></td>
+        <td colspan="11">
+          <div class="task-indent">
+            <div class="task-line"></div>
+            <button class="add-task-btn" onclick="addTask('${key}')">+ Thêm task</button>
+            <span style="font-size:10px;color:var(--muted);">${tasks.length} task</span>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(atr);
+    }
+  });
+}
+
+function toggleExpand(key) {
+  expanded[key] = !expanded[key];
+  renderTable();
+}
+
+// ══════════════════════════════════════════
+// CRUD — PROJECTS
+// ══════════════════════════════════════════
+function openAddProject() {
+  document.getElementById('mName').value='';
+  document.getElementById('mPm').value='';
+  document.getElementById('mExec').value='';
+  document.getElementById('mDept').value='';
+  document.getElementById('mStart').value='';
+  document.getElementById('mEnd').value=todayStr();
+  document.getElementById('mStatus').value='Chờ xử lý';
+  document.getElementById('idPreview').textContent='Chọn ngày và loại để xem ID';
+  previewId();
+  openModal('addModal');
+}
+
+async function submitAddProject() {
+  const dateVal = document.getElementById('mDate').value;
+  const type    = document.getElementById('mType').value;
+  const name    = document.getElementById('mName').value.trim();
+  if (!dateVal || !type || !name) {
+    showToast('⚠️ Vui lòng điền đủ: ngày, loại, và tên dự án.'); return;
+  }
+  const id = await genProjectId(dateVal, type);
+  if (!id) { showToast('⚠️ Không thể sinh ID.'); return; }
+  // Double-check uniqueness
+  const exists = Object.values(projects).some(p=>p.id===id);
+  if (exists) { showToast(`⚠️ ID ${id} vừa được dùng. Đang thử lại...`); await previewId(); return; }
+
+  const fullName = `[NAACP] [${id}] ${name}`;
+  const proj = {
+    id, name, fullName,
+    type, pm: document.getElementById('mPm').value.trim(),
+    exec: document.getElementById('mExec').value.trim(),
+    dept: document.getElementById('mDept').value.trim(),
+    start: document.getElementById('mStart').value,
+    end: document.getElementById('mEnd').value,
+    status: document.getElementById('mStatus').value,
+    createdAt: Date.now()
+  };
+  const res = await fbPush('/projects', proj);
+  if (res && res.name) {
+    projects[res.name] = proj;
+    closeModal('addModal');
+    renderTable();
+    renderStats();
+    showToast(`✅ Đã thêm dự án <b>${id}</b>`);
+  } else showToast('⚠️ Lỗi khi lưu. Thử lại.');
+}
+
+async function updateField(el) {
+  const key = el.dataset.key;
+  const field = el.dataset.f;
+  let val = el.value;
+  if (!projects[key]) return;
+  projects[key][field] = val;
+  // Auto-update fullName when id or name changes
+  if (field==='id'||field==='name') {
+    const fn = `[NAACP] [${projects[key].id}] ${projects[key].name}`;
+    projects[key].fullName = fn;
+    // Update fullName input in same row
+    const row = el.closest('tr');
+    if (row) {
+      const fnInput = row.querySelector('[data-f="fullName"]');
+      if (fnInput) fnInput.value = fn;
+    }
+  }
+  // Auto-fill type from ID
+  if (field==='id') {
+    const idU = val.toUpperCase();
+    const t = ['MAIN','SUPP','OPER'].find(x=>idU.includes('-'+x+'-'));
+    if (t) {
+      projects[key].type = t;
+      const sel = el.closest('tr').querySelector('[data-f="type"]');
+      if (sel) sel.value = t;
+    }
+  }
+  await fbPatch(`/projects/${key}`, {[field]: projects[key][field], ...(field==='id'||field==='name'?{fullName:projects[key].fullName}:{})});
+  if (field==='type'||field==='status'||field==='dept') renderStats();
+}
+
+async function deleteProject(key) {
+  if (!confirm(`Xóa dự án "${projects[key]?.name}"? Tất cả task sẽ bị xóa.`)) return;
+  await fbDelete(`/projects/${key}`);
+  delete projects[key];
+  delete expanded[key];
+  renderTable();
+  renderStats();
+  showToast('🗑 Đã xóa dự án.');
+}
+
+// ══════════════════════════════════════════
+// CRUD — TASKS
+// ══════════════════════════════════════════
+async function addTask(projKey) {
+  const task = { name:'', exec:'', start:'', end:todayStr(), status:'Chờ xử lý', createdAt:Date.now() };
+  const res = await fbPush(`/projects/${projKey}/tasks`, task);
+  if (res && res.name) {
+    if (!projects[projKey].tasks) projects[projKey].tasks = {};
+    projects[projKey].tasks[res.name] = task;
+    expanded[projKey] = true;
+    renderTable();
+    // Focus the new task name input
+    setTimeout(()=>{
+      const rows = document.querySelectorAll('.task-row input[placeholder="Tên task..."]');
+      if (rows.length) rows[rows.length-1].focus();
+    }, 50);
+  }
+}
+
+async function updateTask(el) {
+  const pk = el.dataset.pk, tk = el.dataset.tk, f = el.dataset.f;
+  if (!projects[pk]?.tasks?.[tk]) return;
+  projects[pk].tasks[tk][f] = el.value;
+  await fbPatch(`/projects/${pk}/tasks/${tk}`, {[f]: el.value});
+}
+
+async function deleteTask(projKey, taskKey) {
+  if (!confirm('Xóa task này?')) return;
+  await fbDelete(`/projects/${projKey}/tasks/${taskKey}`);
+  delete projects[projKey].tasks[taskKey];
+  renderTable();
+  showToast('🗑 Đã xóa task.');
+}
+
+// ══════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════
+function renderStats() {
+  const filtered = filterProjects().map(([,p])=>p);
+  const total = filtered.length;
+  const main  = filtered.filter(p=>p.type==='MAIN').length;
+  const supp  = filtered.filter(p=>p.type==='SUPP').length;
+  const oper  = filtered.filter(p=>p.type==='OPER').length;
+  const done  = filtered.filter(p=>p.status==='Hoàn thành').length;
+  const inprog= filtered.filter(p=>p.status==='Đang thực hiện').length;
+  const pend  = filtered.filter(p=>p.status==='Chờ xử lý'||p.status==='Tạm dừng').length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  const pf    = v => total ? Math.round(v/total*100)+'%' : '0%';
+
+  document.getElementById('sTotal').textContent=total;
+  document.getElementById('sMain').textContent=main;
+  document.getElementById('sSupp').textContent=supp;
+  document.getElementById('sOper').textContent=oper;
+  document.getElementById('sDone').textContent=done;
+  document.getElementById('sInprog').textContent=inprog;
+  document.getElementById('sPend').textContent=pend;
+  document.getElementById('sDonePct').textContent=pf(done)+' tổng số';
+  document.getElementById('sInprogPct').textContent=pf(inprog)+' tổng số';
+  document.getElementById('sPendPct').textContent=pf(pend)+' tổng số';
+  document.getElementById('pctText').textContent=pct+'%';
+  document.getElementById('pctBar').style.width=pct+'%';
+
+  // Filter note
+  const hasFilter = Object.values(activeFilters).some(Boolean);
+  const note = document.getElementById('statsFilterNote');
+  note.style.display = hasFilter ? 'block' : 'none';
+  if (hasFilter) note.innerHTML = `<div style="background:var(--p50);border:1px solid var(--p100);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--p800);">📊 Thống kê đang hiển thị theo bộ lọc hiện tại (${total} / ${Object.keys(projects).length} dự án). <button class="btn btn-o btn-sm" onclick="clearFilters()" style="margin-left:8px;">Xóa bộ lọc</button></div>`;
+
+  drawCharts(filtered, main,supp,oper,done,inprog,pend,total);
+
+  // Personnel grid — show all staff + project counts
+  const personMap = {};
+  filtered.forEach(p=>{
+    const ex = resolveAll(p.exec,'person');
+    [p.pm, ...ex.split(',')].map(x=>(x||'').trim()).filter(Boolean).forEach(n=>{ personMap[n]=(personMap[n]||0)+1; });
+  });
+  Object.values(staffData).forEach(s=>{ if(s.name && !(s.name in personMap)) personMap[s.name]=0; });
+  const persons = Object.entries(personMap).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const pg = document.getElementById('personGrid');
+  pg.innerHTML = persons.length ? persons.map(([name,cnt])=>{
+    const init=name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
+    const role=(Object.values(staffData).find(s=>s.name===name)||{}).role||'';
+    return `<div class="pcard"><div class="pavatar">${init}</div><div><div class="pname">${name}</div><div class="pcount">${cnt?cnt+' dự án':'Chưa có dự án'}${role?' · '+role:''}</div></div></div>`;
+  }).join('') : '<p style="font-size:12px;color:var(--muted);">Thêm nhân sự trong tab Data.</p>';
+}
+
+// ── Charts ──
+function drawCharts(filtered, main,supp,oper,done,inprog,pend,total) {
+  const pctLabel = {
+    id:'pctLbl',
+    afterDatasetDraw(chart) {
+      const {ctx,data}=chart;
+      chart.getDatasetMeta(0).data.forEach((arc,i)=>{
+        const val=data.datasets[0].data[i]; if(!val||!total) return;
+        const p=Math.round(val/total*100); if(p<5) return;
+        const {x,y}=arc.tooltipPosition();
+        ctx.save();ctx.font='bold 11px sans-serif';ctx.fillStyle='#fff';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(p+'%',x,y);ctx.restore();
+      });
+    }
+  };
+
+  function mkChart(id,type,labels,data,colors,extra={}) {
+    if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+    const canvas=document.getElementById(id);
+    if (!canvas) return;
+    _charts[id]=new Chart(canvas.getContext('2d'),{
+      type, data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff',...(extra.ds||{})}]},
+      options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} (${total?Math.round(ctx.raw/total*100):0}%)`}}},...(extra.opts||{})},
+      plugins:[pctLabel]
+    });
+  }
+
+  mkChart('chartType','doughnut',['MAIN','SUPP','OPER'],[main,supp,oper],['#185FA5','#854F0B','#0F6E56']);
+  mkChart('chartStatus','pie',['Hoàn thành','Đang thực hiện','Chờ/Tạm dừng'],[done,inprog,pend],['#3B6D11','#993C1D','#888780']);
+
+  // Bar chart
+  const types=['MAIN','SUPP','OPER'];
+  const bDone  =types.map(t=>filtered.filter(p=>p.type===t&&p.status==='Hoàn thành').length);
+  const bInprog=types.map(t=>filtered.filter(p=>p.type===t&&p.status==='Đang thực hiện').length);
+  const bPend  =types.map(t=>filtered.filter(p=>p.type===t&&(p.status==='Chờ xử lý'||p.status==='Tạm dừng')).length);
+  if (_charts['chartBar']) { _charts['chartBar'].destroy(); delete _charts['chartBar']; }
+  const bc=document.getElementById('chartBar');
+  if (bc) _charts['chartBar']=new Chart(bc.getContext('2d'),{
+    type:'bar',
+    data:{labels:types,datasets:[
+      {label:'Hoàn thành',data:bDone,backgroundColor:'#3B6D11',borderRadius:4},
+      {label:'Đang thực hiện',data:bInprog,backgroundColor:'#993C1D',borderRadius:4},
+      {label:'Chờ/Tạm dừng',data:bPend,backgroundColor:'#888780',borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw}`}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0,font:{size:10}},grid:{color:'#f0ede6'}}}}
+  });
+
+  // Dept chart
+  const deptMap={};
+  filtered.forEach(p=>{
+    const dr=resolveAll(p.dept,'dept');
+    dr.split(',').map(x=>x.trim()).filter(Boolean).forEach(d=>{ deptMap[d]=(deptMap[d]||0)+1; });
+  });
+  const dLabels=Object.keys(deptMap).sort();
+  const dColors=['#534AB7','#185FA5','#0F6E56','#854F0B','#993C1D','#3B6D11','#888780','#26215C'];
+  if (_charts['chartDept']) { _charts['chartDept'].destroy(); delete _charts['chartDept']; }
+  const dc=document.getElementById('chartDept');
+  if (dc) _charts['chartDept']=new Chart(dc.getContext('2d'),{
+    type:'bar',
+    data:{labels:dLabels,datasets:[{label:'Dự án',data:dLabels.map(d=>deptMap[d]),backgroundColor:dLabels.map((_,i)=>dColors[i%dColors.length]),borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} dự án`}}},scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:10}},grid:{color:'#f0ede6'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+// ══════════════════════════════════════════
+// DATA TAB
+// ══════════════════════════════════════════
+function renderDataTab() {
+  // Staff
+  const sl = document.getElementById('staffList');
+  const sArr = Object.entries(staffData);
+  sl.innerHTML = sArr.length ? sArr.map(([k,s])=>`
+    <div class="data-item">
+      <div class="pavatar">${(s.name||'?').split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase()}</div>
+      <div style="flex:1;min-width:0;">
+        <input value="${esc(s.name||'')}" placeholder="Họ tên..." onchange="updateStaff('${k}','name',this.value)">
+        <input class="role-inp" value="${esc(s.role||'')}" placeholder="Chức vụ..." onchange="updateStaff('${k}','role',this.value)">
+      </div>
+      <button onclick="deleteStaff('${k}')" class="del-btn">✕</button>
+    </div>`).join('')
+    : '<p style="font-size:12px;color:var(--muted);">Chưa có nhân sự.</p>';
+
+  // Depts
+  const dl = document.getElementById('deptList');
+  const dArr = Object.entries(deptsData);
+  dl.innerHTML = dArr.length ? dArr.map(([k,d])=>`
+    <div class="data-item" style="background:var(--t50);">
+      <span style="font-size:16px;">🏢</span>
+      <input value="${esc(d.name||'')}" placeholder="Tên phòng/bộ phận..." style="flex:1;border:none;background:transparent;font-size:13px;" onchange="updateDept('${k}','name',this.value)">
+      <button onclick="deleteDept('${k}')" class="del-btn">✕</button>
+    </div>`).join('')
+    : '<p style="font-size:12px;color:var(--muted);">Chưa có phòng/bộ phận.</p>';
+}
+
+async function addStaff() {
+  const res = await fbPush('/staff', {name:'',role:''});
+  if (res?.name) {
+    staffData[res.name]={name:'',role:''};
+    renderDataTab(); refreshSuggestions();
+    setTimeout(()=>{ const inp=document.querySelector('#staffList input'); if(inp) inp.focus(); },50);
+  }
+}
+async function updateStaff(key,field,val) {
+  if (!staffData[key]) return;
+  staffData[key][field]=val;
+  await fbPatch(`/staff/${key}`,{[field]:val});
+  refreshSuggestions();
+}
+async function deleteStaff(key) {
+  if (!confirm('Xóa nhân sự này?')) return;
+  await fbDelete(`/staff/${key}`);
+  delete staffData[key]; renderDataTab(); refreshSuggestions();
+}
+async function addDept() {
+  const res = await fbPush('/depts', {name:''});
+  if (res?.name) {
+    deptsData[res.name]={name:''};
+    renderDataTab(); refreshSuggestions();
+    setTimeout(()=>{ const inp=document.querySelector('#deptList input'); if(inp) inp.focus(); },50);
+  }
+}
+async function updateDept(key,field,val) {
+  if (!deptsData[key]) return;
+  deptsData[key][field]=val;
+  await fbPatch(`/depts/${key}`,{[field]:val});
+  refreshSuggestions();
+}
+async function deleteDept(key) {
+  if (!confirm('Xóa phòng/bộ phận này?')) return;
+  await fbDelete(`/depts/${key}`);
+  delete deptsData[key]; renderDataTab(); refreshSuggestions();
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function switchTab(tab) {
+  const tabs=['table','stats','data','guide'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===tab));
+  tabs.forEach(t=>document.getElementById('section-'+t).classList.toggle('active',t===tab));
+  if (tab==='stats') { setTimeout(()=>renderStats(),50); }
+  if (tab==='data')  renderDataTab();
+}
+
+// ══════════════════════════════════════════
+// EXPORT / PRINT
+// ══════════════════════════════════════════
+function openExportModal(mode) {
+  _expMode = mode;
+  document.getElementById('expTitle').textContent = mode==='csv' ? '⬇ Xuất CSV' : '🖨 Chọn nội dung in';
+  document.getElementById('expBtn').textContent   = mode==='csv' ? 'Xuất CSV' : 'In';
+  document.getElementById('inclStats').parentElement.style.display = mode==='print' ? 'flex' : 'none';
+  updateExpCount();
+  openModal('expModal');
+}
+function getExpData() {
   const dept   = document.getElementById('expDept').value;
   const status = document.getElementById('expStatus').value;
   const type   = document.getElementById('expType').value;
-  const person = document.getElementById('expPerson').value.trim().toLowerCase();
-  const allData = (window.projectData && window.projectData.length) ? window.projectData : projectData;
-  return allData.filter(r => {
-    const deptOk   = !dept   || r[6] === dept;
-    const statusOk = !status || r[9] === status;
-    const typeOk   = !type   || r[3] === type;
-    const personOk = !person || (r[4]||'').toLowerCase().includes(person) || (r[5]||'').toLowerCase().includes(person);
-    return deptOk && statusOk && typeOk && personOk;
-  });
+  const person = (document.getElementById('expPerson').value||'').trim().toLowerCase();
+  return Object.values(projects).filter(p=>{
+    const ex=resolveAll(p.exec,'person');
+    return (!dept||p.dept===dept)&&(!status||p.status===status)&&(!type||p.type===type)
+      &&(!person|||(p.pm||'').toLowerCase().includes(person)||ex.toLowerCase().includes(person));
+  }).sort((a,b)=>(b.id||'')>(a.id||'')?1:-1);
 }
-
 function updateExpCount() {
-  const count = getExportData().length;
-  document.getElementById('expCount').textContent = `Sẽ xuất/in ${count} dự án`;
+  document.getElementById('expCount').textContent=`Sẽ xuất ${getExpData().length} dự án`;
 }
-
 function confirmExport() {
-  const data = getExportData();
-  if (_exportMode === 'csv') {
-    const headers = ['STT','Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
-    const rows = data.map((r,i) => [i+1,...r]);
-    const csv = [headers,...rows].map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
-    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    const deptLabel = document.getElementById('expDept').value || 'TatCa';
-    a.download = `bang_da_NAACP_${deptLabel}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
+  const data = getExpData();
+  if (_expMode==='csv') {
+    const hdrs=['Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
+    const rows=data.map(p=>[p.id,p.name,p.fullName,p.type,p.pm,p.exec,p.dept,fmtDate(p.start),fmtDate(p.end),p.status]);
+    const csv=[hdrs,...rows].map(r=>r.map(c=>'"'+(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download=`NAACP_projects_${todayStr()}.csv`; a.click();
   } else {
-    // Print selected data
-    const headers = ['STT','Project ID','Project Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
-    const rows = data.map((r,i) => [i+1, r[0],r[1],r[3],r[4],r[5],r[6],r[7],r[8],r[9]]);
-    const tableHtml = `
-      <html><head><meta charset="UTF-8">
-      <style>body{font-family:Arial,sans-serif;font-size:11px;}
-      h2{font-size:14px;margin-bottom:8px;}
-      table{width:100%;border-collapse:collapse;}
-      th{background:#26215C;color:#fff;padding:6px 8px;text-align:left;font-size:10px;}
-      td{padding:5px 8px;border-bottom:0.5px solid #e0ddd6;vertical-align:top;}
-      tr:nth-child(even) td{background:#f8f7f4;}
-      </style></head><body>
-      <h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2>
-      <p style="font-size:10px;color:#888;margin-bottom:10px;">In ngày: ${new Date().toLocaleDateString('vi-VN')} · ${data.length} dự án</p>
-      <table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c||''}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table></body></html>`;
-    const w = window.open('','_blank','width=1000,height=700');
-    w.document.write(tableHtml);
-    w.document.close();
-    w.print();
+    const inclStats = document.getElementById('inclStats').checked;
+    const statsHtml = inclStats ? buildStatsHtml(data) : '';
+    const tbl=`<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:10px;">
+      <thead style="background:#26215C;color:#fff;"><tr>${['STT','Project ID','Project Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Bắt đầu','Kết thúc DK','Trạng thái'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${data.map((p,i)=>`<tr style="${i%2?'background:#f8f7f4':''}"><td>${i+1}</td><td style="font-family:monospace">${p.id||''}</td><td>${p.name||''}</td><td>${p.type||''}</td><td>${p.pm||''}</td><td>${p.exec||''}</td><td>${p.dept||''}</td><td>${fmtDate(p.start)}</td><td>${fmtDate(p.end)}</td><td>${p.status||''}</td></tr>`).join('')}</tbody>
+    </table>`;
+    const w=window.open('','_blank','width=1100,height=750');
+    w.document.write(`<html><head><meta charset="UTF-8"><title>BẢNG MÃ DỰ ÁN – NAACP</title>
+    <style>body{font-family:Arial,sans-serif;padding:20px;} h2{font-size:16px;} p{font-size:11px;color:#888;margin-bottom:12px;}</style></head>
+    <body><h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2>
+    <p>In ngày: ${new Date().toLocaleDateString('vi-VN')} · ${data.length} dự án${inclStats?' · Kèm thống kê':''}</p>
+    ${tbl}${statsHtml}</body></html>`);
+    w.document.close(); w.print();
   }
-  closeExportModal();
+  closeModal('expModal');
 }
 
-function closeExportModal() {
-  document.getElementById('exportModal').style.display = 'none';
+function buildStatsHtml(data) {
+  const total=data.length;
+  const done=data.filter(p=>p.status==='Hoàn thành').length;
+  const inprog=data.filter(p=>p.status==='Đang thực hiện').length;
+  const pend=data.filter(p=>p.status==='Chờ xử lý'||p.status==='Tạm dừng').length;
+  const main=data.filter(p=>p.type==='MAIN').length;
+  const supp=data.filter(p=>p.type==='SUPP').length;
+  const oper=data.filter(p=>p.type==='OPER').length;
+  const pct=total?Math.round(done/total*100):0;
+  return `<br><h3 style="font-size:13px;margin:16px 0 8px;">THỐNG KÊ</h3>
+  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:11px;margin-bottom:10px;">
+    <tr><th>Tổng dự án</th><th>MAIN</th><th>SUPP</th><th>OPER</th><th>Hoàn thành</th><th>Đang thực hiện</th><th>Chờ/Tạm dừng</th><th>Tỷ lệ HT</th></tr>
+    <tr style="text-align:center"><td>${total}</td><td>${main}</td><td>${supp}</td><td>${oper}</td><td>${done}</td><td>${inprog}</td><td>${pend}</td><td>${pct}%</td></tr>
+  </table>`;
 }
 
-// Close modal when clicking backdrop
-document.getElementById('exportModal').addEventListener('click', function(e) {
-  if (e.target === this) closeExportModal();
-});
-
-function cancelImport() {
-  pendingImportRows = null;
-  document.getElementById('importToast').style.display = 'none';
+// ══════════════════════════════════════════
+// CSV IMPORT
+// ══════════════════════════════════════════
+function parseCSVLine(line) {
+  const res=[]; let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(c===','&&!inQ){res.push(cur);cur='';}
+    else cur+=c;
+  }
+  res.push(cur); return res;
 }
-
-// INIT — Firebase listener in <script type="module"> handles data loading
-document.getElementById('row-count').textContent = 'Đang kết nối Firebase...';
-updateTimestamp();
-
-// Fallback: if Firebase takes too long, load from localStorage
-setTimeout(() => {
-  if (!projectData.length) {
-    // Try draft first (most recent), then normal backup
-    try {
-      const draft = localStorage.getItem(STORAGE_KEY + '_draft');
-      if (draft) { projectData = JSON.parse(draft); }
-      else { projectData = loadData(); }
-    } catch(e) { projectData = loadData(); }
-    renderTable(projectData);
-    updateStats();
-  }
-}, 3000);
-
-// ── Auto-save on ANY keystroke via event delegation ──
-document.getElementById('projectTable').addEventListener('input', function(e) {
-  const el = e.target;
-  if (!el.dataset || !el.dataset.col) return;
-  const idx = parseInt(el.dataset.idx);
-  const col = parseInt(el.dataset.col);
-  if (isNaN(idx) || isNaN(col)) return;
-  let val = el.value;
-  if (col===7||col===8) val = fromInputDate(val);
-  if (!projectData[idx]) return;
-  projectData[idx][col] = val;
-  window._hasUnsaved = true;
-  // Instant localStorage backup on every keystroke
-  try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(projectData)); } catch(e) {}
-});
-
-// ── Reliable save on tab/window close using fetch keepalive ──
-// keepalive:true tells the browser to complete this request even after the page unloads
-window.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden' && window._fbBeaconSave) {
-    const data = (window.projectData && window.projectData.length) ? window.projectData : projectData;
-    if (data.length) {
-      window._lastSaveTime = Date.now();
-      window._fbBeaconSave(data);
-      try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(data)); } catch(e) {}
-    }
-  }
-});
-
-// visibilitychange is more reliable, but also keep beforeunload as double safety
-window.addEventListener('beforeunload', function() {
-  const data = (window.projectData && window.projectData.length) ? window.projectData : projectData;
-  if (data.length && window._fbBeaconSave) {
-    window._lastSaveTime = Date.now();
-    window._fbBeaconSave(data);
-    try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(data)); } catch(e) {}
-  }
-});
-
-// ── Auto-save to Firebase every 5 seconds if there are changes ──
-setInterval(() => {
-  if (window._hasUnsaved) {
-    window._hasUnsaved = false;
-    saveData();
-  }
-}, 5000);
-</script>
-</body>
-</html>
+function parseCSV(text) {
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) return [];
+  const hdr=parseCSVLine(lines[0]).map(h=>h.toLowerCase().trim());
+  const fi=k=>hdr.findIndex(h=>h.includes(k));
+  const idx={id:fi('project id'),name:fi('project name'),full:fi('full name'),type:fi('loại'),pm:fi('quản lý'),exec:fi('người thực hiện'),dept:fi('phòng'),start:fi('bắt đầu'),end:fi('kết thúc'),status:fi('trạng thái')};
+  const get=(cols,k)=>idx[k]>=0?(cols[idx[k]]||'').trim():'';
+  return lines.slice(1).map(l=>{
+    const c=par
