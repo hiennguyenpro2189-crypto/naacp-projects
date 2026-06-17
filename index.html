@@ -618,7 +618,6 @@ function onCellChange(el) {
     const allData = (window.projectData && window.projectData.length) ? window.projectData : projectData;
     const duplicate = newId && allData.some((r, i) => i !== idx && (r[0]||'').trim() === newId);
     const td = el.closest('td');
-    // Remove old error if any
     const oldErr = td.querySelector('.id-error');
     if (oldErr) oldErr.remove();
     el.style.outline = '';
@@ -629,7 +628,25 @@ function onCellChange(el) {
       err.style.cssText = 'color:#c0392b;font-size:10px;margin-top:2px;line-height:1.3;';
       err.textContent = '⚠️ Project ID đã tồn tại!';
       td.appendChild(err);
-      return; // Don't save if duplicate
+      return;
+    }
+  }
+
+  // Auto-fill Loại from Project ID (col 0)
+  if (col === 0) {
+    const idUpper = val.toUpperCase();
+    let detectedType = '';
+    if (idUpper.includes('-MAIN-')) detectedType = 'MAIN';
+    else if (idUpper.includes('-SUPP-')) detectedType = 'SUPP';
+    else if (idUpper.includes('-OPER-')) detectedType = 'OPER';
+    if (detectedType) {
+      projectData[idx][3] = detectedType;
+      // Update the select dropdown in the same row
+      const row = document.querySelector(`tr[data-idx="${idx}"]`) || el.closest('tr');
+      if (row) {
+        const typeSelect = row.querySelector('select[data-col="3"]');
+        if (typeSelect) typeSelect.value = detectedType;
+      }
     }
   }
 
@@ -646,6 +663,11 @@ function onCellChange(el) {
       }
     }
   }
+
+  // Mark as having unsaved changes (for beforeunload)
+  window._hasUnsaved = true;
+  // Save to localStorage immediately as draft backup
+  try { localStorage.setItem(STORAGE_KEY + '_draft', JSON.stringify(projectData)); } catch(e) {}
   saveData();
   updateStats();
 }
@@ -1091,17 +1113,55 @@ function cancelImport() {
 }
 
 // INIT — Firebase listener in <script type="module"> handles data loading
-// Show loading state until Firebase delivers data
 document.getElementById('row-count').textContent = 'Đang kết nối Firebase...';
 updateTimestamp();
+
 // Fallback: if Firebase takes too long, load from localStorage
 setTimeout(() => {
   if (!projectData.length) {
-    projectData = loadData();
+    // Try draft first (most recent), then normal backup
+    try {
+      const draft = localStorage.getItem(STORAGE_KEY + '_draft');
+      if (draft) { projectData = JSON.parse(draft); }
+      else { projectData = loadData(); }
+    } catch(e) { projectData = loadData(); }
     renderTable(projectData);
     updateStats();
   }
 }, 3000);
+
+// ── Auto-save on ANY keystroke (oninput) using event delegation ──
+document.getElementById('projectTable').addEventListener('input', function(e) {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.col) return;
+  const idx = parseInt(el.dataset.idx);
+  const col = parseInt(el.dataset.col);
+  if (isNaN(idx) || isNaN(col)) return;
+  let val = el.value;
+  if (col===7||col===8) val = fromInputDate(val);
+  if (!projectData[idx]) return;
+  projectData[idx][col] = val;
+  window._hasUnsaved = true;
+  // Save draft to localStorage immediately on every keystroke
+  try { localStorage.setItem(STORAGE_KEY + '_draft', JSON.stringify(projectData)); } catch(e) {}
+});
+
+// ── Emergency save to Firebase when user is about to leave/close ──
+window.addEventListener('beforeunload', function(e) {
+  if (window._hasUnsaved && window._fbSave) {
+    window._lastSaveTime = Date.now();
+    window._fbSave(projectData);
+    window._hasUnsaved = false;
+  }
+});
+
+// ── Periodic auto-save every 10 seconds if there are unsaved changes ──
+setInterval(() => {
+  if (window._hasUnsaved) {
+    saveData();
+    window._hasUnsaved = false;
+  }
+}, 10000);
 </script>
 </body>
 </html>
