@@ -243,10 +243,72 @@ window._fbReady = true;
       <option value="Tạm dừng">Tạm dừng</option>
     </select>
     <button class="btn btn-primary" onclick="addRow()">+ Thêm dự án</button>
-    <button class="btn btn-outline" onclick="exportCSV()">⬇ Xuất CSV</button>
+    <button class="btn btn-outline" onclick="openExportModal('csv')">⬇ Xuất CSV</button>
     <button class="btn btn-import" onclick="document.getElementById('csvFileInput').click()">⬆ Nhập CSV</button>
     <input type="file" id="csvFileInput" accept=".csv" multiple style="display:none" onchange="handleCSVImport(this)">
-    <button class="btn btn-outline" onclick="window.print()">🖨 In</button>
+    <button class="btn btn-outline" onclick="openExportModal('print')">🖨 In</button>
+  </div>
+
+  <!-- DATALIST for dept suggestions -->
+  <datalist id="deptList">
+    <option value="R&D">
+    <option value="Bảo trì">
+    <option value="Sản xuất">
+    <option value="Tự động hoá">
+    <option value="Tổng vụ">
+    <option value="Kho">
+    <option value="CNC">
+  </datalist>
+
+  <!-- EXPORT/PRINT MODAL -->
+  <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:24px 28px;min-width:360px;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.18);">
+      <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;" id="exportModalTitle">Xuất CSV</h3>
+      <div style="font-size:13px;font-weight:500;margin-bottom:8px;color:var(--text-muted);">Lọc theo:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Phòng / Bộ phận</label>
+          <select id="expDept" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="">Tất cả</option>
+            <option value="R&D">R&D</option>
+            <option value="Bảo trì">Bảo trì</option>
+            <option value="Sản xuất">Sản xuất</option>
+            <option value="Tự động hoá">Tự động hoá</option>
+            <option value="Tổng vụ">Tổng vụ</option>
+            <option value="Kho">Kho</option>
+            <option value="CNC">CNC</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Trạng thái</label>
+          <select id="expStatus" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="">Tất cả</option>
+            <option value="Đang thực hiện">Đang thực hiện</option>
+            <option value="Hoàn thành">Hoàn thành</option>
+            <option value="Chờ xử lý">Chờ xử lý</option>
+            <option value="Tạm dừng">Tạm dừng</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Loại dự án</label>
+          <select id="expType" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="">Tất cả</option>
+            <option value="MAIN">MAIN</option>
+            <option value="SUPP">SUPP</option>
+            <option value="OPER">OPER</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Người thực hiện</label>
+          <input id="expPerson" placeholder="Tên cá nhân..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+        </div>
+      </div>
+      <div id="expCount" style="font-size:12px;color:var(--text-muted);margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="closeExportModal()">Hủy</button>
+        <button class="btn btn-primary" id="expConfirmBtn" onclick="confirmExport()">Xuất CSV</button>
+      </div>
+    </div>
   </div>
   <div id="importToast" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.7;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
@@ -338,6 +400,12 @@ window._fbReady = true;
 
   <div class="section-title">Thống kê theo nhân sự</div>
   <div class="person-grid" id="personGrid"></div>
+
+  <div class="section-title">Thống kê theo phòng / bộ phận</div>
+  <div class="chart-card" style="margin-bottom:28px;">
+    <h4>Số dự án theo phòng / bộ phận</h4>
+    <canvas id="chartDept" style="max-height:240px;"></canvas>
+  </div>
 </div>
 
 <!-- ===== GUIDE TAB ===== -->
@@ -572,7 +640,9 @@ function renderTable(data) {
       </td>
       <td><input value="${esc(pm)}" placeholder="Họ tên QL..." data-col="4" data-idx="${idx}" onchange="onCellChange(this)"></td>
       <td><input value="${esc(exec)}" placeholder="A, B, C..." data-col="5" data-idx="${idx}" onchange="onCellChange(this)"></td>
-      <td><input value="${esc(dept)}" placeholder="Tên phòng/bộ phận..." data-col="6" data-idx="${idx}" onchange="onCellChange(this)"></td>
+      <td>
+        <input value="${esc(dept)}" placeholder="Chọn hoặc nhập..." list="deptList" data-col="6" data-idx="${idx}" onchange="onCellChange(this)">
+      </td>
       <td><input type="date" value="${toInputDate(start)}" data-col="7" data-idx="${idx}" onchange="onCellChange(this)"></td>
       <td><input type="date" value="${toInputDate(end)}" data-col="8" data-idx="${idx}" onchange="onCellChange(this)"></td>
       <td>
@@ -717,7 +787,7 @@ function refreshDeptFilter() {
 }
 
 // CHARTS
-let chartType=null, chartStatus=null, chartBar=null;
+let chartType=null, chartStatus=null, chartBar=null, chartDept=null;
 
 function drawCharts(main,supp,oper,done,inprog,pending,total) {
   const typeLabels = ['MAIN','SUPP','OPER'];
@@ -785,6 +855,31 @@ function drawCharts(main,supp,oper,done,inprog,pending,total) {
       }
     }
   });
+
+  // Dept chart
+  if (chartDept) chartDept.destroy();
+  const deptMap = {};
+  _d.forEach(r => { const d = r[6]||'Chưa phân loại'; deptMap[d] = (deptMap[d]||0)+1; });
+  const deptLabels = Object.keys(deptMap).sort();
+  const deptCounts = deptLabels.map(d => deptMap[d]);
+  const deptColors = ['#534AB7','#185FA5','#0F6E56','#854F0B','#993C1D','#3B6D11','#888780','#26215C','#085041'];
+  const ctxDept = document.getElementById('chartDept').getContext('2d');
+  chartDept = new Chart(ctxDept, {
+    type: 'bar',
+    data: {
+      labels: deptLabels,
+      datasets: [{ label:'Số dự án', data:deptCounts, backgroundColor: deptLabels.map((_,i)=>deptColors[i%deptColors.length]), borderRadius:5, borderSkipped:false }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>`${ctx.raw} dự án` } } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{ precision:0, font:{size:11} }, grid:{ color:'#f0ede6' } },
+        y:{ grid:{display:false}, ticks:{ font:{size:12} } }
+      }
+    }
+  });
 }
 
 function updateStats() {
@@ -844,6 +939,7 @@ function switchTab(tab) {
     if(chartType) { chartType.destroy(); chartType=null; }
     if(chartStatus) { chartStatus.destroy(); chartStatus=null; }
     if(chartBar) { chartBar.destroy(); chartBar=null; }
+    if(chartDept) { chartDept.destroy(); chartDept=null; }
     setTimeout(()=>updateStats(), 50);
   }
 }
@@ -1106,6 +1202,89 @@ function confirmImport(overwrite) {
   showToast(parts.join('<br>'), false);
   setTimeout(() => { document.getElementById('importToast').style.display='none'; }, 6000);
 }
+
+// EXPORT / PRINT MODAL
+let _exportMode = 'csv';
+
+function openExportModal(mode) {
+  _exportMode = mode;
+  const modal = document.getElementById('exportModal');
+  document.getElementById('exportModalTitle').textContent = mode === 'csv' ? '⬇ Xuất CSV' : '🖨 Chọn nội dung in';
+  document.getElementById('expConfirmBtn').textContent = mode === 'csv' ? 'Xuất CSV' : 'In';
+  modal.style.display = 'flex';
+  updateExpCount();
+  ['expDept','expStatus','expType','expPerson'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateExpCount);
+    document.getElementById(id).addEventListener('change', updateExpCount);
+  });
+}
+
+function getExportData() {
+  const dept   = document.getElementById('expDept').value;
+  const status = document.getElementById('expStatus').value;
+  const type   = document.getElementById('expType').value;
+  const person = document.getElementById('expPerson').value.trim().toLowerCase();
+  const allData = (window.projectData && window.projectData.length) ? window.projectData : projectData;
+  return allData.filter(r => {
+    const deptOk   = !dept   || r[6] === dept;
+    const statusOk = !status || r[9] === status;
+    const typeOk   = !type   || r[3] === type;
+    const personOk = !person || (r[4]||'').toLowerCase().includes(person) || (r[5]||'').toLowerCase().includes(person);
+    return deptOk && statusOk && typeOk && personOk;
+  });
+}
+
+function updateExpCount() {
+  const count = getExportData().length;
+  document.getElementById('expCount').textContent = `Sẽ xuất/in ${count} dự án`;
+}
+
+function confirmExport() {
+  const data = getExportData();
+  if (_exportMode === 'csv') {
+    const headers = ['STT','Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
+    const rows = data.map((r,i) => [i+1,...r]);
+    const csv = [headers,...rows].map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const deptLabel = document.getElementById('expDept').value || 'TatCa';
+    a.download = `bang_da_NAACP_${deptLabel}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  } else {
+    // Print selected data
+    const headers = ['STT','Project ID','Project Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
+    const rows = data.map((r,i) => [i+1, r[0],r[1],r[3],r[4],r[5],r[6],r[7],r[8],r[9]]);
+    const tableHtml = `
+      <html><head><meta charset="UTF-8">
+      <style>body{font-family:Arial,sans-serif;font-size:11px;}
+      h2{font-size:14px;margin-bottom:8px;}
+      table{width:100%;border-collapse:collapse;}
+      th{background:#26215C;color:#fff;padding:6px 8px;text-align:left;font-size:10px;}
+      td{padding:5px 8px;border-bottom:0.5px solid #e0ddd6;vertical-align:top;}
+      tr:nth-child(even) td{background:#f8f7f4;}
+      </style></head><body>
+      <h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2>
+      <p style="font-size:10px;color:#888;margin-bottom:10px;">In ngày: ${new Date().toLocaleDateString('vi-VN')} · ${data.length} dự án</p>
+      <table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c||''}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table></body></html>`;
+    const w = window.open('','_blank','width=1000,height=700');
+    w.document.write(tableHtml);
+    w.document.close();
+    w.print();
+  }
+  closeExportModal();
+}
+
+function closeExportModal() {
+  document.getElementById('exportModal').style.display = 'none';
+}
+
+// Close modal when clicking backdrop
+document.getElementById('exportModal').addEventListener('click', function(e) {
+  if (e.target === this) closeExportModal();
+});
 
 function cancelImport() {
   pendingImportRows = null;
