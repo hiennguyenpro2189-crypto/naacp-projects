@@ -8,7 +8,7 @@
 <script type="module">
 // ====== FIREBASE CONFIG ======
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBq4GpPN9TO2AmPWtsnGhaN_HOHFVAVQns",
@@ -20,48 +20,61 @@ const firebaseConfig = {
   appId: "1:218174774842:web:71f549d14bfcc661a89f03"
 };
 
+const DB_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app/projects.json";
+
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db  = getDatabase(app);
 const dbRef = ref(db, 'projects');
 
-// Save entire projectData array to Firebase
-window._fbSave = (data) => {
+// ── Save via fetch (async, normal usage) ──
+window._fbSave = async (data) => {
   const obj = {};
   data.forEach((row, i) => { obj[i] = row; });
-  return set(dbRef, obj);
+  await fetch(DB_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(obj)
+  });
 };
 
-// Listen for remote changes — but only update UI if user is NOT actively editing
+// ── Emergency save via sendBeacon (fires reliably on tab close) ──
+window._fbBeaconSave = (data) => {
+  const obj = {};
+  data.forEach((row, i) => { obj[i] = row; });
+  // sendBeacon does not support PUT, so we use a workaround:
+  // Firebase REST supports POST to push, but we need PUT.
+  // Use keepalive fetch instead which works on page unload.
+  fetch(DB_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(obj),
+    keepalive: true   // <-- KEY: this survives tab/window close
+  });
+};
+
+// ── Listen for remote changes ──
 window._lastSaveTime = 0;
 onValue(dbRef, (snap) => {
-  const val = snap.val();
+  const val  = snap.val();
   const rows = val ? Object.values(val) : [];
 
-  // If this update came within 2s of our own save, it's our own echo — skip UI refresh
-  const now = Date.now();
-  const isSelfEcho = (now - window._lastSaveTime) < 2000;
-
-  // Always update the data array
   window.projectData = rows;
 
-  if (typeof renderTable === 'function') {
-    // Only re-render if no input is focused (user not actively typing)
-    const activeEl = document.activeElement;
-    const userEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#projectTable');
+  // Skip re-render if this is our own echo (within 3s of our save)
+  const isSelfEcho = (Date.now() - window._lastSaveTime) < 3000;
+  const activeEl   = document.activeElement;
+  const userEditing = activeEl &&
+    (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') &&
+    activeEl.closest('#projectTable');
 
+  if (typeof renderTable === 'function') {
     if (!isSelfEcho && !userEditing) {
       renderTable(rows);
-      updateStats();
-      // If stats tab is active, redraw charts
-      if (document.getElementById('section-stats').classList.contains('active')) {
-        setTimeout(() => updateStats(), 100);
-      }
+      if (typeof updateStats === 'function') updateStats();
     }
-
-    // Always update status indicator
     const s = document.getElementById('sync-status');
     if (s) s.textContent = '🟢 Đã kết nối · Realtime';
-    updateTimestamp();
+    if (typeof updateTimestamp === 'function') updateTimestamp();
   }
 });
 
@@ -601,6 +614,8 @@ function saveData() {
   } else {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projectData)); } catch(e) {}
   }
+  // Always backup to localStorage as safety net
+  try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(projectData)); } catch(e) {}
   updateTimestamp();
 }
 
@@ -1309,7 +1324,7 @@ setTimeout(() => {
   }
 }, 3000);
 
-// ── Auto-save on ANY keystroke (oninput) using event delegation ──
+// ── Auto-save on ANY keystroke via event delegation ──
 document.getElementById('projectTable').addEventListener('input', function(e) {
   const el = e.target;
   if (!el.dataset || !el.dataset.col) return;
@@ -1321,26 +1336,40 @@ document.getElementById('projectTable').addEventListener('input', function(e) {
   if (!projectData[idx]) return;
   projectData[idx][col] = val;
   window._hasUnsaved = true;
-  // Save draft to localStorage immediately on every keystroke
-  try { localStorage.setItem(STORAGE_KEY + '_draft', JSON.stringify(projectData)); } catch(e) {}
+  // Instant localStorage backup on every keystroke
+  try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(projectData)); } catch(e) {}
 });
 
-// ── Emergency save to Firebase when user is about to leave/close ──
-window.addEventListener('beforeunload', function(e) {
-  if (window._hasUnsaved && window._fbSave) {
-    window._lastSaveTime = Date.now();
-    window._fbSave(projectData);
-    window._hasUnsaved = false;
+// ── Reliable save on tab/window close using fetch keepalive ──
+// keepalive:true tells the browser to complete this request even after the page unloads
+window.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && window._fbBeaconSave) {
+    const data = (window.projectData && window.projectData.length) ? window.projectData : projectData;
+    if (data.length) {
+      window._lastSaveTime = Date.now();
+      window._fbBeaconSave(data);
+      try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(data)); } catch(e) {}
+    }
   }
 });
 
-// ── Periodic auto-save every 10 seconds if there are unsaved changes ──
+// visibilitychange is more reliable, but also keep beforeunload as double safety
+window.addEventListener('beforeunload', function() {
+  const data = (window.projectData && window.projectData.length) ? window.projectData : projectData;
+  if (data.length && window._fbBeaconSave) {
+    window._lastSaveTime = Date.now();
+    window._fbBeaconSave(data);
+    try { localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(data)); } catch(e) {}
+  }
+});
+
+// ── Auto-save to Firebase every 5 seconds if there are changes ──
 setInterval(() => {
   if (window._hasUnsaved) {
-    saveData();
     window._hasUnsaved = false;
+    saveData();
   }
-}, 10000);
+}, 5000);
 </script>
 </body>
 </html>
