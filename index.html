@@ -8,7 +8,7 @@
 <style>
 :root{
   --p50:#EEEDFE;--p100:#CECBF6;--p600:#534AB7;--p800:#3C3489;--p900:#26215C;
-  --t50:#E1F5EE;--t100:#9FE1CB;--t600:#0F6E56;--t800:#085041;
+  --t50:#E1F5EE;--t600:#0F6E56;--t800:#085041;
   --a50:#FAEEDA;--a100:#FAC775;--a600:#854F0B;--a800:#633806;
   --c50:#FAECE7;--c100:#F5C4B3;--c600:#993C1D;--c800:#712B13;
   --b50:#E6F1FB;--b600:#185FA5;--b800:#0C447C;
@@ -18,39 +18,24 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;}
-
-/* HEADER */
 .hdr{background:var(--p900);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
 .hdr h1{font-size:20px;font-weight:600;}
 .hdr .meta{font-size:11px;opacity:.65;margin-top:3px;}
-.badge-conn{border-radius:20px;padding:4px 12px;font-size:11px;white-space:nowrap;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);}
-
-/* TABS */
+.badge-conn{border-radius:20px;padding:5px 14px;font-size:12px;white-space:nowrap;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);}
 .tabs{display:flex;background:var(--sur);border-bottom:1.5px solid var(--bdr);padding:0 28px;}
 .tab{padding:11px 18px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);transition:.15s;}
 .tab:hover{color:var(--txt);}
 .tab.active{color:var(--p800);border-bottom-color:var(--p600);}
-
-/* LAYOUT */
 .main{padding:20px 28px;}
 .section{display:none;}.section.active{display:block;}
-
-/* CONTROLS */
 .ctrl{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
 .search{flex:1;min-width:180px;max-width:300px;padding:7px 11px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;}
-.search:focus{outline:none;border-color:var(--p600);}
 .fsel{padding:7px 11px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;background:var(--sur);cursor:pointer;}
 .btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:.15s;}
 .btn-p{background:var(--p600);color:#fff;}.btn-p:hover{background:var(--p800);}
 .btn-t{background:var(--t600);color:#fff;}.btn-t:hover{background:var(--t800);}
 .btn-o{background:var(--sur);color:var(--txt);border:1px solid var(--bdr);}.btn-o:hover{background:var(--s50);}
-.btn-r{background:var(--c50);color:var(--c800);border:1px solid var(--c100);}.btn-r:hover{background:var(--c100);}
 .btn-sm{padding:4px 10px;font-size:11px;}
-
-/* FILTER BADGE */
-.filter-active{background:var(--p50);border:1px solid var(--p100);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--p800);display:flex;align-items:center;gap:4px;}
-
-/* TABLE */
 .tbl-wrap{background:var(--sur);border:0.5px solid var(--bdr);border-radius:10px;overflow:auto;}
 table{width:100%;border-collapse:collapse;min-width:1050px;}
 thead tr{background:var(--p900);}
@@ -59,82 +44,48 @@ thead th:last-child{border-right:none;}
 tbody tr.proj-row{border-bottom:.5px solid var(--bdr);transition:background .1s;}
 tbody tr.proj-row:hover{background:var(--p50);}
 tbody tr.task-row{background:#fafaf8;border-bottom:.5px solid var(--bdr);}
-tbody tr.task-row:hover{background:var(--s50);}
-tbody tr.task-row td{font-size:11px;padding:5px 10px;}
 td{padding:7px 10px;font-size:12px;vertical-align:middle;word-break:break-word;}
 td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--txt);padding:0;}
 td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;}
-td select{cursor:pointer;}
-.expand-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px;color:var(--muted);transition:.15s;}
+.expand-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px;color:var(--muted);}
 .expand-btn:hover{color:var(--p600);}
 .del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;}
 .del-btn:hover{color:#c0392b;background:#fdf0ef;}
-
-/* TASK ROW */
 .task-indent{padding-left:24px;display:flex;align-items:center;gap:6px;}
 .task-line{width:12px;height:1px;background:var(--s100);flex-shrink:0;}
-.add-task-btn{font-size:11px;color:var(--t600);background:none;border:1px dashed var(--t100);border-radius:5px;padding:2px 8px;cursor:pointer;}
-.add-task-btn:hover{background:var(--t50);}
-
-/* BADGES */
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
-.bm{background:var(--b50);color:var(--b800);}
-.bs{background:var(--a50);color:var(--a800);}
-.bo{background:var(--t50);color:var(--t800);}
-.bd{background:var(--g50);color:var(--g800);}
-.bi{background:var(--c50);color:var(--c800);}
-.bp{background:var(--s50);color:var(--s800);}
-
-/* STATS */
+.add-task-btn{font-size:11px;color:var(--t600);background:none;border:1px dashed var(--t600);border-radius:5px;padding:2px 8px;cursor:pointer;}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:22px;}
 .sc{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:13px 15px;position:relative;overflow:hidden;}
 .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-.sc.total::before{background:var(--p600);}.sc.main::before{background:var(--b600);}
-.sc.supp::before{background:var(--a600);}.sc.oper::before{background:var(--t600);}
-.sc.done::before{background:var(--g600);}.sc.inprog::before{background:var(--c600);}
+.sc.total::before{background:var(--p600);}
+.sc.main::before{background:var(--b600);}
+.sc.supp::before{background:var(--a600);}
+.sc.oper::before{background:var(--t600);}
+.sc.done::before{background:var(--g600);}
+.sc.inprog::before{background:var(--c600);}
 .sc.pend::before{background:var(--s400);}
 .sc-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
 .sc-val{font-size:26px;font-weight:600;line-height:1;}
-.sc.total .sc-val{color:var(--p800);}.sc.main .sc-val{color:var(--b800);}
-.sc.supp .sc-val{color:var(--a800);}.sc.oper .sc-val{color:var(--t800);}
-.sc.done .sc-val{color:var(--g800);}.sc.inprog .sc-val{color:var(--c800);}
+.sc.total .sc-val{color:var(--p800);}
+.sc.main .sc-val{color:var(--b800);}
+.sc.supp .sc-val{color:var(--a800);}
+.sc.oper .sc-val{color:var(--t600);}
+.sc.done .sc-val{color:var(--g800);}
+.sc.inprog .sc-val{color:var(--c800);}
 .sc.pend .sc-val{color:var(--s800);}
 .sc-sub{font-size:10px;color:var(--muted);margin-top:3px;}
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;}
 .cc{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:14px 18px;}
 .cc h4{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
-.cc canvas{max-height:200px;}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:22px;}
 .pcard{background:var(--sur);border:.5px solid var(--bdr);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:9px;}
 .pavatar{width:30px;height:30px;border-radius:50%;background:var(--p50);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--p800);flex-shrink:0;}
-.pname{font-size:12px;font-weight:500;}.pcount{font-size:10px;color:var(--muted);}
 .sec-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;}
 .prog-wrap{background:#e8e6e0;border-radius:4px;height:5px;overflow:hidden;}
 .prog-bar{height:100%;border-radius:4px;background:var(--g600);}
-
-/* DATA TAB */
 .data-panel{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:16px 18px;}
 .data-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--p50);border-radius:7px;margin-bottom:5px;}
-.data-item input{flex:1;border:none;background:transparent;font-size:13px;font-weight:500;}
-.data-item .role-inp{font-size:11px;color:var(--muted);flex:1;}
-
-/* GUIDE */
-.guide-box{background:var(--b50);border:1px solid #b5d4f4;border-radius:10px;padding:14px 18px;margin-bottom:18px;}
-.guide-box h3{font-size:13px;font-weight:600;color:var(--b800);margin-bottom:10px;}
-.gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
-.gi{font-size:12px;line-height:1.65;}
-.gi strong{color:var(--b800);display:block;margin-bottom:2px;}
-.gi code{background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;font-family:monospace;font-size:11px;}
-.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 18px;}
-.tdef{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6;}
-.tdef.m{background:var(--b50);border:1px solid #b5d4f4;}
-.tdef.s{background:var(--a50);border:1px solid var(--a100);}
-.tdef.o{background:var(--t50);border:1px solid var(--t100);}
-.tdef .tn{font-size:13px;font-weight:700;margin-bottom:6px;}
-.tdef.m .tn{color:var(--b800);}.tdef.s .tn{color:var(--a800);}.tdef.o .tn{color:var(--t800);}
-.tdef ul{padding-left:13px;margin-top:4px;}
-
-/* MODAL */
+.data-item input{flex:1;border:none;background:transparent;font-size:13px;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
 .modal{background:#fff;border-radius:14px;padding:22px 26px;min-width:340px;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,.18);}
@@ -142,20 +93,16 @@ td select{cursor:pointer;}
 .form-row{margin-bottom:12px;}
 .form-row label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
 .form-row input,.form-row select{width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;font-family:inherit;}
-.form-row input:focus,.form-row select:focus{outline:none;border-color:var(--p600);}
 .modal-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
 .id-preview{background:var(--p50);border:1px solid var(--p100);border-radius:6px;padding:8px 12px;font-family:monospace;font-size:14px;font-weight:600;color:var(--p800);text-align:center;margin-bottom:12px;}
-
-/* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:12px 18px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:2000;max-width:400px;display:none;}
 .toast.show{display:block;}
-
-@media print{
-  .tabs,.ctrl,.btn,.del-btn,.expand-btn,.add-task-btn,.modal-bg,.toast{display:none!important;}
-  .main{padding:0;}
-  table{font-size:10px;}
-  .section{display:block!important;}
-}
+.guide-box{background:var(--b50);border:1px solid #b5d4f4;border-radius:10px;padding:14px 18px;margin-bottom:18px;}
+.guide-box h3{font-size:13px;font-weight:600;color:var(--b800);margin-bottom:10px;}
+.gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+.gi{font-size:12px;line-height:1.65;}
+.gi strong{color:var(--b800);display:block;margin-bottom:2px;}
+.gi code{background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;font-family:monospace;font-size:11px;}
 </style>
 </head>
 <body>
@@ -167,7 +114,6 @@ td select{cursor:pointer;}
   </div>
   <div style="text-align:right">
     <div class="badge-conn" id="connBadge">⏳ Đang kết nối...</div>
-    <div id="syncStatus" style="font-size:11px;opacity:.7;margin-top:5px;color:#fff;"></div>
   </div>
 </div>
 
@@ -180,42 +126,31 @@ td select{cursor:pointer;}
 
 <div class="main">
 
-<!-- ========== TABLE ========== -->
 <div id="section-table" class="section active">
   <div class="ctrl">
     <input class="search" id="searchQ" placeholder="🔍 Tìm mã, tên, nhân sự..." oninput="applyFilters()">
     <select class="fsel" id="fType" onchange="applyFilters()">
       <option value="">Tất cả loại</option>
-      <option value="MAIN">MAIN</option><option value="SUPP">SUPP</option><option value="OPER">OPER</option>
+      <option>MAIN</option><option>SUPP</option><option>OPER</option>
     </select>
-    <select class="fsel" id="fDept" onchange="applyFilters()">
-      <option value="">Tất cả phòng/bộ phận</option>
-    </select>
-    <select class="fsel" id="fPerson" onchange="applyFilters()">
-      <option value="">Tất cả nhân sự</option>
-    </select>
+    <select class="fsel" id="fDept" onchange="applyFilters()"><option value="">Tất cả phòng/bộ phận</option></select>
+    <select class="fsel" id="fPerson" onchange="applyFilters()"><option value="">Tất cả nhân sự</option></select>
     <select class="fsel" id="fStatus" onchange="applyFilters()">
       <option value="">Tất cả trạng thái</option>
-      <option value="Đang thực hiện">Đang thực hiện</option>
-      <option value="Hoàn thành">Hoàn thành</option>
-      <option value="Chờ xử lý">Chờ xử lý</option>
-      <option value="Tạm dừng">Tạm dừng</option>
+      <option>Đang thực hiện</option><option>Hoàn thành</option><option>Chờ xử lý</option><option>Tạm dừng</option>
     </select>
     <button class="btn btn-p" onclick="openAddProject()">+ Thêm dự án</button>
     <button class="btn btn-t" onclick="document.getElementById('csvIn').click()">⬆ Nhập CSV</button>
     <input type="file" id="csvIn" accept=".csv" multiple style="display:none" onchange="handleCSVImport(this)">
-    <button class="btn btn-o" onclick="openExportModal('csv')">⬇ Xuất CSV</button>
-    <button class="btn btn-o" onclick="openExportModal('print')">🖨 In</button>
+    <button class="btn btn-o" onclick="exportCSV()">⬇ Xuất CSV</button>
+    <button class="btn btn-o" onclick="printTable()">🖨 In</button>
   </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <span id="rowCount" style="font-size:12px;color:var(--muted);"></span>
-    <span id="filterBadge"></span>
-  </div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="rowCount"></div>
   <div class="tbl-wrap">
     <table>
       <colgroup>
         <col style="width:36px"><col style="width:26px"><col style="width:145px">
-        <col style="width:170px"><col style="width:230px"><col style="width:58px">
+        <col style="width:170px"><col style="width:220px"><col style="width:58px">
         <col style="width:108px"><col style="width:108px"><col style="width:98px">
         <col style="width:82px"><col style="width:82px"><col style="width:100px"><col style="width:30px">
       </colgroup>
@@ -230,44 +165,33 @@ td select{cursor:pointer;}
   </div>
 </div>
 
-<!-- ========== STATS ========== -->
 <div id="section-stats" class="section">
-  <div id="statsFilterNote" style="display:none;margin-bottom:12px;"></div>
   <div class="sec-title">Tổng quan</div>
   <div class="stats-grid">
-    <div class="sc total"><div class="sc-lbl">Tổng dự án</div><div class="sc-val" id="sTotal">0</div><div class="sc-sub">tất cả loại</div></div>
-    <div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val" id="sMain">0</div><div class="sc-sub">dự án chính</div></div>
-    <div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val" id="sSupp">0</div><div class="sc-sub">hỗ trợ</div></div>
-    <div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val" id="sOper">0</div><div class="sc-sub">vận hành</div></div>
+    <div class="sc total"><div class="sc-lbl">Tổng dự án</div><div class="sc-val" id="sTotal">0</div></div>
+    <div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val" id="sMain">0</div></div>
+    <div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val" id="sSupp">0</div></div>
+    <div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val" id="sOper">0</div></div>
     <div class="sc done"><div class="sc-lbl">Hoàn thành</div><div class="sc-val" id="sDone">0</div><div class="sc-sub" id="sDonePct"></div></div>
     <div class="sc inprog"><div class="sc-lbl">Đang thực hiện</div><div class="sc-val" id="sInprog">0</div><div class="sc-sub" id="sInprogPct"></div></div>
-    <div class="sc pend"><div class="sc-lbl">Chờ / Tạm dừng</div><div class="sc-val" id="sPend">0</div><div class="sc-sub" id="sPendPct"></div></div>
+    <div class="sc pend"><div class="sc-lbl">Chờ / Tạm dừng</div><div class="sc-val" id="sPend">0</div></div>
   </div>
   <div class="charts-row">
     <div class="cc"><h4>Phân bổ theo loại</h4><canvas id="chartType"></canvas></div>
     <div class="cc"><h4>Phân bổ theo trạng thái</h4><canvas id="chartStatus"></canvas></div>
   </div>
-  <div class="cc" style="margin-bottom:22px;">
-    <h4>Dự án theo loại &amp; trạng thái</h4>
-    <canvas id="chartBar" style="max-height:180px;"></canvas>
-  </div>
+  <div class="cc" style="margin-bottom:22px;"><h4>Theo loại &amp; trạng thái</h4><canvas id="chartBar" style="max-height:180px;"></canvas></div>
   <div class="sec-title">Tiến độ tổng thể</div>
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:14px 18px;margin-bottom:22px;">
-    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">
-      <span>Tỷ lệ hoàn thành</span><span id="pctText">0%</span>
-    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span>Tỷ lệ hoàn thành</span><span id="pctText">0%</span></div>
     <div class="prog-wrap"><div class="prog-bar" id="pctBar" style="width:0%"></div></div>
   </div>
   <div class="sec-title">Theo nhân sự</div>
   <div class="pgrid" id="personGrid"></div>
   <div class="sec-title">Theo phòng / bộ phận</div>
-  <div class="cc" style="margin-bottom:22px;">
-    <h4>Số dự án theo phòng / bộ phận</h4>
-    <canvas id="chartDept" style="max-height:220px;"></canvas>
-  </div>
+  <div class="cc"><h4>Số dự án theo phòng / bộ phận</h4><canvas id="chartDept" style="max-height:220px;"></canvas></div>
 </div>
 
-<!-- ========== DATA ========== -->
 <div id="section-data" class="section">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
     <div class="data-panel">
@@ -282,7 +206,7 @@ td select{cursor:pointer;}
         <h3 style="font-size:14px;font-weight:600;">🏢 Phòng / Bộ phận</h3>
         <button class="btn btn-p btn-sm" onclick="addDept()">+ Thêm</button>
       </div>
-      <div id="deptList"></div>
+      <div id="deptListEl"></div>
     </div>
   </div>
   <div style="background:var(--b50);border:1px solid #b5d4f4;border-radius:8px;padding:11px 14px;font-size:12px;color:var(--b800);">
@@ -290,136 +214,51 @@ td select{cursor:pointer;}
   </div>
 </div>
 
-<!-- ========== GUIDE ========== -->
 <div id="section-guide" class="section">
   <div class="guide-box">
     <h3>📌 Quy tắc đặt mã Project ID</h3>
     <div class="gg">
-      <div class="gi">
-        <strong>Cấu trúc mã (tự động sinh)</strong>
-        Hệ thống tự tạo ID theo format: <code>YYMMDD-LOẠI-SỐ</code><br>
-        Bạn chỉ cần chọn <b>Loại</b> và <b>ngày tạo</b> — số thứ tự tự tăng.<br>
-        Ví dụ: <code>260506-MAIN-01</code>, <code>260506-MAIN-02</code>
-      </div>
-      <div class="gi">
-        <strong>Số thứ tự — đánh riêng theo ngày &amp; loại</strong>
-        · <code>260506-MAIN-01</code>, <code>260506-MAIN-02</code> (MAIN ngày 06/05)<br>
-        · <code>260506-SUPP-01</code> (SUPP cùng ngày, đánh riêng từ 01)<br>
-        · <code>260507-MAIN-01</code> (sang ngày mới → bắt đầu lại từ 01)<br>
-        · <b>Không có khoảng cách</b> trong ID — chỉ dùng dấu <code>-</code>
-      </div>
-      <div class="gi">
-        <strong>Full Name</strong>
-        Tự động tạo theo format:<br>
-        <code>[NAACP] [ID] Tên dự án</code><br>
-        Ví dụ: <code>[NAACP] [260506-MAIN-02] Thiết Kế CT-WPS-05</code>
-      </div>
-    </div>
-    <div style="margin-top:12px;padding:9px 13px;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25);border-radius:7px;font-size:12px;line-height:1.7;color:#7b241c;">
-      <b>⚠️ Lưu ý:</b> ID được sinh tự động khi thêm dự án — không cần tự đặt số, tránh trùng lặp khi nhiều người điền cùng lúc.
+      <div class="gi"><strong>Cấu trúc (tự động sinh)</strong><code>YYMMDD-LOẠI-SỐ</code><br>Chọn Loại + ngày → hệ thống tự sinh ID.<br>Ví dụ: <code>260506-MAIN-01</code></div>
+      <div class="gi"><strong>Số thứ tự — theo ngày &amp; loại</strong><code>260506-MAIN-01</code>, <code>260506-MAIN-02</code>...<br><code>260506-SUPP-01</code> (SUPP riêng từ 01)<br><b>Không khoảng cách</b> — chỉ dùng dấu <code>-</code></div>
+      <div class="gi"><strong>Full Name tự động</strong><code>[NAACP] [ID] Tên dự án</code></div>
     </div>
   </div>
-
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:6px;">🎯 Phân biệt Project và Task</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Bảng này ghi nhận <b>Project</b>. Mỗi project có thể có nhiều <b>Task</b> bên trong (nhấn ▶ để mở rộng).</p>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🎯 Phân biệt Project và Task</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div style="background:var(--p50);border:1px solid var(--p100);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;">
-        <div style="font-size:13px;font-weight:700;color:var(--p800);margin-bottom:7px;">📦 Project (Dự án)</div>
-        <ul style="padding-left:13px;">
-          <li>Có mục tiêu rõ ràng, đầu ra cụ thể</li>
-          <li>Có ngày bắt đầu và kết thúc xác định</li>
-          <li>Cần phối hợp nhiều người / nhiều bước</li>
-          <li>Theo dõi trạng thái ở cấp quản lý</li>
-          <li><i>Ví dụ: Thiết kế model CT-WPS-05</i></li>
-        </ul>
+        <div style="font-size:13px;font-weight:700;color:var(--p800);margin-bottom:7px;">📦 Project</div>
+        <ul style="padding-left:13px;"><li>Mục tiêu rõ ràng, đầu ra cụ thể</li><li>Có ngày bắt đầu và kết thúc</li><li>Cần phối hợp nhiều người</li><li>Ví dụ: Thiết kế model CT-WPS-05</li></ul>
       </div>
       <div style="background:var(--s50);border:1px solid var(--s100);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;">
-        <div style="font-size:13px;font-weight:700;color:var(--s800);margin-bottom:7px;">✅ Task (Công việc)</div>
-        <ul style="padding-left:13px;">
-          <li>Bước nhỏ bên trong một project</li>
-          <li>Thường hoàn thành trong vài giờ – vài ngày</li>
-          <li>Do một người thực hiện</li>
-          <li>Quản lý trong phần mở rộng của project</li>
-          <li><i>Ví dụ: Vẽ bản phác thảo cánh, In thử mẫu</i></li>
-        </ul>
+        <div style="font-size:13px;font-weight:700;color:var(--s800);margin-bottom:7px;">✅ Task</div>
+        <ul style="padding-left:13px;"><li>Bước nhỏ bên trong một project</li><li>Thường hoàn thành trong vài giờ</li><li>Do một người thực hiện</li><li>Ví dụ: Vẽ bản phác thảo cánh</li></ul>
       </div>
-    </div>
-    <div style="margin-top:11px;padding:9px 13px;background:var(--a50);border:1px solid var(--a100);border-radius:7px;font-size:12px;color:var(--a800);">
-      <b>🔎 Tự kiểm tra:</b> Hoàn thành trong 1 buổi, 1 người làm → <b>Task</b> (điền vào task của project). Cần theo dõi nhiều ngày, có đầu ra bàn giao → <b>Project</b>.
-    </div>
-  </div>
-
-  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🗂 Định nghĩa loại dự án</h3>
-    <div class="type-grid">
-      <div class="tdef m"><div class="tn">🔵 MAIN – Dự án chính</div>Nghiên cứu, thiết kế, phát triển sản phẩm/hệ thống cốt lõi.<ul><li>Thiết kế model UAV mới</li><li>Nghiên cứu &amp; phát triển hệ thống</li><li>Hợp tác kỹ thuật dài hạn</li></ul></div>
-      <div class="tdef s"><div class="tn">🟡 SUPP – Hỗ trợ</div>Hỗ trợ kỹ thuật, sự kiện, đón tiếp — không tạo sản phẩm mới.<ul><li>Chuẩn bị kỹ thuật bay demo</li><li>Đón tiếp đoàn khách, đối tác</li><li>Hỗ trợ triển lãm, hội thảo</li></ul></div>
-      <div class="tdef o"><div class="tn">🟢 OPER – Vận hành</div>Công việc định kỳ, vận hành lab, đào tạo nội bộ.<ul><li>Lab Daily Task hàng tháng</li><li>Daily Task / công việc thường nhật</li><li>Quy trình vận hành định kỳ</li></ul></div>
-    </div>
-  </div>
-
-  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📝 Hướng dẫn điền từng cột</h3>
-    <div class="gg">
-      <div class="gi"><strong>Project Name</strong>Tên ngắn gọn, rõ ý. Không cần prefix [NAACP].</div>
-      <div class="gi"><strong>Loại</strong>Chọn MAIN / SUPP / OPER hoặc để trống nếu chưa xác định.</div>
-      <div class="gi"><strong>Quản lý dự án</strong>Người phụ trách tiến độ, ra quyết định.</div>
-      <div class="gi"><strong>Người thực hiện</strong>Nhập tên hoặc <code>all</code> để chỉ tất cả nhân sự trong Data.</div>
-      <div class="gi"><strong>Phòng / Bộ phận</strong>Chọn từ gợi ý hoặc nhập <code>all</code> để chỉ tất cả phòng/bộ phận.</div>
-      <div class="gi"><strong>Trạng thái</strong>Chờ xử lý → Đang thực hiện → Tạm dừng → Hoàn thành.</div>
     </div>
   </div>
 </div>
 
-</div><!-- /main -->
+</div>
 
-<!-- ===== ADD PROJECT MODAL ===== -->
+<!-- ADD PROJECT MODAL -->
 <div class="modal-bg" id="addModal">
   <div class="modal">
     <h3>+ Thêm dự án mới</h3>
-    <div class="form-row">
-      <label>Ngày tạo</label>
-      <input type="date" id="mDate">
-    </div>
-    <div class="form-row">
-      <label>Loại dự án</label>
-      <select id="mType">
-        <option value="">-- Chọn loại --</option>
-        <option value="MAIN">MAIN – Dự án chính</option>
-        <option value="SUPP">SUPP – Hỗ trợ</option>
-        <option value="OPER">OPER – Vận hành</option>
-      </select>
+    <div class="form-row"><label>Ngày tạo</label><input type="date" id="mDate"></div>
+    <div class="form-row"><label>Loại dự án</label>
+      <select id="mType"><option value="">-- Chọn loại --</option><option value="MAIN">MAIN</option><option value="SUPP">SUPP</option><option value="OPER">OPER</option></select>
     </div>
     <div class="id-preview" id="idPreview">Chọn ngày và loại để xem ID</div>
-    <div class="form-row">
-      <label>Project Name</label>
-      <input type="text" id="mName" placeholder="Tên ngắn gọn...">
-    </div>
-    <div class="form-row">
-      <label>Quản lý DA</label>
-      <input type="text" id="mPm" list="dlPerson" placeholder="Chọn hoặc nhập...">
-    </div>
-    <div class="form-row">
-      <label>Người thực hiện</label>
-      <input type="text" id="mExec" list="dlPerson" placeholder="Tên, all, hoặc A,B,C...">
-    </div>
-    <div class="form-row">
-      <label>Phòng / Bộ phận</label>
-      <input type="text" id="mDept" list="dlDept" placeholder="Chọn hoặc nhập...">
-    </div>
+    <div class="form-row"><label>Project Name</label><input type="text" id="mName" placeholder="Tên ngắn gọn..."></div>
+    <div class="form-row"><label>Quản lý DA</label><input type="text" id="mPm" list="dlPerson" placeholder="Chọn hoặc nhập..."></div>
+    <div class="form-row"><label>Người thực hiện</label><input type="text" id="mExec" list="dlPerson" placeholder="Tên, all, hoặc A,B,C..."></div>
+    <div class="form-row"><label>Phòng / Bộ phận</label><input type="text" id="mDept" list="dlDept" placeholder="Chọn hoặc nhập..."></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-row"><label>Ngày bắt đầu</label><input type="date" id="mStart"></div>
       <div class="form-row"><label>Dự kiến kết thúc</label><input type="date" id="mEnd"></div>
     </div>
-    <div class="form-row">
-      <label>Trạng thái</label>
-      <select id="mStatus">
-        <option value="Chờ xử lý">Chờ xử lý</option>
-        <option value="Đang thực hiện">Đang thực hiện</option>
-        <option value="Tạm dừng">Tạm dừng</option>
-        <option value="Hoàn thành">Hoàn thành</option>
-      </select>
+    <div class="form-row"><label>Trạng thái</label>
+      <select id="mStatus"><option>Chờ xử lý</option><option>Đang thực hiện</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
     </div>
     <div class="modal-btns">
       <button class="btn btn-o" onclick="closeModal('addModal')">Hủy</button>
@@ -428,247 +267,173 @@ td select{cursor:pointer;}
   </div>
 </div>
 
-<!-- ===== EXPORT MODAL ===== -->
-<div class="modal-bg" id="expModal">
-  <div class="modal">
-    <h3 id="expTitle">Xuất CSV</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div class="form-row"><label>Phòng/Bộ phận</label><select id="expDept" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;"></select></div>
-      <div class="form-row"><label>Trạng thái</label><select id="expStatus" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;"><option value="">Tất cả</option><option>Đang thực hiện</option><option>Hoàn thành</option><option>Chờ xử lý</option><option>Tạm dừng</option></select></div>
-      <div class="form-row"><label>Loại</label><select id="expType" style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;"><option value="">Tất cả</option><option>MAIN</option><option>SUPP</option><option>OPER</option></select></div>
-      <div class="form-row"><label>Nhân sự</label><input id="expPerson" placeholder="Tên cá nhân..." style="width:100%;padding:7px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;" oninput="updateExpCount()"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-      <input type="checkbox" id="inclStats" style="width:auto;">
-      <label for="inclStats" style="font-size:12px;cursor:pointer;">Bao gồm thống kê khi in</label>
-    </div>
-    <div id="expCount" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></div>
-    <div class="modal-btns">
-      <button class="btn btn-o" onclick="closeModal('expModal')">Hủy</button>
-      <button class="btn btn-p" id="expBtn" onclick="confirmExport()">Xuất CSV</button>
-    </div>
-  </div>
-</div>
-
-<!-- DATALISTS -->
 <datalist id="dlPerson"></datalist>
-<datalist id="dlDept"><option value="all">Tất cả phòng/bộ phận</option></datalist>
-
-<!-- TOAST -->
+<datalist id="dlDept"></datalist>
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════
-// FIREBASE CONFIG
-// ══════════════════════════════════════════
-const FB_BASE = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
+var FB = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
+var projects = {};
+var staffData = {};
+var deptsData = {};
+var expanded = {};
+var activeFilters = {q:'',type:'',dept:'',person:'',status:''};
+var charts = {};
 
-async function fbGet(path) {
-  const r = await fetch(`${FB_BASE}${path}.json`);
-  return r.json();
-}
-async function fbSet(path, data) {
-  return fetch(`${FB_BASE}${path}.json`, {
-    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data), keepalive:true
-  });
-}
-async function fbPatch(path, data) {
-  return fetch(`${FB_BASE}${path}.json`, {
-    method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data), keepalive:true
-  });
-}
-async function fbDelete(path) {
-  return fetch(`${FB_BASE}${path}.json`, { method:'DELETE', keepalive:true });
-}
-// Push new item (Firebase generates key)
-async function fbPush(path, data) {
-  const r = await fetch(`${FB_BASE}${path}.json`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
-  });
-  return r.json(); // returns {name: "-Nabc..."}
+// ── Firebase REST helpers ──
+function fbGet(path, cb) {
+  fetch(FB + path + ".json")
+    .then(function(r){ return r.json(); })
+    .then(function(v){ cb(null, v); })
+    .catch(function(e){ cb(e, null); });
 }
 
-// ── Realtime listener via polling ──
-let _listeners = {};
-function fbListen(path, cb) {
-  let firstSuccess = false;
-  const poll = async () => {
-    try {
-      console.log('Polling:', path);
-      const r = await fetch(`${FB_BASE}${path}.json`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const val = await r.json();
-      console.log('Poll success:', path, typeof val);
-      cb(val);
-      if (!firstSuccess) {
-        firstSuccess = true;
-        document.getElementById('connBadge').textContent = '🟢 Đã kết nối · Realtime';
-        document.getElementById('connBadge').style.background = 'rgba(59,109,17,0.3)';
+function fbPut(path, data, cb) {
+  fetch(FB + path + ".json", {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); })
+    .then(function(v){ if(cb) cb(null,v); })
+    .catch(function(e){ if(cb) cb(e,null); });
+}
+
+function fbPost(path, data, cb) {
+  fetch(FB + path + ".json", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); })
+    .then(function(v){ if(cb) cb(null,v); })
+    .catch(function(e){ if(cb) cb(e,null); });
+}
+
+function fbPatch(path, data, cb) {
+  fetch(FB + path + ".json", {
+    method: "PATCH",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  }).then(function(r){ return r.json(); })
+    .then(function(v){ if(cb) cb(null,v); })
+    .catch(function(e){ if(cb) cb(e,null); });
+}
+
+function fbDel(path, cb) {
+  fetch(FB + path + ".json", {method:"DELETE"})
+    .then(function(){ if(cb) cb(null); })
+    .catch(function(e){ if(cb) cb(e); });
+}
+
+// ── Poll Firebase every 4 seconds ──
+function startPolling() {
+  function poll() {
+    fbGet("/projects", function(err, val) {
+      if (err) {
+        document.getElementById("connBadge").textContent = "🔴 Lỗi kết nối";
+        document.getElementById("connBadge").style.background = "rgba(153,60,29,0.3)";
+        return;
       }
-    } catch(e) {
-      document.getElementById('connBadge').textContent = '🔴 Lỗi kết nối';
-      document.getElementById('connBadge').style.background = 'rgba(153,60,29,0.3)';
-      console.error('Firebase poll error:', path, e.message, e);
-    }
-  };
+      document.getElementById("connBadge").textContent = "🟢 Đã kết nối · Realtime";
+      document.getElementById("connBadge").style.background = "rgba(59,109,17,0.3)";
+      projects = val || {};
+      renderTable();
+      renderStats();
+      refreshFilters();
+    });
+    fbGet("/staff", function(err, val) {
+      if (!err) { staffData = val || {}; renderDataTab(); refreshSuggestions(); }
+    });
+    fbGet("/depts", function(err, val) {
+      if (!err) { deptsData = val || {}; renderDataTab(); refreshSuggestions(); }
+    });
+  }
   poll();
-  const id = setInterval(poll, 3000);
-  _listeners[path] = id;
-  return () => clearInterval(id);
+  setInterval(poll, 4000);
 }
 
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-let projects  = {}; // {fbKey: {id, name, fullName, type, pm, exec, dept, start, end, status, tasks:{...}}}
-let staffData = {}; // {fbKey: {name, role}}
-let deptsData = {}; // {fbKey: {name}}
-let expanded  = {}; // {fbKey: bool}
-let activeFilters = { q:'', type:'', dept:'', person:'', status:'' };
-let _expMode  = 'csv';
-let _charts   = {};
-
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM ready, initializing...');
-
-  // Set today's date in add modal
-  try { document.getElementById('mDate').value = todayStr(); } catch(e) { console.error('mDate error:', e); }
-
-  // Listen to projects
-  console.log('Starting Firebase listeners...');
-  fbListen('/projects', val => {
-    console.log('Projects received:', val ? Object.keys(val).length : 0);
-    projects = val || {};
-    try { renderTable(); } catch(e) { console.error('renderTable error:', e); }
-    try { renderStats(); } catch(e) { console.error('renderStats error:', e); }
-    try { refreshFilters(); } catch(e) { console.error('refreshFilters error:', e); }
-  });
-
-  fbListen('/staff', val => {
-    console.log('Staff received:', val ? Object.keys(val).length : 0);
-    staffData = val || {};
-    try { renderDataTab(); } catch(e) { console.error('renderDataTab error:', e); }
-    try { refreshSuggestions(); } catch(e) { console.error('refreshSuggestions error:', e); }
-  });
-
-  fbListen('/depts', val => {
-    console.log('Depts received:', val ? Object.keys(val).length : 0);
-    deptsData = val || {};
-    try { renderDataTab(); } catch(e) { console.error('renderDataTab error:', e); }
-    try { refreshSuggestions(); } catch(e) { console.error('refreshSuggestions error:', e); }
-  });
-
-  // Modal date/type → auto-preview ID
-  ['mDate','mType'].forEach(id => {
-    document.getElementById(id).addEventListener('change', previewId);
-  });
-
-  // Export modal listeners
-  ['expDept','expStatus','expType'].forEach(id => {
-    document.getElementById(id).addEventListener('change', updateExpCount);
-  });
-});
-
-// ══════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════
+// ── Helpers ──
 function todayStr() {
   return new Date().toISOString().slice(0,10);
 }
-function esc(v) { return (v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function esc(v) {
+  return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+}
 function fmtDate(iso) {
   if (!iso) return '';
-  const p = iso.split('-');
-  return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+  var p = iso.split('-');
+  return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
 }
-function showToast(msg, dur=4000) {
-  const t = document.getElementById('toast');
+function showToast(msg) {
+  var t = document.getElementById('toast');
   t.innerHTML = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), dur);
+  setTimeout(function(){ t.classList.remove('show'); }, 4000);
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 
-// Expand/collapse "all" keyword
 function resolveAll(val, type) {
-  if ((val||'').trim().toLowerCase() !== 'all') return val||'';
-  if (type==='person') return Object.values(staffData).map(s=>s.name).filter(Boolean).join(', ') || 'all';
-  if (type==='dept')   return Object.values(deptsData).map(d=>d.name).filter(Boolean).join(', ') || 'all';
-  return val;
+  if (String(val||'').trim().toLowerCase() !== 'all') return val||'';
+  if (type==='person') return Object.values(staffData).map(function(s){return s.name;}).filter(Boolean).join(', ');
+  if (type==='dept')   return Object.values(deptsData).map(function(d){return d.name;}).filter(Boolean).join(', ');
+  return val||'';
 }
 
-// ── Auto-generate next Project ID ──
-async function genProjectId(dateStr, type) {
+// ── Auto-generate Project ID ──
+function genProjectId(dateStr, type) {
   if (!dateStr || !type) return null;
-  const yy = dateStr.slice(2,4), mm = dateStr.slice(5,7), dd = dateStr.slice(8,10);
-  const prefix = `${yy}${mm}${dd}-${type}-`;
-  // Find max existing number for this prefix
-  const existing = Object.values(projects)
-    .map(p => p.id||'')
-    .filter(id => id.startsWith(prefix))
-    .map(id => parseInt(id.replace(prefix,''),10))
-    .filter(n => !isNaN(n));
-  const next = existing.length ? Math.max(...existing)+1 : 1;
-  return `${prefix}${String(next).padStart(2,'0')}`;
+  var yy = dateStr.slice(2,4), mm = dateStr.slice(5,7), dd = dateStr.slice(8,10);
+  var prefix = yy+mm+dd+'-'+type+'-';
+  var existing = Object.values(projects)
+    .map(function(p){ return p.id||''; })
+    .filter(function(id){ return id.indexOf(prefix)===0; })
+    .map(function(id){ return parseInt(id.replace(prefix,''),10); })
+    .filter(function(n){ return !isNaN(n); });
+  var next = existing.length ? Math.max.apply(null, existing)+1 : 1;
+  return prefix + (next < 10 ? '0'+next : ''+next);
 }
 
-async function previewId() {
-  const d = document.getElementById('mDate').value;
-  const t = document.getElementById('mType').value;
-  const el = document.getElementById('idPreview');
+function previewId() {
+  var d = document.getElementById('mDate').value;
+  var t = document.getElementById('mType').value;
+  var el = document.getElementById('idPreview');
   if (!d || !t) { el.textContent='Chọn ngày và loại để xem ID'; return; }
-  const id = await genProjectId(d, t);
-  el.textContent = id || 'Đang tính...';
+  el.textContent = genProjectId(d, t) || 'Đang tính...';
 }
 
-// ══════════════════════════════════════════
-// SUGGESTIONS (datalists)
-// ══════════════════════════════════════════
+// ── Suggestions ──
 function refreshSuggestions() {
-  const dl = document.getElementById('dlPerson');
-  const persons = Object.values(staffData).map(s=>s.name).filter(Boolean);
-  dl.innerHTML = '<option value="all">Tất cả nhân sự</option>' +
-    persons.map(n=>`<option value="${esc(n)}">`).join('');
-
-  const dd = document.getElementById('dlDept');
-  const depts = Object.values(deptsData).map(d=>d.name).filter(Boolean);
-  dd.innerHTML = '<option value="all">Tất cả phòng/bộ phận</option>' +
-    depts.map(n=>`<option value="${esc(n)}">`).join('');
-
-  // Update filter dropdowns
-  refreshFilters();
+  var dlP = document.getElementById('dlPerson');
+  var persons = Object.values(staffData).map(function(s){return s.name;}).filter(Boolean);
+  dlP.innerHTML = '<option value="all">Tất cả nhân sự</option>' +
+    persons.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
+  var dlD = document.getElementById('dlDept');
+  var depts = Object.values(deptsData).map(function(d){return d.name;}).filter(Boolean);
+  dlD.innerHTML = '<option value="all">Tất cả phòng/bộ phận</option>' +
+    depts.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
 }
 
 function refreshFilters() {
-  const depts = [...new Set(Object.values(projects).map(p=>p.dept).filter(Boolean))].sort();
-  const fd = document.getElementById('fDept');
-  const curD = fd.value;
+  var depts = [];
+  Object.values(projects).forEach(function(p){ if(p.dept && depts.indexOf(p.dept)<0) depts.push(p.dept); });
+  depts.sort();
+  var fd = document.getElementById('fDept');
+  var cur = fd.value;
   fd.innerHTML = '<option value="">Tất cả phòng/bộ phận</option>' +
-    depts.map(d=>`<option value="${esc(d)}" ${curD===d?'selected':''}>${d}</option>`).join('');
-
-  const persons = [...new Set(
-    Object.values(projects).flatMap(p=>[p.pm, ...(p.exec||'').split(',')].map(x=>(x||'').trim())).filter(Boolean)
-  )].sort();
-  const fp = document.getElementById('fPerson');
-  const curP = fp.value;
+    depts.map(function(d){ return '<option value="'+esc(d)+'"'+(cur===d?' selected':'')+'>'+esc(d)+'</option>'; }).join('');
+  var persons = [];
+  Object.values(projects).forEach(function(p){
+    [p.pm].concat((p.exec||'').split(',')).forEach(function(x){
+      var n=(x||'').trim(); if(n && persons.indexOf(n)<0) persons.push(n);
+    });
+  });
+  persons.sort();
+  var fp = document.getElementById('fPerson');
+  var curP = fp.value;
   fp.innerHTML = '<option value="">Tất cả nhân sự</option>' +
-    persons.map(n=>`<option value="${esc(n)}" ${curP===n?'selected':''}>${n}</option>`).join('');
-
-  // Export dept dropdown
-  const ed = document.getElementById('expDept');
-  if (ed) {
-    const curE = ed.value;
-    ed.innerHTML = '<option value="">Tất cả</option>' +
-      depts.map(d=>`<option value="${esc(d)}" ${curE===d?'selected':''}>${d}</option>`).join('');
-  }
+    persons.map(function(n){ return '<option value="'+esc(n)+'"'+(curP===n?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
 }
 
-// ══════════════════════════════════════════
-// FILTERS
-// ══════════════════════════════════════════
+// ── Filters ──
 function applyFilters() {
   activeFilters.q      = document.getElementById('searchQ').value.toLowerCase();
   activeFilters.type   = document.getElementById('fType').value;
@@ -677,146 +442,100 @@ function applyFilters() {
   activeFilters.status = document.getElementById('fStatus').value;
   renderTable();
   renderStats();
-  updateFilterBadge();
-}
-
-function updateFilterBadge() {
-  const active = Object.values(activeFilters).filter(Boolean);
-  const el = document.getElementById('filterBadge');
-  if (active.length) {
-    el.innerHTML = `<span class="filter-active">🔍 Đang lọc (${active.length}) <button onclick="clearFilters()" style="background:none;border:none;cursor:pointer;color:var(--c800);font-size:12px;">✕</button></span>`;
-  } else el.innerHTML = '';
-}
-
-function clearFilters() {
-  ['searchQ','fType','fDept','fPerson','fStatus'].forEach(id => document.getElementById(id).value='');
-  activeFilters = {q:'',type:'',dept:'',person:'',status:''};
-  renderTable();
-  renderStats();
-  updateFilterBadge();
 }
 
 function filterProjects() {
-  return Object.entries(projects).filter(([k,p]) => {
-    const {q,type,dept,person,status} = activeFilters;
-    const execResolved = resolveAll(p.exec,'person');
-    const deptResolved = resolveAll(p.dept,'dept');
-    const matchQ = !q || (p.id+p.name+p.pm+execResolved+deptResolved).toLowerCase().includes(q);
-    const matchT = !type   || p.type===type;
-    const matchD = !dept   || deptResolved.toLowerCase().includes(dept.toLowerCase()) || p.dept===dept;
-    const matchP = !person || (p.pm||'').toLowerCase().includes(person.toLowerCase()) ||
-                              execResolved.toLowerCase().includes(person.toLowerCase());
-    const matchS = !status || p.status===status;
+  var af = activeFilters;
+  return Object.entries(projects).filter(function(entry){
+    var p = entry[1];
+    var ex = resolveAll(p.exec,'person');
+    var matchQ = !af.q || (p.id+p.name+p.pm+ex+(p.dept||'')).toLowerCase().indexOf(af.q)>=0;
+    var matchT = !af.type   || p.type===af.type;
+    var matchD = !af.dept   || (p.dept||'')=== af.dept;
+    var matchP = !af.person || (p.pm||'').indexOf(af.person)>=0 || ex.indexOf(af.person)>=0;
+    var matchS = !af.status || p.status===af.status;
     return matchQ && matchT && matchD && matchP && matchS;
-  }).sort((a,b) => {
-    // Sort by date desc (from Project ID prefix YYMMDD)
-    const da=(a[1].id||'').slice(0,6), db=(b[1].id||'').slice(0,6);
+  }).sort(function(a,b){
+    var da=(a[1].id||'').slice(0,6), db=(b[1].id||'').slice(0,6);
     return db>da?1:db<da?-1:0;
   });
 }
 
-// ══════════════════════════════════════════
-// RENDER TABLE
-// ══════════════════════════════════════════
+// ── Render Table ──
 function renderTable() {
-  const filtered = filterProjects();
-  const tbody = document.getElementById('tbody');
+  var filtered = filterProjects();
+  var tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
   document.getElementById('rowCount').textContent =
-    `Hiển thị ${filtered.length} / ${Object.keys(projects).length} dự án`;
+    'Hiển thị ' + filtered.length + ' / ' + Object.keys(projects).length + ' dự án';
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--muted);">Không có dự án nào. Nhấn "+ Thêm dự án" để bắt đầu.</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--muted);">Chưa có dự án. Nhấn "+ Thêm dự án" để bắt đầu.</td></tr>';
     return;
   }
 
-  filtered.forEach(([key,p], i) => {
-    const isExp = expanded[key];
-    const tasks = p.tasks ? Object.entries(p.tasks) : [];
-    const typeBadge = {MAIN:'bm',SUPP:'bs',OPER:'bo'}[p.type]||'bp';
-    const statusBadge = {'Hoàn thành':'bd','Đang thực hiện':'bi','Tạm dừng':'bs','Chờ xử lý':'bp'}[p.status]||'bp';
+  filtered.forEach(function(entry, i) {
+    var key = entry[0], p = entry[1];
+    var isExp = expanded[key];
+    var tasks = p.tasks ? Object.entries(p.tasks) : [];
 
-    // Project row
-    const tr = document.createElement('tr');
+    var tr = document.createElement('tr');
     tr.className = 'proj-row';
-    tr.innerHTML = `
-      <td style="text-align:center;color:var(--muted);font-size:11px;">${i+1}</td>
-      <td style="text-align:center;">
-        <button class="expand-btn" onclick="toggleExpand('${key}')" title="${isExp?'Thu gọn':'Mở rộng task'}">${isExp?'▼':'▶'}</button>
-      </td>
-      <td><input value="${esc(p.id)}" data-key="${key}" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"></td>
-      <td><input value="${esc(p.name)}" data-key="${key}" data-f="name" onchange="updateField(this)"></td>
-      <td><input value="${esc(p.fullName)}" data-key="${key}" data-f="fullName" onchange="updateField(this)" style="font-size:11px;"></td>
-      <td>
-        <select data-key="${key}" data-f="type" onchange="updateField(this)">
-          <option value="" ${!p.type?'selected':''}>—</option>
-          <option value="MAIN" ${p.type==='MAIN'?'selected':''}>MAIN</option>
-          <option value="SUPP" ${p.type==='SUPP'?'selected':''}>SUPP</option>
-          <option value="OPER" ${p.type==='OPER'?'selected':''}>OPER</option>
-        </select>
-      </td>
-      <td><input value="${esc(p.pm)}" data-key="${key}" data-f="pm" list="dlPerson" onchange="updateField(this)"></td>
-      <td><input value="${esc(p.exec)}" data-key="${key}" data-f="exec" list="dlPerson" onchange="updateField(this)"></td>
-      <td><input value="${esc(p.dept)}" data-key="${key}" data-f="dept" list="dlDept" onchange="updateField(this)"></td>
-      <td><input type="date" value="${p.start||''}" data-key="${key}" data-f="start" onchange="updateField(this)"></td>
-      <td><input type="date" value="${p.end||''}" data-key="${key}" data-f="end" onchange="updateField(this)"></td>
-      <td>
-        <select data-key="${key}" data-f="status" onchange="updateField(this)">
-          <option value="Chờ xử lý" ${p.status==='Chờ xử lý'?'selected':''}>⬜ Chờ xử lý</option>
-          <option value="Đang thực hiện" ${p.status==='Đang thực hiện'?'selected':''}>🔵 Đang TH</option>
-          <option value="Tạm dừng" ${p.status==='Tạm dừng'?'selected':''}>🟡 Tạm dừng</option>
-          <option value="Hoàn thành" ${p.status==='Hoàn thành'?'selected':''}>✅ Hoàn thành</option>
-        </select>
-      </td>
-      <td><button class="del-btn" onclick="deleteProject('${key}')" title="Xóa dự án">✕</button></td>
-    `;
+    tr.innerHTML =
+      '<td style="text-align:center;color:var(--muted);font-size:11px;">'+(i+1)+'</td>'+
+      '<td style="text-align:center;"><button class="expand-btn" onclick="toggleExpand(\''+key+'\')">'+(isExp?'▼':'▶')+'</button></td>'+
+      '<td><input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"></td>'+
+      '<td><input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)"></td>'+
+      '<td><input value="'+esc(p.fullName)+'" data-key="'+key+'" data-f="fullName" onchange="updateField(this)" style="font-size:11px;"></td>'+
+      '<td><select data-key="'+key+'" data-f="type" onchange="updateField(this)">'+
+        '<option value="" '+((!p.type)?'selected':'')+'>—</option>'+
+        '<option value="MAIN" '+((p.type==='MAIN')?'selected':'')+'>MAIN</option>'+
+        '<option value="SUPP" '+((p.type==='SUPP')?'selected':'')+'>SUPP</option>'+
+        '<option value="OPER" '+((p.type==='OPER')?'selected':'')+'>OPER</option>'+
+      '</select></td>'+
+      '<td><input value="'+esc(p.pm)+'" data-key="'+key+'" data-f="pm" list="dlPerson" onchange="updateField(this)"></td>'+
+      '<td><input value="'+esc(p.exec)+'" data-key="'+key+'" data-f="exec" list="dlPerson" onchange="updateField(this)"></td>'+
+      '<td><input value="'+esc(p.dept)+'" data-key="'+key+'" data-f="dept" list="dlDept" onchange="updateField(this)"></td>'+
+      '<td><input type="date" value="'+(p.start||'')+'" data-key="'+key+'" data-f="start" onchange="updateField(this)"></td>'+
+      '<td><input type="date" value="'+(p.end||'')+'" data-key="'+key+'" data-f="end" onchange="updateField(this)"></td>'+
+      '<td><select data-key="'+key+'" data-f="status" onchange="updateField(this)">'+
+        '<option value="Chờ xử lý" '+((p.status==='Chờ xử lý')?'selected':'')+'>⬜ Chờ xử lý</option>'+
+        '<option value="Đang thực hiện" '+((p.status==='Đang thực hiện')?'selected':'')+'>🔵 Đang TH</option>'+
+        '<option value="Tạm dừng" '+((p.status==='Tạm dừng')?'selected':'')+'>🟡 Tạm dừng</option>'+
+        '<option value="Hoàn thành" '+((p.status==='Hoàn thành')?'selected':'')+'>✅ Hoàn thành</option>'+
+      '</select></td>'+
+      '<td><button class="del-btn" onclick="deleteProject(\''+key+'\')" title="Xóa">✕</button></td>';
     tbody.appendChild(tr);
 
-    // Task rows (expanded)
     if (isExp) {
-      tasks.forEach(([tk, task]) => {
-        const ttr = document.createElement('tr');
+      tasks.forEach(function(te) {
+        var tk = te[0], task = te[1];
+        var ttr = document.createElement('tr');
         ttr.className = 'task-row';
-        ttr.innerHTML = `
-          <td></td><td></td>
-          <td colspan="2">
-            <div class="task-indent">
-              <div class="task-line"></div>
-              <span style="color:var(--muted);font-size:10px;">TASK</span>
-              <input value="${esc(task.name)}" data-pk="${key}" data-tk="${tk}" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;">
-            </div>
-          </td>
-          <td><input value="${esc(task.exec)}" data-pk="${key}" data-tk="${tk}" data-f="exec" list="dlPerson" onchange="updateTask(this)" placeholder="Người thực hiện..."></td>
-          <td></td>
-          <td colspan="2"></td>
-          <td></td>
-          <td><input type="date" value="${task.start||''}" data-pk="${key}" data-tk="${tk}" data-f="start" onchange="updateTask(this)"></td>
-          <td><input type="date" value="${task.end||''}" data-pk="${key}" data-tk="${tk}" data-f="end" onchange="updateTask(this)"></td>
-          <td>
-            <select data-pk="${key}" data-tk="${tk}" data-f="status" onchange="updateTask(this)">
-              <option value="Chờ xử lý" ${task.status==='Chờ xử lý'?'selected':''}>⬜ Chờ</option>
-              <option value="Đang thực hiện" ${task.status==='Đang thực hiện'?'selected':''}>🔵 Đang TH</option>
-              <option value="Tạm dừng" ${task.status==='Tạm dừng'?'selected':''}>🟡 Tạm dừng</option>
-              <option value="Hoàn thành" ${task.status==='Hoàn thành'?'selected':''}>✅ Xong</option>
-            </select>
-          </td>
-          <td><button class="del-btn" onclick="deleteTask('${key}','${tk}')" title="Xóa task">✕</button></td>
-        `;
+        ttr.innerHTML =
+          '<td></td><td></td>'+
+          '<td colspan="2"><div class="task-indent"><div class="task-line"></div>'+
+          '<span style="color:var(--muted);font-size:10px;">TASK</span>'+
+          '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;"></div></td>'+
+          '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" list="dlPerson" onchange="updateTask(this)" placeholder="Người thực hiện..."></td>'+
+          '<td></td><td colspan="2"></td><td></td>'+
+          '<td><input type="date" value="'+(task.start||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="start" onchange="updateTask(this)"></td>'+
+          '<td><input type="date" value="'+(task.end||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="end" onchange="updateTask(this)"></td>'+
+          '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)">'+
+            '<option value="Chờ xử lý" '+((task.status==='Chờ xử lý')?'selected':'')+'>⬜ Chờ</option>'+
+            '<option value="Đang thực hiện" '+((task.status==='Đang thực hiện')?'selected':'')+'>🔵 Đang TH</option>'+
+            '<option value="Tạm dừng" '+((task.status==='Tạm dừng')?'selected':'')+'>🟡 Tạm dừng</option>'+
+            '<option value="Hoàn thành" '+((task.status==='Hoàn thành')?'selected':'')+'>✅ Xong</option>'+
+          '</select></td>'+
+          '<td><button class="del-btn" onclick="deleteTask(\''+key+'\',\''+tk+'\')" title="Xóa task">✕</button></td>';
         tbody.appendChild(ttr);
       });
-      // Add task button row
-      const atr = document.createElement('tr');
+      var atr = document.createElement('tr');
       atr.className = 'task-row';
-      atr.innerHTML = `
-        <td></td><td></td>
-        <td colspan="11">
-          <div class="task-indent">
-            <div class="task-line"></div>
-            <button class="add-task-btn" onclick="addTask('${key}')">+ Thêm task</button>
-            <span style="font-size:10px;color:var(--muted);">${tasks.length} task</span>
-          </div>
-        </td>
-      `;
+      atr.innerHTML = '<td></td><td></td><td colspan="11">'+
+        '<div class="task-indent"><div class="task-line"></div>'+
+        '<button class="add-task-btn" onclick="addTask(\''+key+'\')">+ Thêm task</button>'+
+        '<span style="font-size:10px;color:var(--muted);">'+tasks.length+' task</span></div></td>';
       tbody.appendChild(atr);
     }
   });
@@ -827,10 +546,9 @@ function toggleExpand(key) {
   renderTable();
 }
 
-// ══════════════════════════════════════════
-// CRUD — PROJECTS
-// ══════════════════════════════════════════
+// ── CRUD Projects ──
 function openAddProject() {
+  document.getElementById('mDate').value = todayStr();
   document.getElementById('mName').value='';
   document.getElementById('mPm').value='';
   document.getElementById('mExec').value='';
@@ -838,28 +556,22 @@ function openAddProject() {
   document.getElementById('mStart').value='';
   document.getElementById('mEnd').value=todayStr();
   document.getElementById('mStatus').value='Chờ xử lý';
+  document.getElementById('mType').value='';
   document.getElementById('idPreview').textContent='Chọn ngày và loại để xem ID';
-  previewId();
   openModal('addModal');
 }
 
-async function submitAddProject() {
-  const dateVal = document.getElementById('mDate').value;
-  const type    = document.getElementById('mType').value;
-  const name    = document.getElementById('mName').value.trim();
-  if (!dateVal || !type || !name) {
-    showToast('⚠️ Vui lòng điền đủ: ngày, loại, và tên dự án.'); return;
-  }
-  const id = await genProjectId(dateVal, type);
-  if (!id) { showToast('⚠️ Không thể sinh ID.'); return; }
-  // Double-check uniqueness
-  const exists = Object.values(projects).some(p=>p.id===id);
-  if (exists) { showToast(`⚠️ ID ${id} vừa được dùng. Đang thử lại...`); await previewId(); return; }
-
-  const fullName = `[NAACP] [${id}] ${name}`;
-  const proj = {
-    id, name, fullName,
-    type, pm: document.getElementById('mPm').value.trim(),
+function submitAddProject() {
+  var dateVal = document.getElementById('mDate').value;
+  var type    = document.getElementById('mType').value;
+  var name    = document.getElementById('mName').value.trim();
+  if (!dateVal || !type || !name) { showToast('⚠️ Điền đủ: ngày, loại, và tên dự án.'); return; }
+  var id = genProjectId(dateVal, type);
+  var exists = Object.values(projects).some(function(p){ return p.id===id; });
+  if (exists) { showToast('⚠️ ID '+id+' vừa được dùng. Thử lại.'); previewId(); return; }
+  var proj = {
+    id: id, name: name, fullName: '[NAACP] ['+id+'] '+name,
+    type: type, pm: document.getElementById('mPm').value.trim(),
     exec: document.getElementById('mExec').value.trim(),
     dept: document.getElementById('mDept').value.trim(),
     start: document.getElementById('mStart').value,
@@ -867,105 +579,94 @@ async function submitAddProject() {
     status: document.getElementById('mStatus').value,
     createdAt: Date.now()
   };
-  const res = await fbPush('/projects', proj);
-  if (res && res.name) {
+  fbPost('/projects', proj, function(err, res) {
+    if (err || !res || !res.name) { showToast('⚠️ Lỗi khi lưu.'); return; }
     projects[res.name] = proj;
     closeModal('addModal');
-    renderTable();
-    renderStats();
-    showToast(`✅ Đã thêm dự án <b>${id}</b>`);
-  } else showToast('⚠️ Lỗi khi lưu. Thử lại.');
+    renderTable(); renderStats(); refreshFilters();
+    showToast('✅ Đã thêm dự án <b>'+id+'</b>');
+  });
 }
 
-async function updateField(el) {
-  const key = el.dataset.key;
-  const field = el.dataset.f;
-  let val = el.value;
+function updateField(el) {
+  var key = el.dataset.key, field = el.dataset.f, val = el.value;
   if (!projects[key]) return;
   projects[key][field] = val;
-  // Auto-update fullName when id or name changes
-  if (field==='id'||field==='name') {
-    const fn = `[NAACP] [${projects[key].id}] ${projects[key].name}`;
+  var patch = {};
+  patch[field] = val;
+  if (field==='id' || field==='name') {
+    var fn = '[NAACP] ['+projects[key].id+'] '+projects[key].name;
     projects[key].fullName = fn;
-    // Update fullName input in same row
-    const row = el.closest('tr');
-    if (row) {
-      const fnInput = row.querySelector('[data-f="fullName"]');
-      if (fnInput) fnInput.value = fn;
-    }
+    patch.fullName = fn;
+    var row = el.closest('tr');
+    if (row) { var fi = row.querySelector('[data-f="fullName"]'); if(fi) fi.value=fn; }
   }
-  // Auto-fill type from ID
   if (field==='id') {
-    const idU = val.toUpperCase();
-    const t = ['MAIN','SUPP','OPER'].find(x=>idU.includes('-'+x+'-'));
-    if (t) {
-      projects[key].type = t;
-      const sel = el.closest('tr').querySelector('[data-f="type"]');
-      if (sel) sel.value = t;
+    var idu = val.toUpperCase();
+    var types = ['MAIN','SUPP','OPER'];
+    for (var ti=0; ti<types.length; ti++) {
+      if (idu.indexOf('-'+types[ti]+'-')>=0) {
+        projects[key].type = types[ti]; patch.type = types[ti];
+        var sel = el.closest('tr').querySelector('[data-f="type"]');
+        if (sel) sel.value = types[ti]; break;
+      }
     }
   }
-  await fbPatch(`/projects/${key}`, {[field]: projects[key][field], ...(field==='id'||field==='name'?{fullName:projects[key].fullName}:{})});
+  fbPatch('/projects/'+key, patch);
   if (field==='type'||field==='status'||field==='dept') renderStats();
 }
 
-async function deleteProject(key) {
-  if (!confirm(`Xóa dự án "${projects[key]?.name}"? Tất cả task sẽ bị xóa.`)) return;
-  await fbDelete(`/projects/${key}`);
-  delete projects[key];
-  delete expanded[key];
-  renderTable();
-  renderStats();
-  showToast('🗑 Đã xóa dự án.');
+function deleteProject(key) {
+  if (!confirm('Xóa dự án "'+projects[key].name+'"?')) return;
+  fbDel('/projects/'+key, function() {
+    delete projects[key]; delete expanded[key];
+    renderTable(); renderStats(); showToast('🗑 Đã xóa.');
+  });
 }
 
-// ══════════════════════════════════════════
-// CRUD — TASKS
-// ══════════════════════════════════════════
-async function addTask(projKey) {
-  const task = { name:'', exec:'', start:'', end:todayStr(), status:'Chờ xử lý', createdAt:Date.now() };
-  const res = await fbPush(`/projects/${projKey}/tasks`, task);
-  if (res && res.name) {
+// ── CRUD Tasks ──
+function addTask(projKey) {
+  var task = {name:'',exec:'',start:'',end:todayStr(),status:'Chờ xử lý',createdAt:Date.now()};
+  fbPost('/projects/'+projKey+'/tasks', task, function(err, res) {
+    if (err || !res || !res.name) return;
     if (!projects[projKey].tasks) projects[projKey].tasks = {};
     projects[projKey].tasks[res.name] = task;
     expanded[projKey] = true;
     renderTable();
-    // Focus the new task name input
-    setTimeout(()=>{
-      const rows = document.querySelectorAll('.task-row input[placeholder="Tên task..."]');
+    setTimeout(function(){
+      var rows = document.querySelectorAll('.task-row input[placeholder="Tên task..."]');
       if (rows.length) rows[rows.length-1].focus();
     }, 50);
-  }
+  });
 }
 
-async function updateTask(el) {
-  const pk = el.dataset.pk, tk = el.dataset.tk, f = el.dataset.f;
-  if (!projects[pk]?.tasks?.[tk]) return;
+function updateTask(el) {
+  var pk=el.dataset.pk, tk=el.dataset.tk, f=el.dataset.f;
+  if (!projects[pk] || !projects[pk].tasks || !projects[pk].tasks[tk]) return;
   projects[pk].tasks[tk][f] = el.value;
-  await fbPatch(`/projects/${pk}/tasks/${tk}`, {[f]: el.value});
+  var patch = {}; patch[f] = el.value;
+  fbPatch('/projects/'+pk+'/tasks/'+tk, patch);
 }
 
-async function deleteTask(projKey, taskKey) {
+function deleteTask(projKey, taskKey) {
   if (!confirm('Xóa task này?')) return;
-  await fbDelete(`/projects/${projKey}/tasks/${taskKey}`);
-  delete projects[projKey].tasks[taskKey];
-  renderTable();
-  showToast('🗑 Đã xóa task.');
+  fbDel('/projects/'+projKey+'/tasks/'+taskKey, function() {
+    delete projects[projKey].tasks[taskKey];
+    renderTable(); showToast('🗑 Đã xóa task.');
+  });
 }
 
-// ══════════════════════════════════════════
-// STATS
-// ══════════════════════════════════════════
+// ── Stats ──
 function renderStats() {
-  const filtered = filterProjects().map(([,p])=>p);
-  const total = filtered.length;
-  const main  = filtered.filter(p=>p.type==='MAIN').length;
-  const supp  = filtered.filter(p=>p.type==='SUPP').length;
-  const oper  = filtered.filter(p=>p.type==='OPER').length;
-  const done  = filtered.filter(p=>p.status==='Hoàn thành').length;
-  const inprog= filtered.filter(p=>p.status==='Đang thực hiện').length;
-  const pend  = filtered.filter(p=>p.status==='Chờ xử lý'||p.status==='Tạm dừng').length;
-  const pct   = total ? Math.round(done/total*100) : 0;
-  const pf    = v => total ? Math.round(v/total*100)+'%' : '0%';
+  var filtered = filterProjects().map(function(e){ return e[1]; });
+  var total = filtered.length;
+  var main  = filtered.filter(function(p){ return p.type==='MAIN'; }).length;
+  var supp  = filtered.filter(function(p){ return p.type==='SUPP'; }).length;
+  var oper  = filtered.filter(function(p){ return p.type==='OPER'; }).length;
+  var done  = filtered.filter(function(p){ return p.status==='Hoàn thành'; }).length;
+  var inprog= filtered.filter(function(p){ return p.status==='Đang thực hiện'; }).length;
+  var pend  = filtered.filter(function(p){ return p.status==='Chờ xử lý'||p.status==='Tạm dừng'; }).length;
+  var pct   = total ? Math.round(done/total*100) : 0;
 
   document.getElementById('sTotal').textContent=total;
   document.getElementById('sMain').textContent=main;
@@ -974,269 +675,248 @@ function renderStats() {
   document.getElementById('sDone').textContent=done;
   document.getElementById('sInprog').textContent=inprog;
   document.getElementById('sPend').textContent=pend;
-  document.getElementById('sDonePct').textContent=pf(done)+' tổng số';
-  document.getElementById('sInprogPct').textContent=pf(inprog)+' tổng số';
-  document.getElementById('sPendPct').textContent=pf(pend)+' tổng số';
+  document.getElementById('sDonePct').textContent=total?Math.round(done/total*100)+'%':'';
+  document.getElementById('sInprogPct').textContent=total?Math.round(inprog/total*100)+'%':'';
   document.getElementById('pctText').textContent=pct+'%';
   document.getElementById('pctBar').style.width=pct+'%';
 
-  // Filter note
-  const hasFilter = Object.values(activeFilters).some(Boolean);
-  const note = document.getElementById('statsFilterNote');
-  note.style.display = hasFilter ? 'block' : 'none';
-  if (hasFilter) note.innerHTML = `<div style="background:var(--p50);border:1px solid var(--p100);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--p800);">📊 Thống kê đang hiển thị theo bộ lọc hiện tại (${total} / ${Object.keys(projects).length} dự án). <button class="btn btn-o btn-sm" onclick="clearFilters()" style="margin-left:8px;">Xóa bộ lọc</button></div>`;
+  drawCharts(filtered,main,supp,oper,done,inprog,pend,total);
 
-  drawCharts(filtered, main,supp,oper,done,inprog,pend,total);
-
-  // Personnel grid — show all staff + project counts
-  const personMap = {};
-  filtered.forEach(p=>{
-    const ex = resolveAll(p.exec,'person');
-    [p.pm, ...ex.split(',')].map(x=>(x||'').trim()).filter(Boolean).forEach(n=>{ personMap[n]=(personMap[n]||0)+1; });
+  var personMap = {};
+  filtered.forEach(function(p){
+    var ex = resolveAll(p.exec,'person');
+    [p.pm].concat(ex.split(',')).map(function(x){ return (x||'').trim(); }).filter(Boolean)
+      .forEach(function(n){ personMap[n]=(personMap[n]||0)+1; });
   });
-  Object.values(staffData).forEach(s=>{ if(s.name && !(s.name in personMap)) personMap[s.name]=0; });
-  const persons = Object.entries(personMap).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  const pg = document.getElementById('personGrid');
-  pg.innerHTML = persons.length ? persons.map(([name,cnt])=>{
-    const init=name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
-    const role=(Object.values(staffData).find(s=>s.name===name)||{}).role||'';
-    return `<div class="pcard"><div class="pavatar">${init}</div><div><div class="pname">${name}</div><div class="pcount">${cnt?cnt+' dự án':'Chưa có dự án'}${role?' · '+role:''}</div></div></div>`;
+  Object.values(staffData).forEach(function(s){ if(s.name&&!(s.name in personMap)) personMap[s.name]=0; });
+  var persons = Object.entries(personMap).sort(function(a,b){ return b[1]-a[1]; });
+  var pg = document.getElementById('personGrid');
+  pg.innerHTML = persons.length ? persons.map(function(e){
+    var name=e[0], cnt=e[1];
+    var init=name.split(' ').slice(-2).map(function(w){ return w[0]; }).join('').toUpperCase();
+    var role=(Object.values(staffData).find(function(s){ return s.name===name; })||{}).role||'';
+    return '<div class="pcard"><div class="pavatar">'+init+'</div><div>'+
+      '<div style="font-size:12px;font-weight:500;">'+esc(name)+'</div>'+
+      '<div style="font-size:10px;color:var(--muted);">'+(cnt?cnt+' dự án':'Chưa có')+(role?' · '+esc(role):'')+'</div>'+
+      '</div></div>';
   }).join('') : '<p style="font-size:12px;color:var(--muted);">Thêm nhân sự trong tab Data.</p>';
 }
 
-// ── Charts ──
-function drawCharts(filtered, main,supp,oper,done,inprog,pend,total) {
-  const pctLabel = {
-    id:'pctLbl',
-    afterDatasetDraw(chart) {
-      const {ctx,data}=chart;
-      chart.getDatasetMeta(0).data.forEach((arc,i)=>{
-        const val=data.datasets[0].data[i]; if(!val||!total) return;
-        const p=Math.round(val/total*100); if(p<5) return;
-        const {x,y}=arc.tooltipPosition();
-        ctx.save();ctx.font='bold 11px sans-serif';ctx.fillStyle='#fff';
-        ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(p+'%',x,y);ctx.restore();
-      });
-    }
-  };
-
-  function mkChart(id,type,labels,data,colors,extra={}) {
-    if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
-    const canvas=document.getElementById(id);
+function drawCharts(filtered,main,supp,oper,done,inprog,pend,total) {
+  function mk(id,type,labels,data,colors,extra) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+    var canvas = document.getElementById(id);
     if (!canvas) return;
-    _charts[id]=new Chart(canvas.getContext('2d'),{
-      type, data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff',...(extra.ds||{})}]},
-      options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} (${total?Math.round(ctx.raw/total*100):0}%)`}}},...(extra.opts||{})},
-      plugins:[pctLabel]
-    });
+    var opts = {responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}},
+        tooltip:{callbacks:{label:function(ctx){ return ' '+ctx.label+': '+ctx.raw+(total?' ('+Math.round(ctx.raw/total*100)+'%)':''); }}}}};
+    if (extra) {
+      if (extra.scales) opts.scales = extra.scales;
+      if (extra.indexAxis) opts.indexAxis = extra.indexAxis;
+    }
+    charts[id] = new Chart(canvas.getContext('2d'),{type:type,
+      data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderWidth:2,borderColor:'#fff',borderRadius:extra&&extra.radius?extra.radius:0}]},
+      options:opts});
+  }
+  mk('chartType','doughnut',['MAIN','SUPP','OPER'],[main,supp,oper],['#185FA5','#854F0B','#0F6E56']);
+  mk('chartStatus','pie',['Hoàn thành','Đang TH','Chờ/Tạm dừng'],[done,inprog,pend],['#3B6D11','#993C1D','#888780']);
+
+  if (charts['chartBar']) { charts['chartBar'].destroy(); delete charts['chartBar']; }
+  var bc = document.getElementById('chartBar');
+  if (bc) {
+    var types=['MAIN','SUPP','OPER'];
+    charts['chartBar'] = new Chart(bc.getContext('2d'),{type:'bar',
+      data:{labels:types,datasets:[
+        {label:'Hoàn thành',data:types.map(function(t){ return filtered.filter(function(p){ return p.type===t&&p.status==='Hoàn thành'; }).length; }),backgroundColor:'#3B6D11',borderRadius:4},
+        {label:'Đang TH',data:types.map(function(t){ return filtered.filter(function(p){ return p.type===t&&p.status==='Đang thực hiện'; }).length; }),backgroundColor:'#993C1D',borderRadius:4},
+        {label:'Chờ/Tạm',data:types.map(function(t){ return filtered.filter(function(p){ return p.type===t&&(p.status==='Chờ xử lý'||p.status==='Tạm dừng'); }).length; }),backgroundColor:'#888780',borderRadius:4}
+      ]},
+      options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}});
   }
 
-  mkChart('chartType','doughnut',['MAIN','SUPP','OPER'],[main,supp,oper],['#185FA5','#854F0B','#0F6E56']);
-  mkChart('chartStatus','pie',['Hoàn thành','Đang thực hiện','Chờ/Tạm dừng'],[done,inprog,pend],['#3B6D11','#993C1D','#888780']);
-
-  // Bar chart
-  const types=['MAIN','SUPP','OPER'];
-  const bDone  =types.map(t=>filtered.filter(p=>p.type===t&&p.status==='Hoàn thành').length);
-  const bInprog=types.map(t=>filtered.filter(p=>p.type===t&&p.status==='Đang thực hiện').length);
-  const bPend  =types.map(t=>filtered.filter(p=>p.type===t&&(p.status==='Chờ xử lý'||p.status==='Tạm dừng')).length);
-  if (_charts['chartBar']) { _charts['chartBar'].destroy(); delete _charts['chartBar']; }
-  const bc=document.getElementById('chartBar');
-  if (bc) _charts['chartBar']=new Chart(bc.getContext('2d'),{
-    type:'bar',
-    data:{labels:types,datasets:[
-      {label:'Hoàn thành',data:bDone,backgroundColor:'#3B6D11',borderRadius:4},
-      {label:'Đang thực hiện',data:bInprog,backgroundColor:'#993C1D',borderRadius:4},
-      {label:'Chờ/Tạm dừng',data:bPend,backgroundColor:'#888780',borderRadius:4}
-    ]},
-    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw}`}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0,font:{size:10}},grid:{color:'#f0ede6'}}}}
-  });
-
-  // Dept chart
-  const deptMap={};
-  filtered.forEach(p=>{
-    const dr=resolveAll(p.dept,'dept');
-    dr.split(',').map(x=>x.trim()).filter(Boolean).forEach(d=>{ deptMap[d]=(deptMap[d]||0)+1; });
-  });
-  const dLabels=Object.keys(deptMap).sort();
-  const dColors=['#534AB7','#185FA5','#0F6E56','#854F0B','#993C1D','#3B6D11','#888780','#26215C'];
-  if (_charts['chartDept']) { _charts['chartDept'].destroy(); delete _charts['chartDept']; }
-  const dc=document.getElementById('chartDept');
-  if (dc) _charts['chartDept']=new Chart(dc.getContext('2d'),{
-    type:'bar',
-    data:{labels:dLabels,datasets:[{label:'Dự án',data:dLabels.map(d=>deptMap[d]),backgroundColor:dLabels.map((_,i)=>dColors[i%dColors.length]),borderRadius:5}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} dự án`}}},scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:10}},grid:{color:'#f0ede6'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
-  });
+  if (charts['chartDept']) { charts['chartDept'].destroy(); delete charts['chartDept']; }
+  var dc = document.getElementById('chartDept');
+  if (dc) {
+    var deptMap={};
+    filtered.forEach(function(p){
+      var dr=resolveAll(p.dept,'dept');
+      dr.split(',').map(function(x){ return x.trim(); }).filter(Boolean)
+        .forEach(function(d){ deptMap[d]=(deptMap[d]||0)+1; });
+    });
+    var dLabels=Object.keys(deptMap).sort();
+    var dColors=['#534AB7','#185FA5','#0F6E56','#854F0B','#993C1D','#3B6D11','#888780'];
+    charts['chartDept'] = new Chart(dc.getContext('2d'),{type:'bar',
+      data:{labels:dLabels,datasets:[{label:'Dự án',data:dLabels.map(function(d){ return deptMap[d]; }),backgroundColor:dLabels.map(function(_,i){ return dColors[i%dColors.length]; }),borderRadius:5}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{display:false}},
+        scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}});
+  }
 }
 
-// ══════════════════════════════════════════
-// DATA TAB
-// ══════════════════════════════════════════
+// ── Data Tab ──
 function renderDataTab() {
-  // Staff
-  const sl = document.getElementById('staffList');
-  const sArr = Object.entries(staffData);
-  sl.innerHTML = sArr.length ? sArr.map(([k,s])=>`
-    <div class="data-item">
-      <div class="pavatar">${(s.name||'?').split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase()}</div>
-      <div style="flex:1;min-width:0;">
-        <input value="${esc(s.name||'')}" placeholder="Họ tên..." onchange="updateStaff('${k}','name',this.value)">
-        <input class="role-inp" value="${esc(s.role||'')}" placeholder="Chức vụ..." onchange="updateStaff('${k}','role',this.value)">
-      </div>
-      <button onclick="deleteStaff('${k}')" class="del-btn">✕</button>
-    </div>`).join('')
-    : '<p style="font-size:12px;color:var(--muted);">Chưa có nhân sự.</p>';
+  var sl = document.getElementById('staffList');
+  var sArr = Object.entries(staffData);
+  sl.innerHTML = sArr.length ? sArr.map(function(e){
+    var k=e[0],s=e[1];
+    return '<div class="data-item">'+
+      '<div class="pavatar">'+(s.name||'?').split(' ').slice(-2).map(function(w){ return w[0]; }).join('').toUpperCase()+'</div>'+
+      '<div style="flex:1;min-width:0;">'+
+        '<input value="'+esc(s.name||'')+'" placeholder="Họ tên..." onchange="updateStaff(\''+k+'\',\'name\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:13px;font-weight:500;">'+
+        '<input value="'+esc(s.role||'')+'" placeholder="Chức vụ..." onchange="updateStaff(\''+k+'\',\'role\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--muted);">'+
+      '</div>'+
+      '<button onclick="deleteStaff(\''+k+'\')" class="del-btn">✕</button></div>';
+  }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có nhân sự.</p>';
 
-  // Depts
-  const dl = document.getElementById('deptList');
-  const dArr = Object.entries(deptsData);
-  dl.innerHTML = dArr.length ? dArr.map(([k,d])=>`
-    <div class="data-item" style="background:var(--t50);">
-      <span style="font-size:16px;">🏢</span>
-      <input value="${esc(d.name||'')}" placeholder="Tên phòng/bộ phận..." style="flex:1;border:none;background:transparent;font-size:13px;" onchange="updateDept('${k}','name',this.value)">
-      <button onclick="deleteDept('${k}')" class="del-btn">✕</button>
-    </div>`).join('')
-    : '<p style="font-size:12px;color:var(--muted);">Chưa có phòng/bộ phận.</p>';
+  var dl2 = document.getElementById('deptListEl');
+  var dArr = Object.entries(deptsData);
+  dl2.innerHTML = dArr.length ? dArr.map(function(e){
+    var k=e[0],d=e[1];
+    return '<div class="data-item" style="background:var(--t50);">'+
+      '<span>🏢</span>'+
+      '<input value="'+esc(d.name||'')+'" placeholder="Tên phòng/bộ phận..." onchange="updateDept(\''+k+'\',\'name\',this.value)" style="flex:1;border:none;background:transparent;font-size:13px;">'+
+      '<button onclick="deleteDept(\''+k+'\')" class="del-btn">✕</button></div>';
+  }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có phòng/bộ phận.</p>';
 }
 
-async function addStaff() {
-  const res = await fbPush('/staff', {name:'',role:''});
-  if (res?.name) {
+function addStaff() {
+  fbPost('/staff', {name:'',role:''}, function(err,res) {
+    if (err||!res||!res.name) return;
     staffData[res.name]={name:'',role:''};
     renderDataTab(); refreshSuggestions();
-    setTimeout(()=>{ const inp=document.querySelector('#staffList input'); if(inp) inp.focus(); },50);
-  }
+    setTimeout(function(){ var inp=document.querySelector('#staffList input'); if(inp) inp.focus(); },50);
+  });
 }
-async function updateStaff(key,field,val) {
-  if (!staffData[key]) return;
-  staffData[key][field]=val;
-  await fbPatch(`/staff/${key}`,{[field]:val});
+function updateStaff(k,f,v) {
+  if (!staffData[k]) return; staffData[k][f]=v;
+  var p={}; p[f]=v; fbPatch('/staff/'+k,p);
   refreshSuggestions();
 }
-async function deleteStaff(key) {
+function deleteStaff(k) {
   if (!confirm('Xóa nhân sự này?')) return;
-  await fbDelete(`/staff/${key}`);
-  delete staffData[key]; renderDataTab(); refreshSuggestions();
+  fbDel('/staff/'+k, function(){ delete staffData[k]; renderDataTab(); refreshSuggestions(); });
 }
-async function addDept() {
-  const res = await fbPush('/depts', {name:''});
-  if (res?.name) {
+function addDept() {
+  fbPost('/depts', {name:''}, function(err,res) {
+    if (err||!res||!res.name) return;
     deptsData[res.name]={name:''};
     renderDataTab(); refreshSuggestions();
-    setTimeout(()=>{ const inp=document.querySelector('#deptList input'); if(inp) inp.focus(); },50);
-  }
+    setTimeout(function(){ var inp=document.querySelector('#deptListEl input'); if(inp) inp.focus(); },50);
+  });
 }
-async function updateDept(key,field,val) {
-  if (!deptsData[key]) return;
-  deptsData[key][field]=val;
-  await fbPatch(`/depts/${key}`,{[field]:val});
+function updateDept(k,f,v) {
+  if (!deptsData[k]) return; deptsData[k][f]=v;
+  var p={}; p[f]=v; fbPatch('/depts/'+k,p);
   refreshSuggestions();
 }
-async function deleteDept(key) {
+function deleteDept(k) {
   if (!confirm('Xóa phòng/bộ phận này?')) return;
-  await fbDelete(`/depts/${key}`);
-  delete deptsData[key]; renderDataTab(); refreshSuggestions();
+  fbDel('/depts/'+k, function(){ delete deptsData[k]; renderDataTab(); refreshSuggestions(); });
 }
 
-// ══════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════
+// ── Tabs ──
 function switchTab(tab) {
-  const tabs=['table','stats','data','guide'];
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===tab));
-  tabs.forEach(t=>document.getElementById('section-'+t).classList.toggle('active',t===tab));
-  if (tab==='stats') { setTimeout(()=>renderStats(),50); }
-  if (tab==='data')  renderDataTab();
-}
-
-// ══════════════════════════════════════════
-// EXPORT / PRINT
-// ══════════════════════════════════════════
-function openExportModal(mode) {
-  _expMode = mode;
-  document.getElementById('expTitle').textContent = mode==='csv' ? '⬇ Xuất CSV' : '🖨 Chọn nội dung in';
-  document.getElementById('expBtn').textContent   = mode==='csv' ? 'Xuất CSV' : 'In';
-  document.getElementById('inclStats').parentElement.style.display = mode==='print' ? 'flex' : 'none';
-  updateExpCount();
-  openModal('expModal');
-}
-function getExpData() {
-  const dept   = document.getElementById('expDept').value;
-  const status = document.getElementById('expStatus').value;
-  const type   = document.getElementById('expType').value;
-  const person = (document.getElementById('expPerson').value||'').trim().toLowerCase();
-  return Object.values(projects).filter(p=>{
-    const ex=resolveAll(p.exec,'person');
-    return (!dept||p.dept===dept)&&(!status||p.status===status)&&(!type||p.type===type)
-      &&(!person|||(p.pm||'').toLowerCase().includes(person)||ex.toLowerCase().includes(person));
-  }).sort((a,b)=>(b.id||'')>(a.id||'')?1:-1);
-}
-function updateExpCount() {
-  document.getElementById('expCount').textContent=`Sẽ xuất ${getExpData().length} dự án`;
-}
-function confirmExport() {
-  const data = getExpData();
-  if (_expMode==='csv') {
-    const hdrs=['Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
-    const rows=data.map(p=>[p.id,p.name,p.fullName,p.type,p.pm,p.exec,p.dept,fmtDate(p.start),fmtDate(p.end),p.status]);
-    const csv=[hdrs,...rows].map(r=>r.map(c=>'"'+(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
-    a.download=`NAACP_projects_${todayStr()}.csv`; a.click();
-  } else {
-    const inclStats = document.getElementById('inclStats').checked;
-    const statsHtml = inclStats ? buildStatsHtml(data) : '';
-    const tbl=`<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:10px;">
-      <thead style="background:#26215C;color:#fff;"><tr>${['STT','Project ID','Project Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Bắt đầu','Kết thúc DK','Trạng thái'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${data.map((p,i)=>`<tr style="${i%2?'background:#f8f7f4':''}"><td>${i+1}</td><td style="font-family:monospace">${p.id||''}</td><td>${p.name||''}</td><td>${p.type||''}</td><td>${p.pm||''}</td><td>${p.exec||''}</td><td>${p.dept||''}</td><td>${fmtDate(p.start)}</td><td>${fmtDate(p.end)}</td><td>${p.status||''}</td></tr>`).join('')}</tbody>
-    </table>`;
-    const w=window.open('','_blank','width=1100,height=750');
-    w.document.write(`<html><head><meta charset="UTF-8"><title>BẢNG MÃ DỰ ÁN – NAACP</title>
-    <style>body{font-family:Arial,sans-serif;padding:20px;} h2{font-size:16px;} p{font-size:11px;color:#888;margin-bottom:12px;}</style></head>
-    <body><h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2>
-    <p>In ngày: ${new Date().toLocaleDateString('vi-VN')} · ${data.length} dự án${inclStats?' · Kèm thống kê':''}</p>
-    ${tbl}${statsHtml}</body></html>`);
-    w.document.close(); w.print();
+  var tabs=['table','stats','data','guide'];
+  document.querySelectorAll('.tab').forEach(function(el,i){ el.classList.toggle('active',tabs[i]===tab); });
+  tabs.forEach(function(t){ document.getElementById('section-'+t).classList.toggle('active',t===tab); });
+  if (tab==='stats') {
+    Object.keys(charts).forEach(function(k){ if(charts[k]){charts[k].destroy();delete charts[k];} });
+    setTimeout(renderStats, 50);
   }
-  closeModal('expModal');
+  if (tab==='data') renderDataTab();
 }
 
-function buildStatsHtml(data) {
-  const total=data.length;
-  const done=data.filter(p=>p.status==='Hoàn thành').length;
-  const inprog=data.filter(p=>p.status==='Đang thực hiện').length;
-  const pend=data.filter(p=>p.status==='Chờ xử lý'||p.status==='Tạm dừng').length;
-  const main=data.filter(p=>p.type==='MAIN').length;
-  const supp=data.filter(p=>p.type==='SUPP').length;
-  const oper=data.filter(p=>p.type==='OPER').length;
-  const pct=total?Math.round(done/total*100):0;
-  return `<br><h3 style="font-size:13px;margin:16px 0 8px;">THỐNG KÊ</h3>
-  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:11px;margin-bottom:10px;">
-    <tr><th>Tổng dự án</th><th>MAIN</th><th>SUPP</th><th>OPER</th><th>Hoàn thành</th><th>Đang thực hiện</th><th>Chờ/Tạm dừng</th><th>Tỷ lệ HT</th></tr>
-    <tr style="text-align:center"><td>${total}</td><td>${main}</td><td>${supp}</td><td>${oper}</td><td>${done}</td><td>${inprog}</td><td>${pend}</td><td>${pct}%</td></tr>
-  </table>`;
+// ── Export / Print ──
+function exportCSV() {
+  var data = filterProjects().map(function(e){ return e[1]; });
+  var hdrs=['Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái'];
+  var rows=data.map(function(p){ return [p.id,p.name,p.fullName,p.type,p.pm,p.exec,p.dept,fmtDate(p.start),fmtDate(p.end),p.status]; });
+  var csv=[hdrs].concat(rows).map(function(r){ return r.map(function(c){ return '"'+(c||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='NAACP_projects_'+todayStr()+'.csv'; a.click();
 }
 
-// ══════════════════════════════════════════
-// CSV IMPORT
-// ══════════════════════════════════════════
+function printTable() {
+  var data = filterProjects().map(function(e){ return e[1]; });
+  var rows = data.map(function(p,i){
+    return '<tr style="'+(i%2?'background:#f8f7f4;':'')+'">'+
+      '<td>'+(i+1)+'</td><td style="font-family:monospace">'+(p.id||'')+'</td>'+
+      '<td>'+(p.name||'')+'</td><td>'+(p.type||'')+'</td>'+
+      '<td>'+(p.pm||'')+'</td><td>'+(p.exec||'')+'</td>'+
+      '<td>'+(p.dept||'')+'</td><td>'+fmtDate(p.start)+'</td>'+
+      '<td>'+fmtDate(p.end)+'</td><td>'+(p.status||'')+'</td></tr>';
+  }).join('');
+  var w=window.open('','_blank');
+  w.document.write('<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;font-size:10px;}th{background:#26215C;color:#fff;padding:6px;}td{padding:5px;border-bottom:0.5px solid #e0ddd6;}</style></head>'+
+    '<body><h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2><p style="font-size:11px;color:#888;">In ngày: '+new Date().toLocaleDateString('vi-VN')+' · '+data.length+' dự án</p>'+
+    '<table><thead><tr><th>STT</th><th>Project ID</th><th>Project Name</th><th>Loại</th><th>Quản lý DA</th><th>Người TH</th><th>Phòng/BPhan</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
+  w.document.close(); w.print();
+}
+
+// ── CSV Import ──
 function parseCSVLine(line) {
-  const res=[]; let cur='',inQ=false;
-  for(let i=0;i<line.length;i++){
-    const c=line[i];
+  var res=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
     if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
     else if(c===','&&!inQ){res.push(cur);cur='';}
     else cur+=c;
   }
   res.push(cur); return res;
 }
-function parseCSV(text) {
-  text=text.replace(/^\uFEFF/,'');
-  const lines=text.split(/\r?\n/).filter(l=>l.trim());
-  if(lines.length<2) return [];
-  const hdr=parseCSVLine(lines[0]).map(h=>h.toLowerCase().trim());
-  const fi=k=>hdr.findIndex(h=>h.includes(k));
-  const idx={id:fi('project id'),name:fi('project name'),full:fi('full name'),type:fi('loại'),pm:fi('quản lý'),exec:fi('người thực hiện'),dept:fi('phòng'),start:fi('bắt đầu'),end:fi('kết thúc'),status:fi('trạng thái')};
-  const get=(cols,k)=>idx[k]>=0?(cols[idx[k]]||'').trim():'';
-  return lines.slice(1).map(l=>{
-    const c=par
+function handleCSVImport(input) {
+  var files=Array.from(input.files); input.value='';
+  if(!files.length) return;
+  var all=[],loaded=0;
+  files.forEach(function(f){
+    var r=new FileReader();
+    r.onload=function(e){
+      var text=e.target.result.replace(/^\uFEFF/,'');
+      var lines=text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+      if(lines.length<2){loaded++;if(loaded===files.length)doImport(all,files.length);return;}
+      var hdr=parseCSVLine(lines[0]).map(function(h){ return h.toLowerCase().trim(); });
+      var fi=function(k){ return hdr.findIndex(function(h){ return h.indexOf(k)>=0; }); };
+      var idx={id:fi('project id'),name:fi('project name'),full:fi('full'),type:fi('loại'),pm:fi('quản lý'),exec:fi('người thực hiện'),dept:fi('phòng'),start:fi('bắt đầu'),end:fi('kết thúc'),status:fi('trạng thái')};
+      var get=function(cols,k){ return idx[k]>=0?(cols[idx[k]]||'').trim():''; };
+      lines.slice(1).forEach(function(l){
+        var c=parseCSVLine(l);
+        var p={id:get(c,'id'),name:get(c,'name'),fullName:get(c,'full'),type:get(c,'type'),pm:get(c,'pm'),exec:get(c,'exec'),dept:get(c,'dept'),start:get(c,'start'),end:get(c,'end'),status:get(c,'status')||'Chờ xử lý'};
+        if(p.id||p.name) all.push(p);
+      });
+      loaded++; if(loaded===files.length) doImport(all,files.length);
+    };
+    r.readAsText(f,'UTF-8');
+  });
+}
+function doImport(rows, fileCount) {
+  var existingNames={};
+  Object.values(projects).forEach(function(p){ if(p.name) existingNames[p.name.toLowerCase().trim()]=true; });
+  var added=0,skipped=0;
+  var next=function(i){
+    if(i>=rows.length){ renderTable();renderStats();showToast('✅ Nhập xong: <b>'+added+' dòng mới</b>'+(skipped?', bỏ qua '+skipped+' trùng':''));return; }
+    var row=rows[i];
+    var nk=(row.name||'').toLowerCase().trim();
+    if(existingNames[nk]){skipped++;next(i+1);return;}
+    var id=row.id||'';
+    var proj=Object.assign({},row,{fullName:row.fullName||('[NAACP] ['+(id)+'] '+row.name),createdAt:Date.now()});
+    fbPost('/projects',proj,function(err,res){
+      if(!err&&res&&res.name){projects[res.name]=proj;existingNames[nk]=true;added++;}
+      next(i+1);
+    });
+  };
+  next(0);
+}
+
+// ── START ──
+document.getElementById('mDate') && document.getElementById('mDate').addEventListener && (function(){
+  document.getElementById('mDate').addEventListener('change', previewId);
+  document.getElementById('mType').addEventListener('change', previewId);
+})();
+
+startPolling();
+</script>
+</body>
+</html>
