@@ -488,15 +488,26 @@ async function fbPush(path, data) {
   return r.json(); // returns {name: "-Nabc..."}
 }
 
-// ── Realtime listener via SSE / polling ──
-let _listeners = {}; // path -> interval
+// ── Realtime listener via polling ──
+let _listeners = {};
 function fbListen(path, cb) {
-  // Poll every 3 seconds
+  let firstSuccess = false;
   const poll = async () => {
     try {
-      const val = await fbGet(path);
+      const r = await fetch(`${FB_BASE}${path}.json`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const val = await r.json();
       cb(val);
-    } catch(e) {}
+      if (!firstSuccess) {
+        firstSuccess = true;
+        document.getElementById('connBadge').textContent = '🟢 Đã kết nối · Realtime';
+        document.getElementById('connBadge').style.background = 'rgba(59,109,17,0.3)';
+      }
+    } catch(e) {
+      document.getElementById('connBadge').textContent = '🔴 Lỗi kết nối';
+      document.getElementById('connBadge').style.background = 'rgba(153,60,29,0.3)';
+      console.error('Firebase poll error:', path, e.message);
+    }
   };
   poll();
   const id = setInterval(poll, 3000);
@@ -543,9 +554,6 @@ window.addEventListener('DOMContentLoaded', () => {
     renderDataTab();
     refreshSuggestions();
   });
-
-  document.getElementById('connBadge').textContent = '🟢 Đã kết nối · Realtime';
-  document.getElementById('connBadge').style.background = 'rgba(59,109,17,0.3)';
 
   // Modal date/type → auto-preview ID
   ['mDate','mType'].forEach(id => {
