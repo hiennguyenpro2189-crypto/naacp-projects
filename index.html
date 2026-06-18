@@ -494,9 +494,11 @@ function fbListen(path, cb) {
   let firstSuccess = false;
   const poll = async () => {
     try {
+      console.log('Polling:', path);
       const r = await fetch(`${FB_BASE}${path}.json`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const val = await r.json();
+      console.log('Poll success:', path, typeof val);
       cb(val);
       if (!firstSuccess) {
         firstSuccess = true;
@@ -506,7 +508,7 @@ function fbListen(path, cb) {
     } catch(e) {
       document.getElementById('connBadge').textContent = '🔴 Lỗi kết nối';
       document.getElementById('connBadge').style.background = 'rgba(153,60,29,0.3)';
-      console.error('Firebase poll error:', path, e.message);
+      console.error('Firebase poll error:', path, e.message, e);
     }
   };
   poll();
@@ -530,29 +532,33 @@ let _charts   = {};
 // INIT
 // ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM ready, initializing...');
+
   // Set today's date in add modal
-  document.getElementById('mDate').value = todayStr();
+  try { document.getElementById('mDate').value = todayStr(); } catch(e) { console.error('mDate error:', e); }
 
   // Listen to projects
+  console.log('Starting Firebase listeners...');
   fbListen('/projects', val => {
+    console.log('Projects received:', val ? Object.keys(val).length : 0);
     projects = val || {};
-    renderTable();
-    renderStats();
-    refreshFilters();
+    try { renderTable(); } catch(e) { console.error('renderTable error:', e); }
+    try { renderStats(); } catch(e) { console.error('renderStats error:', e); }
+    try { refreshFilters(); } catch(e) { console.error('refreshFilters error:', e); }
   });
 
-  // Listen to staff
   fbListen('/staff', val => {
+    console.log('Staff received:', val ? Object.keys(val).length : 0);
     staffData = val || {};
-    renderDataTab();
-    refreshSuggestions();
+    try { renderDataTab(); } catch(e) { console.error('renderDataTab error:', e); }
+    try { refreshSuggestions(); } catch(e) { console.error('refreshSuggestions error:', e); }
   });
 
-  // Listen to depts
   fbListen('/depts', val => {
+    console.log('Depts received:', val ? Object.keys(val).length : 0);
     deptsData = val || {};
-    renderDataTab();
-    refreshSuggestions();
+    try { renderDataTab(); } catch(e) { console.error('renderDataTab error:', e); }
+    try { refreshSuggestions(); } catch(e) { console.error('refreshSuggestions error:', e); }
   });
 
   // Modal date/type → auto-preview ID
