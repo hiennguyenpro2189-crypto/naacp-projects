@@ -264,7 +264,7 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
     </div>
     <div class="modal-btns">
       <button class="btn btn-o" onclick="closeModal('addModal')">Hủy</button>
-      <button class="btn btn-p" onclick="submitAddProject()">Thêm dự án</button>
+      <button class="btn btn-p" id="mSubmitBtn" onclick="submitAddProject()">Thêm dự án</button>
     </div>
   </div>
 </div>
@@ -414,12 +414,31 @@ function genProjectId(dateStr, type) {
   return prefix + (next < 10 ? '0'+next : ''+next);
 }
 
+// Cấp số thứ tự THẬT cho project mới bằng Firebase transaction — đảm bảo
+// nguyên tử trên server, không bị trùng dù nhiều người bấm Lưu cùng lúc.
+// counterKey ví dụ: "260506-MAIN" (ngày + loại, không có số thứ tự)
+function allocateProjectId(dateStr, type, cb) {
+  if (!dateStr || !type) { cb(new Error('missing date/type'), null); return; }
+  var yy = dateStr.slice(2,4), mm = dateStr.slice(5,7), dd = dateStr.slice(8,10);
+  var prefix = yy+mm+dd+'-'+type+'-';
+  var counterKey = yy+mm+dd+'-'+type;
+  db.ref('/counters/'+counterKey).transaction(function(current){
+    return (current||0) + 1; // nếu 2 client transaction cùng lúc, Firebase tự retry để không trùng
+  }, function(error, committed, snap){
+    if (error) { cb(error, null); return; }
+    if (!committed) { cb(new Error('transaction not committed'), null); return; }
+    var next = snap.val();
+    var id = prefix + (next < 10 ? '0'+next : ''+next);
+    cb(null, id);
+  });
+}
+
 function previewId() {
   var d = document.getElementById('mDate').value;
   var t = document.getElementById('mType').value;
   var el = document.getElementById('idPreview');
   if (!d || !t) { el.textContent='Chọn ngày và loại để xem ID'; return; }
-  el.textContent = genProjectId(d, t) || 'Đang tính...';
+  el.textContent = (genProjectId(d, t) || 'Đang tính...') + ' (dự kiến)';
 }
 
 // ── Suggestions ──
@@ -580,6 +599,7 @@ function openAddProject() {
   document.getElementById('mStatus').value='Chờ xử lý';
   document.getElementById('mType').value='';
   document.getElementById('idPreview').textContent='Chọn ngày và loại để xem ID';
+  var btn = document.getElementById('mSubmitBtn'); if (btn) btn.disabled = false;
   openModal('addModal');
 }
 
@@ -588,25 +608,32 @@ function submitAddProject() {
   var type    = document.getElementById('mType').value;
   var name    = document.getElementById('mName').value.trim();
   if (!dateVal || !type || !name) { showToast('⚠️ Điền đủ: ngày, loại, và tên dự án.'); return; }
-  var id = genProjectId(dateVal, type);
-  var exists = Object.values(projects).some(function(p){ return p.id===id; });
-  if (exists) { showToast('⚠️ ID '+id+' vừa được dùng. Thử lại.'); previewId(); return; }
-  var proj = {
-    id: id, name: name, fullName: '[NAACP] ['+id+'] '+name,
-    type: type, pm: document.getElementById('mPm').value.trim(),
-    exec: document.getElementById('mExec').value.trim(),
-    dept: document.getElementById('mDept').value.trim(),
-    start: document.getElementById('mStart').value,
-    end: document.getElementById('mEnd').value,
-    status: document.getElementById('mStatus').value,
-    createdAt: Date.now()
-  };
-  fbPost('/projects', proj, function(err, res) {
-    if (err || !res || !res.name) { showToast('⚠️ Lỗi khi lưu.'); return; }
-    projects[res.name] = proj;
-    closeModal('addModal');
-    renderTable(); renderStats(); refreshFilters();
-    showToast('✅ Đã thêm dự án <b>'+id+'</b>');
+  var btn = document.getElementById('mSubmitBtn');
+  if (btn) { btn.disabled = true; }
+  allocateProjectId(dateVal, type, function(idErr, id){
+    if (idErr || !id) {
+      if (btn) btn.disabled = false;
+      showToast('⚠️ Lỗi khi cấp mã dự án. Thử lại.');
+      return;
+    }
+    var proj = {
+      id: id, name: name, fullName: '[NAACP] ['+id+'] '+name,
+      type: type, pm: document.getElementById('mPm').value.trim(),
+      exec: document.getElementById('mExec').value.trim(),
+      dept: document.getElementById('mDept').value.trim(),
+      start: document.getElementById('mStart').value,
+      end: document.getElementById('mEnd').value,
+      status: document.getElementById('mStatus').value,
+      createdAt: Date.now()
+    };
+    fbPost('/projects', proj, function(err, res) {
+      if (btn) btn.disabled = false;
+      if (err || !res || !res.name) { showToast('⚠️ Lỗi khi lưu.'); return; }
+      projects[res.name] = proj;
+      closeModal('addModal');
+      renderTable(); renderStats(); refreshFilters();
+      showToast('✅ Đã thêm dự án <b>'+id+'</b>');
+    });
   });
 }
 
