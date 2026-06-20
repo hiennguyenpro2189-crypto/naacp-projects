@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bảng Mã Dự Án – Team NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <style>
 :root{
   --p50:#EEEDFE;--p100:#CECBF6;--p600:#534AB7;--p800:#3C3489;--p900:#26215C;
@@ -272,7 +274,10 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
 <div class="toast" id="toast"></div>
 
 <script>
-var FB = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
+var FB_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
+firebase.initializeApp({ databaseURL: FB_URL });
+var db = firebase.database();
+
 var projects = {};
 var staffData = {};
 var deptsData = {};
@@ -280,75 +285,92 @@ var expanded = {};
 var activeFilters = {q:'',type:'',dept:'',person:'',status:''};
 var charts = {};
 
-// ── Firebase REST helpers ──
+// ── Firebase Realtime SDK helpers (giữ nguyên kiểu callback(err,res) như cũ) ──
 function fbGet(path, cb) {
-  fetch(FB + path + ".json")
-    .then(function(r){ return r.json(); })
-    .then(function(v){ cb(null, v); })
+  db.ref(path).once('value')
+    .then(function(snap){ cb(null, snap.val()); })
     .catch(function(e){ cb(e, null); });
 }
 
 function fbPut(path, data, cb) {
-  fetch(FB + path + ".json", {
-    method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  }).then(function(r){ return r.json(); })
-    .then(function(v){ if(cb) cb(null,v); })
-    .catch(function(e){ if(cb) cb(e,null); });
+  db.ref(path).set(data)
+    .then(function(){ if(cb) cb(null, data); })
+    .catch(function(e){ if(cb) cb(e, null); });
 }
 
 function fbPost(path, data, cb) {
-  fetch(FB + path + ".json", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  }).then(function(r){ return r.json(); })
-    .then(function(v){ if(cb) cb(null,v); })
-    .catch(function(e){ if(cb) cb(e,null); });
+  var newRef = db.ref(path).push();
+  newRef.set(data)
+    .then(function(){ if(cb) cb(null, {name:newRef.key}); })
+    .catch(function(e){ if(cb) cb(e, null); });
 }
 
 function fbPatch(path, data, cb) {
-  fetch(FB + path + ".json", {
-    method: "PATCH",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  }).then(function(r){ return r.json(); })
-    .then(function(v){ if(cb) cb(null,v); })
-    .catch(function(e){ if(cb) cb(e,null); });
+  db.ref(path).update(data)
+    .then(function(){ if(cb) cb(null, data); })
+    .catch(function(e){ if(cb) cb(e, null); });
 }
 
 function fbDel(path, cb) {
-  fetch(FB + path + ".json", {method:"DELETE"})
+  db.ref(path).remove()
     .then(function(){ if(cb) cb(null); })
     .catch(function(e){ if(cb) cb(e); });
 }
 
-// ── Poll Firebase every 4 seconds ──
-function startPolling() {
-  function poll() {
-    fbGet("/projects", function(err, val) {
-      if (err) {
-        document.getElementById("connBadge").textContent = "🔴 Lỗi kết nối";
-        document.getElementById("connBadge").style.background = "rgba(153,60,29,0.3)";
-        return;
-      }
-      document.getElementById("connBadge").textContent = "🟢 Đã kết nối · Realtime";
-      document.getElementById("connBadge").style.background = "rgba(59,109,17,0.3)";
-      projects = val || {};
-      renderTable();
-      renderStats();
-      refreshFilters();
-    });
-    fbGet("/staff", function(err, val) {
-      if (!err) { staffData = val || {}; renderDataTab(); refreshSuggestions(); }
-    });
-    fbGet("/depts", function(err, val) {
-      if (!err) { deptsData = val || {}; renderDataTab(); refreshSuggestions(); }
-    });
+// ── Có đang gõ dở trong bảng/data tab không? Nếu có thì hoãn render để không mất dữ liệu đang nhập ──
+function isEditingNow() {
+  var el = document.activeElement;
+  if (!el) return false;
+  var tag = el.tagName;
+  if (tag!=='INPUT' && tag!=='SELECT' && tag!=='TEXTAREA') return false;
+  // chỉ tính là "đang sửa" nếu input nằm trong bảng dự án hoặc tab Data
+  return !!el.closest('#tbody, #staffList, #deptListEl');
+}
+
+var pendingRender = false;
+
+function safeRenderTable() {
+  if (isEditingNow()) { pendingRender = true; return; }
+  renderTable();
+}
+
+// nếu lúc trước có thay đổi bị hoãn vì đang gõ, render lại ngay khi rời input
+document.addEventListener('focusout', function(e){
+  if (pendingRender && !isEditingNow()) {
+    pendingRender = false;
+    setTimeout(function(){ renderTable(); }, 30);
   }
-  poll();
-  setInterval(poll, 4000);
+}, true);
+
+// ── Lắng nghe Firebase realtime (không poll, chỉ cập nhật khi có thay đổi thật) ──
+function startPolling() {
+  db.ref('.info/connected').on('value', function(snap){
+    var badge = document.getElementById("connBadge");
+    if (snap.val()===true) {
+      badge.textContent = "🟢 Đã kết nối · Realtime";
+      badge.style.background = "rgba(59,109,17,0.3)";
+    } else {
+      badge.textContent = "🔴 Mất kết nối";
+      badge.style.background = "rgba(153,60,29,0.3)";
+    }
+  });
+
+  db.ref('/projects').on('value', function(snap){
+    projects = snap.val() || {};
+    safeRenderTable();
+    renderStats();
+    refreshFilters();
+  }, function(err){ console.error('projects listener error:', err); });
+
+  db.ref('/staff').on('value', function(snap){
+    staffData = snap.val() || {};
+    renderDataTab(); refreshSuggestions();
+  }, function(err){ console.error('staff listener error:', err); });
+
+  db.ref('/depts').on('value', function(snap){
+    deptsData = snap.val() || {};
+    renderDataTab(); refreshSuggestions();
+  }, function(err){ console.error('depts listener error:', err); });
 }
 
 // ── Helpers ──
