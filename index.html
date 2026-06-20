@@ -79,6 +79,7 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;}
 .cc{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:14px 18px;}
 .cc h4{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.cc-small{max-width:240px;margin:0 auto;}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:22px;}
 .pcard{background:var(--sur);border:.5px solid var(--bdr);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:9px;}
 .pavatar{width:30px;height:30px;border-radius:50%;background:var(--p50);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--p800);flex-shrink:0;}
@@ -145,7 +146,7 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
     <button class="btn btn-t" onclick="document.getElementById('csvIn').click()">⬆ Nhập CSV</button>
     <input type="file" id="csvIn" accept=".csv" multiple style="display:none" onchange="handleCSVImport(this)">
     <button class="btn btn-o" onclick="exportCSV()">⬇ Xuất CSV</button>
-    <button class="btn btn-o" onclick="printTable()">🖨 In</button>
+    <button class="btn btn-o" onclick="openModal('printModal')">🖨 In</button>
   </div>
   <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="rowCount"></div>
   <div class="tbl-wrap">
@@ -179,8 +180,8 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
     <div class="sc pend"><div class="sc-lbl">Chờ / Tạm dừng</div><div class="sc-val" id="sPend">0</div></div>
   </div>
   <div class="charts-row">
-    <div class="cc"><h4>Phân bổ theo loại</h4><canvas id="chartType"></canvas></div>
-    <div class="cc"><h4>Phân bổ theo trạng thái</h4><canvas id="chartStatus"></canvas></div>
+    <div class="cc"><h4>Phân bổ theo loại</h4><div class="cc-small"><canvas id="chartType"></canvas></div></div>
+    <div class="cc"><h4>Phân bổ theo trạng thái</h4><div class="cc-small"><canvas id="chartStatus"></canvas></div></div>
   </div>
   <div class="cc" style="margin-bottom:22px;"><h4>Theo loại &amp; trạng thái</h4><canvas id="chartBar" style="max-height:180px;"></canvas></div>
   <div class="sec-title">Tiến độ tổng thể</div>
@@ -217,6 +218,18 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
 </div>
 
 <div id="section-guide" class="section">
+
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🧭 Tổng quan 4 tab</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;line-height:1.7;">
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📊 Danh sách dự án</b><br>Xem, thêm, sửa, xóa dự án. Mỗi dự án có thể mở rộng (▶) để xem/quản lý các task bên trong.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📈 Thống kê</b><br>Biểu đồ và số liệu tổng quan, tự cập nhật theo bộ lọc đang chọn ở tab Danh sách.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form và để xác định "ai thuộc phòng nào".</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📖 Hướng dẫn</b><br>Trang bạn đang xem.</div>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:10px;">💡 Dữ liệu đồng bộ realtime — nếu đồng nghiệp khác sửa, màn hình của bạn tự cập nhật ngay, không cần tải lại trang.</p>
+  </div>
+
   <div class="guide-box">
     <h3>📌 Quy tắc đặt mã Project ID</h3>
     <div class="gg">
@@ -224,7 +237,37 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
       <div class="gi"><strong>Số thứ tự — theo ngày &amp; loại</strong><code>260506-MAIN-01</code>, <code>260506-MAIN-02</code>...<br><code>260506-SUPP-01</code> (SUPP riêng từ 01)<br><b>Không khoảng cách</b> — chỉ dùng dấu <code>-</code></div>
       <div class="gi"><strong>Full Name tự động</strong><code>[NAACP] [ID] Tên dự án</code></div>
     </div>
+    <p style="font-size:11.5px;color:var(--b800);margin-top:8px;">✅ Mã số được cấp an toàn ngay cả khi nhiều người cùng tạo dự án cùng lúc — hệ thống đảm bảo không bao giờ trùng mã, kể cả khi 2 người bấm "Thêm dự án" cùng một giây.</p>
   </div>
+
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">✏️ Thêm / Sửa / Xóa dự án &amp; task</h3>
+    <div style="font-size:12px;line-height:1.8;">
+      <p><b>Thêm dự án:</b> bấm nút "+ Thêm dự án" ở tab Danh sách → điền form → ID hiện ra tự động khi chọn đủ Ngày + Loại.</p>
+      <p><b>Sửa dự án:</b> bấm trực tiếp vào ô cần sửa ngay trong bảng (tên, người phụ trách, ngày, trạng thái...) → gõ xong rời chuột khỏi ô (hoặc bấm Tab/Enter) là tự lưu, không cần nút "Lưu" riêng.</p>
+      <p><b>Task trong dự án:</b> bấm ▶ ở đầu mỗi dòng dự án để mở rộng, xem/thêm/sửa/xóa task bên trong. Task cũng tự lưu giống dự án.</p>
+      <p><b>Xóa:</b> dùng nút ✕ trên dòng tương ứng, hệ thống sẽ hỏi xác nhận trước khi xóa hẳn khỏi Firebase.</p>
+    </div>
+  </div>
+
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🔍 Bộ lọc</h3>
+    <p style="font-size:12px;line-height:1.8;">Thanh lọc phía trên bảng cho phép lọc theo <b>Loại</b>, <b>Phòng/Bộ phận</b>, <b>Người thực hiện</b>, <b>Trạng thái</b>, hoặc tìm theo từ khóa. Bộ lọc này ảnh hưởng đồng thời tới <b>cả bảng danh sách lẫn toàn bộ tab Thống kê</b> — ví dụ lọc theo 1 phòng thì biểu đồ và số liệu thống kê cũng chỉ tính riêng phòng đó.</p>
+  </div>
+
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">👤 Nhân sự, Phòng/Bộ phận &amp; từ khóa <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">all</code></h3>
+    <div style="font-size:12px;line-height:1.8;">
+      <p>Vào tab <b>🗃 Data</b> để quản lý danh sách Nhân sự và Phòng/Bộ phận. Mỗi nhân sự có 3 thông tin: <b>Họ tên</b>, <b>Chức vụ</b>, và <b>Phòng/Bộ phận</b> mà người đó thuộc về.</p>
+      <p>Một người có thể thuộc <b>nhiều phòng/bộ phận cùng lúc</b> — nhập cách nhau dấu phẩy, ví dụ: <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">R&amp;D, QA</code>.</p>
+      <p><b>Cách dùng "all" khi điền dự án:</b> ở ô <b>Người thực hiện</b>, gõ <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">all</code> để chỉ định toàn bộ thành viên của phòng được ghi ở ô <b>Phòng/Bộ phận</b> trên cùng dự án đó.</p>
+      <div style="background:var(--a50);border:1px solid var(--a100);border-radius:8px;padding:10px 13px;margin-top:6px;">
+        ⚠️ <b>Bắt buộc chọn Phòng/Bộ phận trước</b> khi gõ "all" ở Người thực hiện. Nếu để trống Phòng/Bộ phận, hệ thống sẽ báo lỗi và không cho lưu — vì không biết "all" nghĩa là toàn bộ ai.
+      </div>
+      <p style="margin-top:8px;">Ở ô <b>Phòng/Bộ phận</b>, gõ <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">all</code> nghĩa là dự án này liên quan tới tất cả các phòng/bộ phận hiện có.</p>
+    </div>
+  </div>
+
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🎯 Phân biệt Project và Task</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -238,6 +281,16 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
       </div>
     </div>
   </div>
+
+  <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📤 Xuất / Nhập CSV &amp; In</h3>
+    <div style="font-size:12px;line-height:1.8;">
+      <p><b>Xuất CSV:</b> bấm "Xuất CSV" — file tải về chỉ chứa các dự án đang khớp với bộ lọc hiện tại, mở được bằng Excel.</p>
+      <p><b>Nhập CSV:</b> chọn 1 hoặc nhiều file CSV cùng lúc. Hệ thống tự bỏ qua dòng nào trùng <b>Tên dự án</b> với dữ liệu đã có, chỉ thêm dòng mới.</p>
+      <p><b>In:</b> bấm "🖨 In" để mở hộp thoại tùy chọn — chọn in <b>Thống kê tổng quan</b>, <b>Danh sách dự án</b>, hoặc cả hai. Khi in danh sách, có thể bỏ tick bớt những cột không cần thiết. Nội dung in cũng theo đúng bộ lọc đang chọn.</p>
+    </div>
+  </div>
+
 </div>
 
 </div>
@@ -265,6 +318,34 @@ td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;b
     <div class="modal-btns">
       <button class="btn btn-o" onclick="closeModal('addModal')">Hủy</button>
       <button class="btn btn-p" id="mSubmitBtn" onclick="submitAddProject()">Thêm dự án</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT OPTIONS MODAL -->
+<div class="modal-bg" id="printModal">
+  <div class="modal">
+    <h3>🖨 Tùy chọn in</h3>
+    <div class="form-row">
+      <label><input type="checkbox" id="prnStats" checked style="width:auto;margin-right:6px;">Thống kê tổng quan</label>
+    </div>
+    <div class="form-row">
+      <label><input type="checkbox" id="prnTable" checked onchange="toggleColPicker()" style="width:auto;margin-right:6px;">Danh sách dự án</label>
+    </div>
+    <div id="colPicker" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;padding:10px 12px;margin:4px 0 10px;display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;">
+      <label><input type="checkbox" class="prnCol" value="id" checked style="width:auto;margin-right:5px;">Project ID</label>
+      <label><input type="checkbox" class="prnCol" value="name" checked style="width:auto;margin-right:5px;">Tên dự án</label>
+      <label><input type="checkbox" class="prnCol" value="type" checked style="width:auto;margin-right:5px;">Loại</label>
+      <label><input type="checkbox" class="prnCol" value="pm" checked style="width:auto;margin-right:5px;">Quản lý DA</label>
+      <label><input type="checkbox" class="prnCol" value="exec" checked style="width:auto;margin-right:5px;">Người TH</label>
+      <label><input type="checkbox" class="prnCol" value="dept" checked style="width:auto;margin-right:5px;">Phòng/BP</label>
+      <label><input type="checkbox" class="prnCol" value="start" checked style="width:auto;margin-right:5px;">Bắt đầu</label>
+      <label><input type="checkbox" class="prnCol" value="end" checked style="width:auto;margin-right:5px;">Kết thúc</label>
+      <label><input type="checkbox" class="prnCol" value="status" checked style="width:auto;margin-right:5px;">Trạng thái</label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-o" onclick="closeModal('printModal')">Hủy</button>
+      <button class="btn btn-p" onclick="executePrint()">In</button>
     </div>
   </div>
 </div>
@@ -393,9 +474,27 @@ function showToast(msg) {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 
-function resolveAll(val, type) {
+// resolveAll: chuyển từ khóa "all" thành danh sách thật.
+//   type='person': cần deptContext (tên phòng) để biết "all" = tất cả nhân sự CỦA PHÒNG ĐÓ.
+//     - Nếu deptContext rỗng/'all': không xác định được phạm vi.
+//       + strict=true (lúc submit form): trả về null để báo lỗi, chặn lưu.
+//       + strict=false (lúc hiển thị dữ liệu đã lưu): fallback về toàn bộ nhân sự, không làm vỡ UI.
+//   type='dept': "all" = tất cả phòng/bộ phận, không đổi so với trước.
+function resolveAll(val, type, deptContext, strict) {
   if (String(val||'').trim().toLowerCase() !== 'all') return val||'';
-  if (type==='person') return Object.values(staffData).map(function(s){return s.name;}).filter(Boolean).join(', ');
+  if (type==='person') {
+    var dCtx = String(deptContext||'').trim();
+    if (!dCtx || dCtx.toLowerCase()==='all') {
+      if (strict) return null; // báo lỗi — gọi nơi submit phải tự xử lý null
+      return Object.values(staffData).map(function(s){return s.name;}).filter(Boolean).join(', '); // fallback an toàn khi hiển thị dữ liệu cũ
+    }
+    return Object.values(staffData)
+      .filter(function(s){
+        var depts = String(s.depts||'').split(',').map(function(x){ return x.trim().toLowerCase(); });
+        return depts.indexOf(dCtx.toLowerCase())>=0;
+      })
+      .map(function(s){ return s.name; }).filter(Boolean).join(', ');
+  }
   if (type==='dept')   return Object.values(deptsData).map(function(d){return d.name;}).filter(Boolean).join(', ');
   return val||'';
 }
@@ -489,7 +588,7 @@ function filterProjects() {
   var af = activeFilters;
   return Object.entries(projects).filter(function(entry){
     var p = entry[1];
-    var ex = resolveAll(p.exec,'person');
+    var ex = resolveAll(p.exec,'person',p.dept);
     var matchQ = !af.q || (p.id+p.name+p.pm+ex+(p.dept||'')).toLowerCase().indexOf(af.q)>=0;
     var matchT = !af.type   || p.type===af.type;
     var matchD = !af.dept   || (p.dept||'')=== af.dept;
@@ -607,7 +706,13 @@ function submitAddProject() {
   var dateVal = document.getElementById('mDate').value;
   var type    = document.getElementById('mType').value;
   var name    = document.getElementById('mName').value.trim();
+  var execVal = document.getElementById('mExec').value.trim();
+  var deptVal = document.getElementById('mDept').value.trim();
   if (!dateVal || !type || !name) { showToast('⚠️ Điền đủ: ngày, loại, và tên dự án.'); return; }
+  if (resolveAll(execVal,'person',deptVal,true)===null) {
+    showToast('⚠️ Gõ "all" ở Người thực hiện thì phải chọn Phòng/Bộ phận trước (để biết "all" là toàn bộ ai).');
+    return;
+  }
   var btn = document.getElementById('mSubmitBtn');
   if (btn) { btn.disabled = true; }
   allocateProjectId(dateVal, type, function(idErr, id){
@@ -640,6 +745,14 @@ function submitAddProject() {
 function updateField(el) {
   var key = el.dataset.key, field = el.dataset.f, val = el.value;
   if (!projects[key]) return;
+  if (field==='exec' && String(val||'').trim().toLowerCase()==='all') {
+    var curDept = (field==='dept') ? val : (projects[key].dept||'');
+    if (resolveAll(val,'person',curDept,true)===null) {
+      showToast('⚠️ Gõ "all" ở Người thực hiện thì dự án này cần có Phòng/Bộ phận trước.');
+      el.value = projects[key].exec||''; // khôi phục giá trị cũ, không lưu
+      return;
+    }
+  }
   projects[key][field] = val;
   var patch = {};
   patch[field] = val;
@@ -708,14 +821,8 @@ function deleteTask(projKey, taskKey) {
 // ── Stats ──
 function renderStats() {
   var filtered = filterProjects().map(function(e){ return e[1]; });
-  var total = filtered.length;
-  var main  = filtered.filter(function(p){ return p.type==='MAIN'; }).length;
-  var supp  = filtered.filter(function(p){ return p.type==='SUPP'; }).length;
-  var oper  = filtered.filter(function(p){ return p.type==='OPER'; }).length;
-  var done  = filtered.filter(function(p){ return p.status==='Hoàn thành'; }).length;
-  var inprog= filtered.filter(function(p){ return p.status==='Đang thực hiện'; }).length;
-  var pend  = filtered.filter(function(p){ return p.status==='Chờ xử lý'||p.status==='Tạm dừng'; }).length;
-  var pct   = total ? Math.round(done/total*100) : 0;
+  var s = computeStats(filtered);
+  var total=s.total, main=s.main, supp=s.supp, oper=s.oper, done=s.done, inprog=s.inprog, pend=s.pend, pct=s.pct;
 
   document.getElementById('sTotal').textContent=total;
   document.getElementById('sMain').textContent=main;
@@ -733,7 +840,7 @@ function renderStats() {
 
   var personMap = {};
   filtered.forEach(function(p){
-    var ex = resolveAll(p.exec,'person');
+    var ex = resolveAll(p.exec,'person',p.dept);
     [p.pm].concat(ex.split(',')).map(function(x){ return (x||'').trim(); }).filter(Boolean)
       .forEach(function(n){ personMap[n]=(personMap[n]||0)+1; });
   });
@@ -752,6 +859,31 @@ function renderStats() {
 }
 
 function drawCharts(filtered,main,supp,oper,done,inprog,pend,total) {
+  // Plugin tự vẽ % ngay trên từng lát doughnut/pie — không cần hover mới thấy
+  var pctLabelPlugin = {
+    id: 'pctLabel',
+    afterDatasetsDraw: function(chart) {
+      var ds = chart.data.datasets[0];
+      var sum = ds.data.reduce(function(a,b){ return a+b; }, 0);
+      if (!sum) return;
+      var ctx = chart.ctx;
+      var meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = '600 10px Segoe UI, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      meta.data.forEach(function(arc, i){
+        var val = ds.data[i];
+        if (!val) return; // không vẽ % cho lát 0
+        var pct = Math.round(val/sum*100);
+        var pos = arc.tooltipPosition();
+        ctx.fillText(pct + '%', pos.x, pos.y);
+      });
+      ctx.restore();
+    }
+  };
+
   function mk(id,type,labels,data,colors,extra) {
     if (charts[id]) { charts[id].destroy(); delete charts[id]; }
     var canvas = document.getElementById(id);
@@ -763,9 +895,10 @@ function drawCharts(filtered,main,supp,oper,done,inprog,pend,total) {
       if (extra.scales) opts.scales = extra.scales;
       if (extra.indexAxis) opts.indexAxis = extra.indexAxis;
     }
+    var plugins = (type==='doughnut'||type==='pie') ? [pctLabelPlugin] : [];
     charts[id] = new Chart(canvas.getContext('2d'),{type:type,
       data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderWidth:2,borderColor:'#fff',borderRadius:extra&&extra.radius?extra.radius:0}]},
-      options:opts});
+      options:opts, plugins:plugins});
   }
   mk('chartType','doughnut',['MAIN','SUPP','OPER'],[main,supp,oper],['#185FA5','#854F0B','#0F6E56']);
   mk('chartStatus','pie',['Hoàn thành','Đang TH','Chờ/Tạm dừng'],[done,inprog,pend],['#3B6D11','#993C1D','#888780']);
@@ -815,6 +948,7 @@ function renderDataTab() {
       '<div style="flex:1;min-width:0;">'+
         '<input value="'+esc(s.name||'')+'" placeholder="Họ tên..." onchange="updateStaff(\''+k+'\',\'name\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:13px;font-weight:500;">'+
         '<input value="'+esc(s.role||'')+'" placeholder="Chức vụ..." onchange="updateStaff(\''+k+'\',\'role\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--muted);">'+
+        '<input value="'+esc(s.depts||'')+'" list="dlDept" placeholder="Phòng/bộ phận (vd: R&D, QA)..." onchange="updateStaff(\''+k+'\',\'depts\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--b800);margin-top:2px;">'+
       '</div>'+
       '<button onclick="deleteStaff(\''+k+'\')" class="del-btn">✕</button></div>';
   }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có nhân sự.</p>';
@@ -831,9 +965,9 @@ function renderDataTab() {
 }
 
 function addStaff() {
-  fbPost('/staff', {name:'',role:''}, function(err,res) {
+  fbPost('/staff', {name:'',role:'',depts:''}, function(err,res) {
     if (err||!res||!res.name) return;
-    staffData[res.name]={name:'',role:''};
+    staffData[res.name]={name:'',role:'',depts:''};
     renderDataTab(); refreshSuggestions();
     setTimeout(function(){ var inp=document.querySelector('#staffList input'); if(inp) inp.focus(); },50);
   });
@@ -888,21 +1022,104 @@ function exportCSV() {
   a.download='NAACP_projects_'+todayStr()+'.csv'; a.click();
 }
 
-function printTable() {
+function toggleColPicker() {
+  var show = document.getElementById('prnTable').checked;
+  document.getElementById('colPicker').style.display = show ? 'grid' : 'none';
+}
+
+// Tính số liệu thống kê dùng chung cho cả renderStats() và bản in
+function computeStats(filtered) {
+  var total = filtered.length;
+  var main  = filtered.filter(function(p){ return p.type==='MAIN'; }).length;
+  var supp  = filtered.filter(function(p){ return p.type==='SUPP'; }).length;
+  var oper  = filtered.filter(function(p){ return p.type==='OPER'; }).length;
+  var done  = filtered.filter(function(p){ return p.status==='Hoàn thành'; }).length;
+  var inprog= filtered.filter(function(p){ return p.status==='Đang thực hiện'; }).length;
+  var pend  = filtered.filter(function(p){ return p.status==='Chờ xử lý'||p.status==='Tạm dừng'; }).length;
+  var pct   = total ? Math.round(done/total*100) : 0;
+  var deptMap={};
+  filtered.forEach(function(p){
+    var dr=resolveAll(p.dept,'dept');
+    dr.split(',').map(function(x){ return x.trim(); }).filter(Boolean)
+      .forEach(function(d){ deptMap[d]=(deptMap[d]||0)+1; });
+  });
+  return {total:total,main:main,supp:supp,oper:oper,done:done,inprog:inprog,pend:pend,pct:pct,deptMap:deptMap};
+}
+
+function executePrint() {
+  var wantStats = document.getElementById('prnStats').checked;
+  var wantTable = document.getElementById('prnTable').checked;
+  if (!wantStats && !wantTable) { showToast('⚠️ Chọn ít nhất 1 nội dung để in.'); return; }
+
+  var cols = Array.from(document.querySelectorAll('.prnCol:checked')).map(function(c){ return c.value; });
+  if (wantTable && !cols.length) { showToast('⚠️ Chọn ít nhất 1 cột để in danh sách.'); return; }
+
+  var colDefs = {
+    id:{label:'Project ID', get:function(p){ return p.id||''; }, mono:true},
+    name:{label:'Project Name', get:function(p){ return p.name||''; }},
+    type:{label:'Loại', get:function(p){ return p.type||''; }},
+    pm:{label:'Quản lý DA', get:function(p){ return p.pm||''; }},
+    exec:{label:'Người TH', get:function(p){ return resolveAll(p.exec,'person',p.dept); }},
+    dept:{label:'Phòng/BPhan', get:function(p){ return resolveAll(p.dept,'dept'); }},
+    start:{label:'Bắt đầu', get:function(p){ return fmtDate(p.start); }},
+    end:{label:'Kết thúc', get:function(p){ return fmtDate(p.end); }},
+    status:{label:'Trạng thái', get:function(p){ return p.status||''; }}
+  };
+
   var data = filterProjects().map(function(e){ return e[1]; });
-  var rows = data.map(function(p,i){
-    return '<tr style="'+(i%2?'background:#f8f7f4;':'')+'">'+
-      '<td>'+(i+1)+'</td><td style="font-family:monospace">'+(p.id||'')+'</td>'+
-      '<td>'+(p.name||'')+'</td><td>'+(p.type||'')+'</td>'+
-      '<td>'+(p.pm||'')+'</td><td>'+(p.exec||'')+'</td>'+
-      '<td>'+(p.dept||'')+'</td><td>'+fmtDate(p.start)+'</td>'+
-      '<td>'+fmtDate(p.end)+'</td><td>'+(p.status||'')+'</td></tr>';
-  }).join('');
-  var w=window.open('','_blank');
-  w.document.write('<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;font-size:10px;}th{background:#26215C;color:#fff;padding:6px;}td{padding:5px;border-bottom:0.5px solid #e0ddd6;}</style></head>'+
-    '<body><h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2><p style="font-size:11px;color:#888;">In ngày: '+new Date().toLocaleDateString('vi-VN')+' · '+data.length+' dự án</p>'+
-    '<table><thead><tr><th>STT</th><th>Project ID</th><th>Project Name</th><th>Loại</th><th>Quản lý DA</th><th>Người TH</th><th>Phòng/BPhan</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
-  w.document.close(); w.print();
+  var html = '<html><head><meta charset="UTF-8"><style>'+
+    'body{font-family:Arial,sans-serif;padding:20px;color:#1a1918;}'+
+    'h2{margin-bottom:2px;} .meta{font-size:11px;color:#888;margin-bottom:18px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:24px;}'+
+    'th{background:#26215C;color:#fff;padding:6px;text-align:left;}'+
+    'td{padding:5px;border-bottom:0.5px solid #e0ddd6;}'+
+    '.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}'+
+    '.stat-box{border:1px solid #e0ddd6;border-radius:6px;padding:10px;text-align:center;}'+
+    '.stat-box .v{font-size:20px;font-weight:700;} .stat-box .l{font-size:10px;color:#888;}'+
+    '.sec-h{font-size:13px;font-weight:700;margin:14px 0 8px;border-bottom:1.5px solid #26215C;padding-bottom:3px;}'+
+    '@media print{ .stat-grid{grid-template-columns:repeat(4,1fr);} }'+
+    '</style></head><body>';
+  html += '<h2>BẢNG MÃ DỰ ÁN – TEAM NAACP</h2><div class="meta">In ngày: '+new Date().toLocaleDateString('vi-VN')+' · '+data.length+' dự án (theo bộ lọc hiện tại)</div>';
+
+  if (wantStats) {
+    var s = computeStats(data);
+    html += '<div class="sec-h">📈 Thống kê tổng quan</div>';
+    html += '<div class="stat-grid">'+
+      '<div class="stat-box"><div class="v">'+s.total+'</div><div class="l">Tổng dự án</div></div>'+
+      '<div class="stat-box"><div class="v">'+s.main+'</div><div class="l">MAIN</div></div>'+
+      '<div class="stat-box"><div class="v">'+s.supp+'</div><div class="l">SUPP</div></div>'+
+      '<div class="stat-box"><div class="v">'+s.oper+'</div><div class="l">OPER</div></div>'+
+      '<div class="stat-box"><div class="v">'+s.done+'</div><div class="l">Hoàn thành ('+s.pct+'%)</div></div>'+
+      '<div class="stat-box"><div class="v">'+s.inprog+'</div><div class="l">Đang thực hiện</div></div>'+
+      '<div class="stat-box"><div class="v">'+s.pend+'</div><div class="l">Chờ / Tạm dừng</div></div>'+
+      '</div>';
+    var deptKeys = Object.keys(s.deptMap).sort();
+    if (deptKeys.length) {
+      html += '<table><thead><tr><th>Phòng / Bộ phận</th><th>Số dự án</th></tr></thead><tbody>'+
+        deptKeys.map(function(d){ return '<tr><td>'+d+'</td><td>'+s.deptMap[d]+'</td></tr>'; }).join('')+
+        '</tbody></table>';
+    }
+  }
+
+  if (wantTable) {
+    html += '<div class="sec-h">📊 Danh sách dự án</div>';
+    var theadCols = '<th>STT</th>'+cols.map(function(c){ return '<th>'+colDefs[c].label+'</th>'; }).join('');
+    var rows = data.map(function(p,i){
+      var tds = cols.map(function(c){
+        var d = colDefs[c];
+        return '<td'+(d.mono?' style="font-family:monospace"':'')+'>'+esc(d.get(p))+'</td>';
+      }).join('');
+      return '<tr style="'+(i%2?'background:#f8f7f4;':'')+'"><td>'+(i+1)+'</td>'+tds+'</tr>';
+    }).join('');
+    html += '<table><thead><tr>'+theadCols+'</tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  html += '</body></html>';
+  var w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  closeModal('printModal');
+  setTimeout(function(){ w.print(); }, 200); // đợi DOM render xong trước khi gọi print
 }
 
 // ── CSV Import ──
