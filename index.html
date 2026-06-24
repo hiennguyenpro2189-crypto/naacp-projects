@@ -96,7 +96,7 @@ td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;
 .data-item input{flex:1;border:none;background:transparent;font-size:13px;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
-.modal{background:#fff;border-radius:14px;padding:22px 26px;min-width:340px;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+.modal{background:#fff;border-radius:14px;padding:22px 26px;min-width:340px;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto;}
 .modal h3{font-size:15px;font-weight:600;margin-bottom:16px;}
 .form-row{margin-bottom:12px;}
 .form-row label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
@@ -590,7 +590,20 @@ function previewId() {
   var t = document.getElementById('mType').value;
   var el = document.getElementById('idPreview');
   if (!d || !t) { el.textContent='Chọn ngày và loại để xem ID'; return; }
-  el.textContent = (genProjectId(d, t) || 'Đang tính...') + ' (dự kiến)';
+  el.textContent = 'Đang tính...';
+  var yy = d.slice(2,4), mm = d.slice(5,7), dd2 = d.slice(8,10);
+  var prefix = yy+mm+dd2+'-'+t+'-';
+  db.ref('/projects').once('value', function(snap){
+    var allProjects = snap.val() || {};
+    var existingNums = Object.values(allProjects)
+      .map(function(p){ return p.id||''; })
+      .filter(function(id){ return id.indexOf(prefix)===0; })
+      .map(function(id){ return parseInt(id.replace(prefix,''),10); })
+      .filter(function(n){ return !isNaN(n); });
+    var next = existingNums.length ? Math.max.apply(null, existingNums)+1 : 1;
+    var preview = prefix + (next < 10 ? '0'+next : ''+next);
+    el.textContent = preview + ' (dự kiến)';
+  });
 }
 
 // ── Suggestions ──
