@@ -46,11 +46,10 @@ thead th:last-child{border-right:none;}
 tbody tr.proj-row{border-bottom:.5px solid var(--bdr);transition:background .1s;}
 tbody tr.proj-row:hover{background:var(--p50);}
 tbody tr.task-row{background:#fafaf8;border-bottom:.5px solid var(--bdr);}
-td{padding:7px 10px;font-size:12px;vertical-align:middle;word-break:break-word;}
-td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--txt);padding:0;min-width:0;}
-td input:focus,td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;}
-td input[type="text"],td input:not([type]){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-td input[type="text"]:focus,td input:not([type]):focus{white-space:normal;overflow:visible;text-overflow:clip;}
+td{padding:7px 10px;font-size:12px;vertical-align:middle;word-break:break-word;position:relative;}
+td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--txt);padding:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+td input:focus{position:absolute;z-index:200;left:0;top:0;width:max-content;min-width:100%;max-width:420px;background:#fff;border:2px solid var(--p600);border-radius:5px;padding:5px 8px;box-shadow:0 4px 16px rgba(83,74,183,.18);white-space:nowrap;overflow:visible;text-overflow:clip;outline:none;}
+td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;}
 .expand-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px;color:var(--muted);}
 .expand-btn:hover{color:var(--p600);}
 .del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;}
@@ -1337,6 +1336,44 @@ function doImport(rows, fileCount) {
 document.getElementById('mDate') && document.getElementById('mDate').addEventListener && (function(){
   document.getElementById('mDate').addEventListener('change', previewId);
   document.getElementById('mType').addEventListener('change', previewId);
+})();
+
+// ── Mở rộng input khi focus để thấy toàn bộ nội dung ──
+(function(){
+  var _canvas = document.createElement('canvas');
+  var _ctx = _canvas.getContext('2d');
+  function measureText(txt, font) {
+    _ctx.font = font || '12px Segoe UI, system-ui, sans-serif';
+    return _ctx.measureText(txt || '').width;
+  }
+  document.addEventListener('focusin', function(e) {
+    var el = e.target;
+    if (el.tagName !== 'INPUT' || !el.closest('td')) return;
+    if (el.type === 'date') return; // date input không cần mở rộng
+    var txt = el.value || el.placeholder || '';
+    var font = window.getComputedStyle(el).font || '12px Segoe UI';
+    var needed = measureText(txt, font) + 30; // padding extra
+    var tdW = el.closest('td').offsetWidth;
+    if (needed > tdW) {
+      el.style.width = Math.min(needed, 480) + 'px';
+    }
+  });
+  document.addEventListener('focusout', function(e) {
+    var el = e.target;
+    if (el.tagName !== 'INPUT' || !el.closest('td')) return;
+    el.style.width = '';
+  });
+  // Cập nhật khi gõ
+  document.addEventListener('input', function(e) {
+    var el = e.target;
+    if (el.tagName !== 'INPUT' || !el.closest('td')) return;
+    if (el.type === 'date') return;
+    if (document.activeElement !== el) return;
+    var txt = el.value || '';
+    var font = window.getComputedStyle(el).font || '12px Segoe UI';
+    var needed = measureText(txt, font) + 30;
+    el.style.width = Math.min(Math.max(needed, el.closest('td').offsetWidth), 480) + 'px';
+  });
 })();
 
 startPolling();
