@@ -810,6 +810,18 @@ function updateField(el) {
       return;
     }
   }
+  // Kiểm tra trùng Project ID khi tự nhập tay
+  if (field === 'id') {
+    var valTrimmed = (val || '').trim();
+    var isDup = Object.entries(projects).some(function(e) {
+      return e[0] !== key && (e[1].id || '').trim() === valTrimmed;
+    });
+    if (isDup) {
+      showToast('⚠️ Mã Project ID "' + valTrimmed + '" đã tồn tại. Vui lòng dùng mã khác.');
+      el.value = projects[key].id || '';
+      return;
+    }
+  }
   projects[key][field] = val;
   var patch = {};
   patch[field] = val;
@@ -1352,11 +1364,11 @@ document.getElementById('mDate') && document.getElementById('mDate').addEventLis
     popup.value = el.value;
     popup.placeholder = el.placeholder || '';
 
-    // Tính vị trí: căn theo ô gốc
+    // Tính vị trí: căn theo ô gốc (position:fixed dùng viewport coords, không cộng scroll)
     var rect = el.getBoundingClientRect();
     popup.style.display = 'block';
-    popup.style.top  = (rect.top + window.scrollY - 2) + 'px';
-    popup.style.left = (rect.left + window.scrollX - 2) + 'px';
+    popup.style.top  = (rect.top - 2) + 'px';
+    popup.style.left = (rect.left - 2) + 'px';
     popup.style.minWidth = Math.max(rect.width, 200) + 'px';
 
     // Đo độ rộng thực của nội dung bằng canvas
