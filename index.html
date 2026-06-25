@@ -478,6 +478,9 @@ function startPolling() {
     safeRenderTable();
     renderStats();
     refreshFilters();
+    // Tự động đồng bộ lại counter về đúng max thực tế mỗi khi dữ liệu thay đổi
+    // → ngăn drift counter cao hơn số dự án thực tế
+    syncCounters(projects);
   }, function(err){ console.error('projects listener error:', err); });
 
   db.ref('/staff').on('value', function(snap){
@@ -536,6 +539,30 @@ function resolveAll(val, type, deptContext, strict) {
   return val||'';
 }
 
+// ── Sync counters về đúng max thực tế (loại bỏ drift) ──
+function syncCounters(allProjects) {
+  // Gom nhóm tất cả số thứ tự theo từng prefix (YYMMDD-TYPE)
+  var maxMap = {};
+  Object.values(allProjects || {}).forEach(function(p) {
+    var id = p.id || '';
+    // ID dạng YYMMDD-TYPE-NN
+    var m = id.match(/^(\d{6}-[A-Z]+-)(\d+)$/);
+    if (!m) return;
+    var key = m[1].slice(0, -1); // bỏ dấu - cuối: "260622-MAIN"
+    var num = parseInt(m[2], 10);
+    if (!maxMap[key] || num > maxMap[key]) maxMap[key] = num;
+  });
+  // Set counter về đúng max thực tế
+  Object.keys(maxMap).forEach(function(key) {
+    db.ref('/counters/' + key).once('value', function(snap) {
+      var cur = snap.val() || 0;
+      if (cur !== maxMap[key]) {
+        db.ref('/counters/' + key).set(maxMap[key]);
+      }
+    });
+  });
+}
+
 // ── Auto-generate Project ID ──
 function genProjectId(dateStr, type) {
   if (!dateStr || !type) return null;
@@ -571,14 +598,16 @@ function allocateProjectId(dateStr, type, cb) {
     var counterKey = yy+mm+dd+'-'+type;
     var currentMax = existingNums.length ? Math.max.apply(null, existingNums) : 0;
     db.ref('/counters/'+counterKey).transaction(function(current){
-      // Nếu counter trong DB nhỏ hơn số thực tế đang có → reset về max thực tế rồi tăng
-      var base = (current||0);
-      if (base < currentMax) base = currentMax;
+      // Luôn lấy max(counter_DB, max_thực_tế) rồi tăng 1
+      // → fix cả 2 chiều: counter thấp hơn thực tế VÀ counter cao hơn thực tế (drift)
+      var base = Math.max((current||0), currentMax);
       return base + 1;
     }, function(error, committed, snap2){
       if (error) { cb(error, null); return; }
       if (!committed) { cb(new Error('transaction not committed'), null); return; }
       var next = snap2.val();
+      // Đồng bộ lại counter về đúng giá trị next (loại bỏ drift tương lai)
+      db.ref('/counters/'+counterKey).set(next);
       var id = prefix + (next < 10 ? '0'+next : ''+next);
       cb(null, id);
     });
