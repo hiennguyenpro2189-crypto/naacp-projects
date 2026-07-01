@@ -1044,7 +1044,10 @@ function drawCharts(filtered,s) {
       options:opts, plugins:plugins});
   }
   mk('chartType','doughnut',['MAIN','SUPP','OPER'],[main,supp,oper],['#185FA5','#854F0B','#0F6E56']);
-  mk('chartStatus','pie',['Hoàn thành','Đang TH','Chờ/Tạm dừng','Quá hạn'],[done,s.inprogOnTime,s.pendOnTime,s.overdue],['#3B6D11','#993C1D','#888780','#c0392b']);
+  mk('chartStatus','pie',
+    ['Hoàn thành','Đang TH','Chờ/Tạm dừng','Quá hạn - Đang TH','Quá hạn - Chờ/Tạm dừng'],
+    [done,s.inprogOnTime,s.pendOnTime,s.overdueInprog,s.overduePend],
+    ['#3B6D11','#993C1D','#888780','#c0392b','#7B241C']);
 
   if (charts['chartBar']) { charts['chartBar'].destroy(); delete charts['chartBar']; }
   var bc = document.getElementById('chartBar');
@@ -1082,9 +1085,9 @@ function drawCharts(filtered,s) {
 
 // ── Biểu đồ theo từng nhân sự (Dự án & Task, gộp Loại + Trạng thái trong 1 pie) ──
 var personTypeStatusColors = {
-  MAIN:{'Hoàn thành':'#185FA5','Đang thực hiện':'#5B9BD5','Chờ/Tạm dừng':'#BBD9F0','Quá hạn':'#c0392b'},
-  SUPP:{'Hoàn thành':'#854F0B','Đang thực hiện':'#C9821F','Chờ/Tạm dừng':'#EBC896','Quá hạn':'#a93226'},
-  OPER:{'Hoàn thành':'#0F6E56','Đang thực hiện':'#2FA98A','Chờ/Tạm dừng':'#A8E0CF','Quá hạn':'#922b21'}
+  MAIN:{'Hoàn thành':'#185FA5','Đang thực hiện':'#5B9BD5','Chờ/Tạm dừng':'#BBD9F0','Quá hạn - Đang TH':'#c0392b','Quá hạn - Chờ/Tạm dừng':'#7B241C'},
+  SUPP:{'Hoàn thành':'#854F0B','Đang thực hiện':'#C9821F','Chờ/Tạm dừng':'#EBC896','Quá hạn - Đang TH':'#a93226','Quá hạn - Chờ/Tạm dừng':'#641E16'},
+  OPER:{'Hoàn thành':'#0F6E56','Đang thực hiện':'#2FA98A','Chờ/Tạm dừng':'#A8E0CF','Quá hạn - Đang TH':'#922b21','Quá hạn - Chờ/Tạm dừng':'#512E1F'}
 };
 
 function renderPersonCharts(filtered) {
@@ -1143,12 +1146,17 @@ function drawPersonPie(canvasId, chartKey, items) {
 
   var today = todayStr();
   var order = ['MAIN','SUPP','OPER'];
-  var buckets = ['Hoàn thành','Đang thực hiện','Chờ/Tạm dừng','Quá hạn'];
+  var buckets = ['Hoàn thành','Đang thực hiện','Chờ/Tạm dừng','Quá hạn - Đang TH','Quá hạn - Chờ/Tạm dừng'];
   var counts = {};
   items.forEach(function(it){
     if (!it.type) return;
     var overdue = it.end && it.end < today && it.status !== 'Hoàn thành';
-    var b = it.status==='Hoàn thành' ? 'Hoàn thành' : (overdue ? 'Quá hạn' : (it.status==='Đang thực hiện' ? 'Đang thực hiện' : 'Chờ/Tạm dừng'));
+    var b;
+    if (it.status==='Hoàn thành') b='Hoàn thành';
+    else if (overdue && it.status==='Đang thực hiện') b='Quá hạn - Đang TH';
+    else if (overdue) b='Quá hạn - Chờ/Tạm dừng';
+    else if (it.status==='Đang thực hiện') b='Đang thực hiện';
+    else b='Chờ/Tạm dừng';
     var key = it.type+'|'+b;
     counts[key] = (counts[key]||0)+1;
   });
@@ -1453,10 +1461,10 @@ function executePrint() {
           'tooltip:{callbacks:{label:function(ctx){var t=['+s.main+','+s.supp+','+s.oper+'].reduce(function(a,b){return a+b;},0);return " "+ctx.label+": "+ctx.raw+(t?" ("+Math.round(ctx.raw/t*100)+"%)":"");}}}},responsive:false},'+
           'plugins:[prnCountLabel]});'+
         'new Chart(document.getElementById("prnChartStatus"),{type:"pie",'+
-          'data:{labels:["Hoàn thành ('+s.done+')","Đang TH ('+s.inprogOnTime+')","Chờ/Tạm dừng ('+s.pendOnTime+')","Quá hạn ('+s.overdue+')"],'+
-          'datasets:[{data:['+s.done+','+s.inprogOnTime+','+s.pendOnTime+','+s.overdue+'],backgroundColor:["#3B6D11","#993C1D","#888780","#c0392b"],borderWidth:2,borderColor:"#fff"}]},'+
+          'data:{labels:["Hoàn thành ('+s.done+')","Đang TH ('+s.inprogOnTime+')","Chờ/Tạm dừng ('+s.pendOnTime+')","Quá hạn - Đang TH ('+s.overdueInprog+')","Quá hạn - Chờ/Tạm dừng ('+s.overduePend+')"],'+
+          'datasets:[{data:['+s.done+','+s.inprogOnTime+','+s.pendOnTime+','+s.overdueInprog+','+s.overduePend+'],backgroundColor:["#3B6D11","#993C1D","#888780","#c0392b","#7B241C"],borderWidth:2,borderColor:"#fff"}]},'+
           'options:{plugins:{legend:{position:"bottom",labels:{font:{size:11}}},'+
-          'tooltip:{callbacks:{label:function(ctx){var t=['+s.done+','+s.inprogOnTime+','+s.pendOnTime+','+s.overdue+'].reduce(function(a,b){return a+b;},0);return " "+ctx.label+": "+ctx.raw+(t?" ("+Math.round(ctx.raw/t*100)+"%)":"");}}}},responsive:false},'+
+          'tooltip:{callbacks:{label:function(ctx){var t=['+s.done+','+s.inprogOnTime+','+s.pendOnTime+','+s.overdueInprog+','+s.overduePend+'].reduce(function(a,b){return a+b;},0);return " "+ctx.label+": "+ctx.raw+(t?" ("+Math.round(ctx.raw/t*100)+"%)":"");}}}},responsive:false},'+
           'plugins:[prnCountLabel]});'+
       '});'+
       '<\/script>';
