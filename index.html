@@ -1003,9 +1003,9 @@ function renderStats() {
 
 function drawCharts(filtered,s) {
   var main=s.main, supp=s.supp, oper=s.oper, done=s.done, inprog=s.inprog, pend=s.pend, total=s.total;
-  // Plugin tự vẽ % ngay trên từng lát doughnut/pie — không cần hover mới thấy
-  var pctLabelPlugin = {
-    id: 'pctLabel',
+  // Plugin tự vẽ SỐ LƯỢNG ngay trên từng lát doughnut/pie — % chỉ hiện khi hover (tooltip)
+  var countLabelPlugin = {
+    id: 'countLabel',
     afterDatasetsDraw: function(chart) {
       var ds = chart.data.datasets[0];
       var sum = ds.data.reduce(function(a,b){ return a+b; }, 0);
@@ -1013,16 +1013,15 @@ function drawCharts(filtered,s) {
       var ctx = chart.ctx;
       var meta = chart.getDatasetMeta(0);
       ctx.save();
-      ctx.font = '600 10px Segoe UI, sans-serif';
+      ctx.font = '600 11px Segoe UI, sans-serif';
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       meta.data.forEach(function(arc, i){
         var val = ds.data[i];
-        if (!val) return; // không vẽ % cho lát 0
-        var pct = Math.round(val/sum*100);
+        if (!val) return; // không vẽ nhãn cho lát 0
         var pos = arc.tooltipPosition();
-        ctx.fillText(pct + '%', pos.x, pos.y);
+        ctx.fillText(String(val), pos.x, pos.y);
       });
       ctx.restore();
     }
@@ -1039,7 +1038,7 @@ function drawCharts(filtered,s) {
       if (extra.scales) opts.scales = extra.scales;
       if (extra.indexAxis) opts.indexAxis = extra.indexAxis;
     }
-    var plugins = (type==='doughnut'||type==='pie') ? [pctLabelPlugin] : [];
+    var plugins = (type==='doughnut'||type==='pie') ? [countLabelPlugin] : [];
     charts[id] = new Chart(canvas.getContext('2d'),{type:type,
       data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderWidth:2,borderColor:'#fff',borderRadius:extra&&extra.radius?extra.radius:0}]},
       options:opts, plugins:plugins});
@@ -1168,11 +1167,34 @@ function drawPersonPie(canvasId, chartKey, items) {
     return;
   }
   var total = data.reduce(function(a,b){ return a+b; },0);
+  var pcCountLabelPlugin = {
+    id: 'pcCountLabel',
+    afterDatasetsDraw: function(chart) {
+      var ds = chart.data.datasets[0];
+      var sum = ds.data.reduce(function(a,b){ return a+b; }, 0);
+      if (!sum) return;
+      var ctx = chart.ctx;
+      var meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = '600 9px Segoe UI, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      meta.data.forEach(function(arc, i){
+        var val = ds.data[i];
+        if (!val) return;
+        var pos = arc.tooltipPosition();
+        ctx.fillText(String(val), pos.x, pos.y);
+      });
+      ctx.restore();
+    }
+  };
   charts[chartKey] = new Chart(canvas.getContext('2d'),{type:'pie',
     data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderWidth:1,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:true,
       plugins:{legend:{position:'bottom',labels:{font:{size:8},boxWidth:8,padding:4}},
-        tooltip:{callbacks:{label:function(ctx){ return ' '+ctx.label+': '+ctx.raw+' ('+Math.round(ctx.raw/total*100)+'%)'; }}}}}});
+        tooltip:{callbacks:{label:function(ctx){ return ' '+ctx.label+': '+ctx.raw+' ('+Math.round(ctx.raw/total*100)+'%)'; }}}}},
+    plugins:[pcCountLabelPlugin]});
 }
 
 // ── Data Tab ──
@@ -1418,16 +1440,24 @@ function executePrint() {
       '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>'+
       '<script>'+
       'window.addEventListener("load",function(){'+
-        'var pct=function(v,t){return t?Math.round(v/t*100)+"%":"0%";};'+
+        'var prnCountLabel={id:"prnCountLabel",afterDatasetsDraw:function(chart){'+
+          'var ds=chart.data.datasets[0];var sum=ds.data.reduce(function(a,b){return a+b;},0);if(!sum)return;'+
+          'var ctx=chart.ctx;var meta=chart.getDatasetMeta(0);ctx.save();'+
+          'ctx.font="600 12px Segoe UI, sans-serif";ctx.fillStyle="#fff";ctx.textAlign="center";ctx.textBaseline="middle";'+
+          'meta.data.forEach(function(arc,i){var val=ds.data[i];if(!val)return;var pos=arc.tooltipPosition();ctx.fillText(String(val),pos.x,pos.y);});'+
+          'ctx.restore();}};'+
         'new Chart(document.getElementById("prnChartType"),{type:"pie",'+
           'data:{labels:["MAIN ('+s.main+')","SUPP ('+s.supp+')","OPER ('+s.oper+')"],'+
           'datasets:[{data:['+s.main+','+s.supp+','+s.oper+'],backgroundColor:["#185FA5","#854F0B","#0F6E56"],borderWidth:2,borderColor:"#fff"}]},'+
           'options:{plugins:{legend:{position:"bottom",labels:{font:{size:11}}},'+
-          'datalabels:{display:false}},responsive:false}});'+
+          'tooltip:{callbacks:{label:function(ctx){var t=['+s.main+','+s.supp+','+s.oper+'].reduce(function(a,b){return a+b;},0);return " "+ctx.label+": "+ctx.raw+(t?" ("+Math.round(ctx.raw/t*100)+"%)":"");}}}},responsive:false},'+
+          'plugins:[prnCountLabel]});'+
         'new Chart(document.getElementById("prnChartStatus"),{type:"pie",'+
           'data:{labels:["Hoàn thành ('+s.done+')","Đang TH ('+s.inprogOnTime+')","Chờ/Tạm dừng ('+s.pendOnTime+')","Quá hạn ('+s.overdue+')"],'+
           'datasets:[{data:['+s.done+','+s.inprogOnTime+','+s.pendOnTime+','+s.overdue+'],backgroundColor:["#3B6D11","#993C1D","#888780","#c0392b"],borderWidth:2,borderColor:"#fff"}]},'+
-          'options:{plugins:{legend:{position:"bottom",labels:{font:{size:11}}}},responsive:false}});'+
+          'options:{plugins:{legend:{position:"bottom",labels:{font:{size:11}}},'+
+          'tooltip:{callbacks:{label:function(ctx){var t=['+s.done+','+s.inprogOnTime+','+s.pendOnTime+','+s.overdue+'].reduce(function(a,b){return a+b;},0);return " "+ctx.label+": "+ctx.raw+(t?" ("+Math.round(ctx.raw/t*100)+"%)":"");}}}},responsive:false},'+
+          'plugins:[prnCountLabel]});'+
       '});'+
       '<\/script>';
     var deptKeys = Object.keys(s.deptMap).sort();
