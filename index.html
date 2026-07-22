@@ -126,13 +126,17 @@ td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;
 /* ── Cải tiến: hàng theo trạng thái, progress mini, sort, kanban, gantt, gate, workload ── */
 tr.proj-row.row-done{background:#F2F8EC;}
 tr.proj-row.row-done:hover{background:#E7F3DC;}
-tr.proj-row.row-paused{background:#FDF8ED;}
-tr.proj-row.row-paused:hover{background:#FBF0D8;}
+tr.proj-row.row-paused{background:#FDF3E6;}
+tr.proj-row.row-paused:hover{background:#FBE8CE;}
+tr.proj-row.row-inprogress{background:#EAF2FA;}
+tr.proj-row.row-inprogress:hover{background:#DCEAF6;}
 tr.proj-row.row-overdue{background:#FCEEEC;}
 tr.proj-row.row-overdue:hover{background:#F9E1DD;}
 tr.task-row.row-done{background:#F2F8EC;}
-tr.task-row.row-paused{background:#FDF8ED;}
+tr.task-row.row-paused{background:#FDF3E6;}
+tr.task-row.row-inprogress{background:#EAF2FA;}
 tr.task-row.row-overdue{background:#FCEEEC;}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
 .overdue-flag{color:#c0392b;margin-right:3px;font-size:11px;}
 .mini-prog-cell{display:flex;align-items:center;gap:5px;}
 .mini-prog-wrap{flex:1;background:#e8e6e0;border-radius:3px;height:5px;overflow:hidden;min-width:30px;}
@@ -155,7 +159,7 @@ th.sortable.sort-active .sort-ind{opacity:1;}
 .user-badge{border-radius:20px;padding:5px 12px;font-size:11.5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);cursor:pointer;white-space:nowrap;}
 .user-badge:hover{background:rgba(255,255,255,.2);}
 /* Kanban */
-.kanban-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}
+.kanban-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:start;}
 .kcol{background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:10px;min-height:120px;}
 .kcol h4{font-size:11.5px;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;}
 .kcard{background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;padding:9px 10px;margin-bottom:8px;cursor:grab;font-size:11.5px;}
@@ -166,6 +170,20 @@ th.sortable.sort-active .sort-ind{opacity:1;}
 .kcard .kc-meta{font-size:10px;color:var(--muted);margin-bottom:5px;}
 .kcol.dragover{outline:2px dashed var(--p600);outline-offset:-4px;}
 /* Gantt */
+.gantt-box{padding:10px 12px;background:#fafaf8;}
+.gantt-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:6px;padding-left:150px;}
+.gantt-grid{display:grid;grid-template-columns:145px 1fr;row-gap:7px;column-gap:8px;align-items:center;position:relative;}
+.gantt-label{font-size:11px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gantt-label b{color:var(--p800);}
+.gantt-track2{position:relative;height:20px;background:#eeece6;border-radius:4px;}
+.gantt-bar2{position:absolute;top:2px;height:16px;border-radius:4px;opacity:.35;}
+.gantt-fill{position:absolute;top:2px;height:16px;border-radius:4px;}
+.gantt-bartxt{position:absolute;top:0;height:20px;display:flex;align-items:center;font-size:9px;color:var(--txt);white-space:nowrap;padding-left:4px;}
+.gantt-today{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed #c0392b;z-index:5;}
+.gantt-today-tag{position:absolute;top:-16px;font-size:9px;color:#c0392b;font-weight:700;white-space:nowrap;transform:translateX(-50%);}
+.gantt-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:1px dashed var(--bdr);font-size:10.5px;color:var(--muted);}
+.gantt-legend span{display:inline-flex;align-items:center;gap:4px;}
+/* Gantt (cũ, giữ để tương thích) */
 .gantt-row{padding:8px 10px 8px 30px;background:#fafaf8;}
 .gantt-track{position:relative;height:18px;background:#eeece6;border-radius:4px;overflow:hidden;}
 .gantt-bar{position:absolute;top:0;height:100%;border-radius:4px;font-size:9px;color:#fff;display:flex;align-items:center;padding-left:5px;white-space:nowrap;overflow:hidden;}
@@ -178,12 +196,25 @@ th.sortable.sort-active .sort-ind{opacity:1;}
 </head>
 <body>
 
-<!-- GATE: chọn tên trước khi vào app -->
+<!-- GATE: nhập tên + mã Admin (nếu có) trước khi vào app -->
 <div id="gateBg">
   <div class="gate-card">
     <h2>👋 Xin chào!</h2>
-    <p>Chọn tên của bạn để vào hệ thống. Quyền chỉnh sửa sẽ theo đúng vai trò của bạn (Quản lý DA sửa được mọi thứ; Nhân sự thường chỉ sửa Tiến độ / Trạng thái / Ghi chú của phần việc mình).</p>
-    <select id="gateSelect"><option value="">-- Chọn tên --</option></select>
+    <p>Nhập tên của bạn. Nếu bạn là Admin, nhập thêm Mã Admin để có toàn quyền; nếu không, chọn vai trò Nhân sự hoặc Khách.</p>
+    <div class="form-row" style="text-align:left;"><label style="font-size:12px;color:var(--muted);">Họ tên</label>
+      <input type="text" id="gateName" placeholder="Nhập họ tên..." style="width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;margin-bottom:8px;">
+    </div>
+    <select id="gateSelect" onchange="gateSelectChange()"><option value="">-- hoặc chọn từ danh sách nhân sự --</option></select>
+    <div class="form-row" style="text-align:left;">
+      <label style="font-size:12px;color:var(--muted);">Vai trò (nếu không nhập Mã Admin)</label>
+      <select id="gateRole" style="margin-bottom:8px;">
+        <option value="staff">👷 Nhân sự — điền dự án/task, sửa trạng thái, tiến độ task, ghi chú</option>
+        <option value="guest">👀 Khách — chỉ xem</option>
+      </select>
+    </div>
+    <div class="form-row" style="text-align:left;"><label style="font-size:12px;color:var(--muted);">Mã Admin (tùy chọn — bỏ trống nếu không phải Admin)</label>
+      <input type="password" id="gateCode" placeholder="Nhập mã Admin để có toàn quyền..." style="width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;margin-bottom:14px;">
+    </div>
     <button onclick="confirmGateUser()">Vào hệ thống</button>
   </div>
 </div>
@@ -260,7 +291,7 @@ th.sortable.sort-active .sort-ind{opacity:1;}
 </div>
 
 <div id="section-kanban" class="section">
-  <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">🗂 Kéo-thả thẻ dự án giữa các cột để đổi trạng thái nhanh (theo đúng bộ lọc đang chọn ở tab Danh sách). Chỉ Quản lý DA / vai trò quản lý mới kéo-thả được.</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">🗂 Kéo-thả thẻ dự án giữa các cột để đổi trạng thái nhanh (theo đúng bộ lọc đang chọn ở tab Danh sách). Nhân sự và Admin đều kéo-thả được để đổi trạng thái.</div>
   <div class="kanban-wrap" id="kanbanWrap"></div>
 </div>
 
@@ -338,6 +369,14 @@ th.sortable.sort-active .sort-ind{opacity:1;}
   </div>
   <div style="background:var(--b50);border:1px solid #b5d4f4;border-radius:8px;padding:11px 14px;font-size:12px;color:var(--b800);">
     💡 Nhân sự và phòng/bộ phận sẽ được gợi ý khi điền dự án. Điền <code style="background:rgba(0,0,0,.07);padding:0 3px;border-radius:3px;">all</code> vào Người thực hiện hoặc Phòng/Bộ phận để chọn tất cả.
+  </div>
+  <div class="data-panel" id="adminCodePanel" style="margin-top:18px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">🔑 Mã Admin</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Chỉ Admin mới thấy và đổi được mã này. Người nhập đúng mã khi vào hệ thống sẽ có toàn quyền (sửa mọi trường, xóa, quản lý nhân sự/phòng ban).</div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="newAdminCode" placeholder="Nhập mã Admin mới..." style="flex:1;padding:8px 10px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;">
+      <button class="btn btn-p btn-sm" onclick="changeAdminCode()">Đổi mã</button>
+    </div>
   </div>
 </div>
 
@@ -435,23 +474,24 @@ th.sortable.sort-active .sort-ind{opacity:1;}
   <div class="guide-box">
     <h3>🆕 Các tính năng mới</h3>
     <div class="gg">
-      <div class="gi"><strong>👤 Chọn tên khi vào app</strong>Xác định bạn là Quản lý DA hay Nhân sự thường để phân quyền sửa. Bấm vào tên ở góc phải để đổi người.</div>
+      <div class="gi"><strong>👤 Nhập tên khi vào app</strong>Nhập tên + chọn vai trò (Nhân sự/Khách), hoặc nhập Mã Admin để có toàn quyền. Bấm vào tên ở góc phải để đổi người/vai trò.</div>
       <div class="gi"><strong>🎨 Màu dòng &amp; ⚠️ quá hạn</strong>Dòng xanh nhạt = hoàn thành, vàng nhạt = tạm dừng, đỏ nhạt = quá hạn. Icon ⚠️ hiện ngay ở cột STT.</div>
       <div class="gi"><strong>📶 Thanh tiến độ mini</strong>Mỗi dòng dự án/task có thanh % ngay trong bảng, không cần mở riêng.</div>
       <div class="gi"><strong>↕️ Sắp xếp cột</strong>Bấm vào tiêu đề cột (Project ID, Loại, Trạng thái, Tiến độ...) để sắp xếp tăng/giảm.</div>
-      <div class="gi"><strong>🗂 Kanban</strong>Tab riêng — kéo-thả thẻ dự án giữa 4 cột trạng thái để cập nhật nhanh (chỉ Quản lý DA).</div>
+      <div class="gi"><strong>🗂 Kanban</strong>Tab riêng — kéo-thả thẻ dự án giữa 4 cột trạng thái để cập nhật nhanh (Nhân sự và Admin đều dùng được).</div>
       <div class="gi"><strong>📶 Gantt đơn giản</strong>Mở rộng 1 dự án (▶) rồi bấm "Xem Gantt" để thấy timeline dự án và các task.</div>
       <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, ai đang có hơn 3 việc "Đang thực hiện" cùng lúc sẽ có nhãn "Quá tải".</div>
       <div class="gi"><strong>🕘 Lịch sử</strong>Tab riêng ghi lại ai vừa sửa gì, lúc nào — 300 thao tác gần nhất.</div>
       <div class="gi"><strong>💾 Sao lưu JSON</strong>Nút "Sao lưu JSON" ở tab Danh sách — tải toàn bộ dữ liệu (dự án, nhân sự, phòng ban, lịch sử) về máy đề phòng sự cố.</div>
-      <div class="gi"><strong>🔒 Phân quyền cơ bản</strong>Quản lý DA sửa được mọi thứ và xóa được. Nhân sự thường chỉ sửa Trạng thái/Tiến độ/Ghi chú của dự án hoặc task mình tham gia. Khách chỉ xem.</div>
+      <div class="gi"><strong>🔒 Phân quyền theo Mã Admin</strong>Admin (nhập đúng mã) sửa mọi trường, xóa được, quản lý nhân sự/phòng ban và đổi mã Admin. Nhân sự thêm được dự án/task, sửa Trạng thái, Ghi chú/Link (Tiến độ dự án tự tính từ task; tiến độ task nhân sự vẫn chỉnh được). Khách chỉ xem.</div>
     </div>
   </div>
 
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📶 Cột Tiến độ</h3>
     <div style="font-size:12px;line-height:1.8;">
-      <p>Mỗi dự án và task có cột <b>Tiến độ</b> — chọn nhanh mức % hoàn thành theo bước <b>10%</b> (0%, 10%, 20%... 100%). Chọn xong tự lưu như các ô khác.</p>
+      <p><b>Tiến độ task</b>: chọn nhanh mức % hoàn thành theo bước <b>10%</b> (0%, 10%, 20%... 100%). Chọn xong tự lưu như các ô khác.</p>
+      <p><b>Tiến độ dự án</b>: tự động tính bằng <b>trung bình % của các task</b> bên trong — không ai sửa tay được cột này, kể cả Admin. Nếu dự án chưa có task nào, tiến độ hiện 0%.</p>
       <p>Tab <b>Thống kê</b> hiển thị <b>Tiến độ trung bình</b> của các dự án đang khớp bộ lọc, giúp nhìn nhanh mức độ hoàn thành chung mà không cần mở từng dự án.</p>
     </div>
   </div>
@@ -477,14 +517,10 @@ th.sortable.sort-active .sort-ind{opacity:1;}
       <div class="form-row"><label>Ngày bắt đầu</label><input type="date" id="mStart"></div>
       <div class="form-row"><label>Dự kiến kết thúc</label><input type="date" id="mEnd"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-row"><label>Trạng thái</label>
-        <select id="mStatus"><option>Chờ xử lý</option><option>Đang thực hiện</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
-      </div>
-      <div class="form-row"><label>Tiến độ</label>
-        <select id="mProgress"></select>
-      </div>
+    <div class="form-row"><label>Trạng thái</label>
+      <select id="mStatus"><option>Chờ xử lý</option><option>Đang thực hiện</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
     </div>
+    <div style="font-size:11px;color:var(--muted);margin:-6px 0 10px;">💡 Tiến độ dự án sẽ tự tính theo trung bình tiến độ các task sau khi bạn thêm task.</div>
     <div class="form-row"><label>Mô tả / Link (tùy chọn, tối đa 100 từ hoặc dán link file)</label><input type="text" id="mNote" placeholder="Mô tả ngắn hoặc dán link Google Drive, Confluence..."></div>
     <div class="modal-btns">
       <button class="btn btn-o" onclick="closeModal('addModal')">Hủy</button>
@@ -544,6 +580,7 @@ var charts = {};
 var currentUser = null; // {name, role}
 var sortState = {field:null, dir:1};
 var STATUS_ORDER = ['Chờ xử lý','Đang thực hiện','Tạm dừng','Hoàn thành'];
+var STATUS_COLORS = {'Chờ xử lý':'#888780','Đang thực hiện':'#185FA5','Tạm dừng':'#C9821F','Hoàn thành':'#3B6D11','Quá hạn':'#c0392b'};
 
 // ── Firebase Realtime SDK helpers (giữ nguyên kiểu callback(err,res) như cũ) ──
 function fbGet(path, cb) {
@@ -641,6 +678,10 @@ function startPolling() {
     logsData = snap.val() || {};
     renderLogs();
   }, function(err){ console.error('logs listener error:', err); });
+
+  db.ref('/config').on('value', function(snap){
+    window._cfg = snap.val() || {};
+  }, function(err){ console.error('config listener error:', err); });
 }
 
 // ── Render Lịch sử (audit log) ──
@@ -672,6 +713,22 @@ function fmtDate(iso) {
   return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
 }
 // Sinh options % tiến độ 0 → 100, bước 10
+// ── 5. Tiến độ dự án = trung bình tiến độ các task (tự tính, không sửa tay) ──
+function computeProjectProgress(p) {
+  var tasks = p && p.tasks ? Object.values(p.tasks) : [];
+  if (!tasks.length) return 0;
+  var sum = tasks.reduce(function(a,t){ return a + (parseInt(t.progress,10)||0); }, 0);
+  return Math.round(sum/tasks.length);
+}
+function syncProjectProgress(projKey) {
+  if (!projects[projKey]) return;
+  var val = computeProjectProgress(projects[projKey]);
+  var valStr = String(val);
+  if (String(projects[projKey].progress||'0') !== valStr) {
+    projects[projKey].progress = valStr;
+    fbPatch('/projects/'+projKey, {progress: valStr});
+  }
+}
 function progressOptions(val) {
   var v = (val===undefined || val===null || val==='') ? '0' : String(val);
   var opts = '';
@@ -688,33 +745,43 @@ function showToast(msg) {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 
-// ── 13. Chọn tên / phân quyền cơ bản (không mật khẩu) ──
-function isManagerRole(role) {
-  var r = String(role||'').toLowerCase();
-  return r.indexOf('quản lý')>=0 || r.indexOf('trưởng')>=0 || r.indexOf('giám đốc')>=0 || r.indexOf('admin')>=0;
+// ── 13. Nhập tên + Mã Admin / phân quyền theo vai trò (admin / nhân sự / khách) ──
+var DEFAULT_ADMIN_CODE = 'NAACP2026'; // mã mặc định — Admin có thể đổi trong tab Data
+function getAdminCode() {
+  return (window._cfg && window._cfg.adminCode) ? window._cfg.adminCode : DEFAULT_ADMIN_CODE;
 }
 function populateGateSelect() {
   var sel = document.getElementById('gateSelect');
+  if (!sel) return;
   var names = Object.values(staffData).map(function(s){ return s.name; }).filter(Boolean).sort();
   var cur = sel.value;
-  sel.innerHTML = '<option value="">-- Chọn tên --</option>' +
-    names.map(function(n){ return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(n)+'</option>'; }).join('') +
-    '<option value="__guest__">Khách (chỉ xem)</option>';
+  sel.innerHTML = '<option value="">-- Chọn tên (hoặc tự nhập ở ô trên) --</option>' +
+    names.map(function(n){ return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
 }
 function openGate() {
   populateGateSelect();
+  document.getElementById('gateName').value = currentUser && !currentUser.guest ? currentUser.name : '';
+  document.getElementById('gateCode').value = '';
+  document.getElementById('gateRole').value = currentUser && currentUser.role==='staff' ? 'staff' : 'guest';
   document.getElementById('gateBg').classList.remove('hidden');
 }
-function confirmGateUser() {
+function gateSelectChange() {
   var sel = document.getElementById('gateSelect');
-  var val = sel.value;
-  if (!val) { showToast('⚠️ Vui lòng chọn tên.'); return; }
-  if (val === '__guest__') {
-    currentUser = {name:'Khách', role:'Khách (chỉ xem)', guest:true};
+  if (sel.value) document.getElementById('gateName').value = sel.value;
+}
+function confirmGateUser() {
+  var name = document.getElementById('gateName').value.trim();
+  var code = document.getElementById('gateCode').value.trim();
+  var roleSel = document.getElementById('gateRole').value;
+  if (!name) { showToast('⚠️ Vui lòng nhập hoặc chọn tên của bạn.'); return; }
+  var role = 'guest';
+  if (code) {
+    if (code === getAdminCode()) { role = 'admin'; }
+    else { showToast('⛔ Mã Admin không đúng.'); return; }
   } else {
-    var staff = Object.values(staffData).find(function(s){ return s.name===val; }) || {name:val, role:''};
-    currentUser = {name:staff.name, role:staff.role||'', guest:false};
+    role = (roleSel==='staff') ? 'staff' : 'guest';
   }
+  currentUser = {name:name, role:role, guest:(role==='guest')};
   try { localStorage.setItem('naacp_user', JSON.stringify(currentUser)); } catch(e){}
   document.getElementById('gateBg').classList.add('hidden');
   updateUserBadge();
@@ -724,12 +791,11 @@ function updateUserBadge() {
   var b = document.getElementById('userBadge');
   if (!b) return;
   if (!currentUser) { b.textContent = '👤 Chọn tên'; return; }
-  var tag = currentUser.guest ? ' (chỉ xem)' : (isManagerRole(currentUser.role) ? ' (Quản lý)' : ' (Nhân sự)');
-  b.textContent = '👤 ' + currentUser.name + tag;
+  var tagMap = {admin:' (Admin)', staff:' (Nhân sự)', guest:' (Khách - chỉ xem)'};
+  b.textContent = '👤 ' + currentUser.name + (tagMap[currentUser.role]||'');
   var mgr = canEditAll();
-  ['csvIn'].forEach(function(id){}); // giữ tham chiếu, không đổi input file
   var addBtn = document.querySelector('.btn-p[onclick="openAddProject()"]');
-  if (addBtn) addBtn.style.display = mgr ? '' : 'none';
+  if (addBtn) addBtn.style.display = (currentUser.role!=='guest') ? '' : 'none';
   var importBtnWrap = document.querySelector('.btn-t[onclick*="csvIn"]');
   if (importBtnWrap) importBtnWrap.style.display = mgr ? '' : 'none';
 }
@@ -745,41 +811,48 @@ function tryRestoreUser() {
   }
   updateUserBadge();
 }
-// Quyền: quản lý sửa được mọi thứ; nhân sự thường chỉ sửa Trạng thái/Tiến độ/Ghi chú của phần việc liên quan tới mình; khách chỉ xem.
-function canEditAll() {
-  return !!currentUser && !currentUser.guest && isManagerRole(currentUser.role);
-}
-function isPersonInvolved(p, name) {
-  if (!name) return false;
-  if ((p.pm||'').trim()===name) return true;
-  var ex = resolveAll(p.exec,'person',p.dept).split(',').map(function(x){return x.trim();});
-  return ex.indexOf(name)>=0;
-}
-function isTaskInvolved(p, t, name) {
-  if (!name) return false;
-  var ex = resolveAll(t.exec,'person',p.dept).split(',').map(function(x){return x.trim();});
-  return ex.indexOf(name)>=0;
-}
+// Quyền theo vai trò (phẳng, áp dụng cho mọi dự án/task, không giới hạn theo người phụ trách):
+//  - admin: sửa mọi trường, xóa, quản lý nhân sự/phòng ban, đổi mã Admin
+//  - staff (nhân sự): thêm dự án/task, sửa Trạng thái, sửa Ghi chú/Link; Tiến độ dự án tự tính từ task (không sửa tay),
+//    tiến độ TASK vẫn sửa được tay
+//  - guest (khách): chỉ xem, không sửa được gì
+function canEditAll() { return !!currentUser && currentUser.role==='admin'; }
+function canStaffOrAdmin() { return !!currentUser && (currentUser.role==='admin' || currentUser.role==='staff'); }
+// field 'progress' của PROJECT luôn tự tính -> không ai sửa tay được (kể cả admin), chỉ sửa qua task
 function canEditProjectField(p, field) {
-  if (!currentUser || currentUser.guest) return false;
+  if (!currentUser) return false;
+  if (field==='progress') return false;
   if (canEditAll()) return true;
-  if (['status','progress','note'].indexOf(field)>=0) return isPersonInvolved(p, currentUser.name);
+  if (['status','note'].indexOf(field)>=0) return canStaffOrAdmin();
   return false;
 }
 function canEditTaskField(p, t, field) {
-  if (!currentUser || currentUser.guest) return false;
+  if (!currentUser) return false;
   if (canEditAll()) return true;
-  if (['status','progress','note'].indexOf(field)>=0) return isTaskInvolved(p, t, currentUser.name);
+  if (['status','progress','note'].indexOf(field)>=0) return canStaffOrAdmin();
   return false;
 }
 function canDelete() { return canEditAll(); }
-function canAddProject() { return canEditAll(); }
-function canAddTask(p) { return canEditAll() || isPersonInvolved(p, currentUser?currentUser.name:''); }
+function canAddProject() { return canStaffOrAdmin(); }
+function canAddTask(p) { return canStaffOrAdmin(); }
+function canChangeAdminCode() { return canEditAll(); }
+function changeAdminCode() {
+  if (!canChangeAdminCode()) { showToast('⛔ Chỉ Admin mới đổi được mã Admin.'); return; }
+  var val = document.getElementById('newAdminCode').value.trim();
+  if (!val || val.length<4) { showToast('⚠️ Mã Admin cần tối thiểu 4 ký tự.'); return; }
+  db.ref('/config').update({adminCode: val}, function(err){
+    if (err) { showToast('⚠️ Lỗi khi đổi mã.'); return; }
+    window._cfg = window._cfg || {}; window._cfg.adminCode = val;
+    document.getElementById('newAdminCode').value='';
+    showToast('✅ Đã đổi mã Admin.');
+    writeLog('Đổi mã Admin', '');
+  });
+}
 
 // ── 8. Ghi log thao tác (lịch sử) ──
 function writeLog(action, detail) {
   if (!currentUser) return;
-  var entry = { who: currentUser.name, action: action, detail: detail||'', time: Date.now() };
+  var entry = { who: currentUser.name, role: currentUser.role, action: action, detail: detail||'', time: Date.now() };
   fbPost('/logs', entry);
 }
 
@@ -1005,12 +1078,12 @@ function renderTable() {
     if (overdue) return 'row-overdue';
     if (item.status==='Hoàn thành') return 'row-done';
     if (item.status==='Tạm dừng') return 'row-paused';
+    if (item.status==='Đang thực hiện') return 'row-inprogress';
     return '';
   }
-  function miniProgCell(item, dataAttr, onchangeFn, disabled) {
+  function taskProgCell(item, dataAttr, onchangeFn, disabled) {
     var v = item.progress!==undefined && item.progress!==null && item.progress!=='' ? item.progress : '0';
-    return '<div class="mini-prog-cell"><select '+dataAttr+' data-f="progress" onchange="'+onchangeFn+'(this)"'+(disabled?' disabled':'')+'>'+progressOptions(v)+'</select>'+
-      '<div class="mini-prog-wrap"><div class="mini-prog-bar" style="width:'+v+'%"></div></div></div>';
+    return '<select '+dataAttr+' data-f="progress" onchange="'+onchangeFn+'(this)"'+(disabled?' disabled':'')+'>'+progressOptions(v)+'</select>';
   }
 
   filtered.forEach(function(entry, i) {
@@ -1025,9 +1098,9 @@ function renderTable() {
     var tr = document.createElement('tr');
     tr.className = 'proj-row ' + rowStatusClass(p);
     tr.innerHTML =
-      '<td style="text-align:center;color:var(--muted);font-size:11px;">'+(pOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+(i+1)+'</td>'+
+      '<td style="text-align:center;color:var(--muted);font-size:11px;">'+(i+1)+'</td>'+
       '<td style="text-align:center;"><button class="expand-btn" onclick="toggleExpand(\''+key+'\')">'+(isExp?'▼':'▶')+'</button></td>'+
-      '<td><input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"'+dis(canEditP_id)+'></td>'+
+      '<td><div style="display:flex;align-items:center;gap:3px;">'+(pOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+'<input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"'+dis(canEditP_id)+'></div></td>'+
       '<td><input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input value="'+esc(p.fullName)+'" data-key="'+key+'" data-f="fullName" onchange="updateField(this)" style="font-size:11px;" disabled></td>'+
       '<td><select data-key="'+key+'" data-f="type" onchange="updateField(this)"'+dis(canEditP_id)+'>'+
@@ -1041,13 +1114,13 @@ function renderTable() {
       '<td><input value="'+esc(p.dept)+'" data-key="'+key+'" data-f="dept" list="dlDept" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input type="date" value="'+(p.start||'')+'" data-key="'+key+'" data-f="start" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input type="date" value="'+(p.end||'')+'" data-key="'+key+'" data-f="end" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
-      '<td><select data-key="'+key+'" data-f="status" onchange="updateField(this)"'+dis(canEditP_status)+'>'+
-        '<option value="Chờ xử lý" '+((p.status==='Chờ xử lý')?'selected':'')+'>⬜ Chờ xử lý</option>'+
+      '<td><select data-key="'+key+'" data-f="status" onchange="updateField(this)" style="border-left:3px solid '+(pOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[p.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditP_status)+'>'+
+        '<option value="Chờ xử lý" '+((p.status==='Chờ xử lý')?'selected':'')+'>⚪ Chờ xử lý</option>'+
         '<option value="Đang thực hiện" '+((p.status==='Đang thực hiện')?'selected':'')+'>🔵 Đang TH</option>'+
-        '<option value="Tạm dừng" '+((p.status==='Tạm dừng')?'selected':'')+'>🟡 Tạm dừng</option>'+
-        '<option value="Hoàn thành" '+((p.status==='Hoàn thành')?'selected':'')+'>✅ Hoàn thành</option>'+
+        '<option value="Tạm dừng" '+((p.status==='Tạm dừng')?'selected':'')+'>🟠 Tạm dừng</option>'+
+        '<option value="Hoàn thành" '+((p.status==='Hoàn thành')?'selected':'')+'>🟢 Hoàn thành</option>'+
       '</select></td>'+
-      '<td>'+miniProgCell(p, 'data-key="'+key+'"', 'updateField', !canEditP_prog)+'</td>'+
+      '<td style="text-align:center;font-weight:600;color:var(--p800);" title="Tự tính theo trung bình tiến độ các task">'+computeProjectProgress(p)+'%</td>'+
       '<td><input value="'+esc(p.note||'')+'" data-key="'+key+'" data-f="note" onchange="updateField(this)" placeholder="Mô tả hoặc dán link..." title="'+(p.note||'')+'"'+dis(canEditP_note)+'></td>'+
       '<td><button class="del-btn" onclick="deleteProject(\''+key+'\')" title="Xóa"'+(canDelete()?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
     tbody.appendChild(tr);
@@ -1061,21 +1134,22 @@ function renderTable() {
         var ttr = document.createElement('tr');
         ttr.className = 'task-row ' + rowStatusClass(task);
         ttr.innerHTML =
-          '<td style="text-align:center;">'+(tOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+'</td><td></td>'+
+          '<td></td><td></td>'+
           '<td colspan="2"><div class="task-indent"><div class="task-line"></div>'+
           '<span style="color:var(--muted);font-size:10px;">TASK</span>'+
+          (tOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+
           '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;"'+dis(canEditT_id)+'></div></td>'+
           '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" list="dlPerson" onchange="updateTask(this)" placeholder="Người thực hiện..."'+dis(canEditT_id)+'></td>'+
           '<td></td><td colspan="2"></td><td></td>'+
           '<td><input type="date" value="'+(task.start||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="start" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="end" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
-          '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)"'+dis(canEditT_status)+'>'+
-            '<option value="Chờ xử lý" '+((task.status==='Chờ xử lý')?'selected':'')+'>⬜ Chờ</option>'+
+          '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)" style="border-left:3px solid '+(tOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[task.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditT_status)+'>'+
+            '<option value="Chờ xử lý" '+((task.status==='Chờ xử lý')?'selected':'')+'>⚪ Chờ</option>'+
             '<option value="Đang thực hiện" '+((task.status==='Đang thực hiện')?'selected':'')+'>🔵 Đang TH</option>'+
-            '<option value="Tạm dừng" '+((task.status==='Tạm dừng')?'selected':'')+'>🟡 Tạm dừng</option>'+
-            '<option value="Hoàn thành" '+((task.status==='Hoàn thành')?'selected':'')+'>✅ Xong</option>'+
+            '<option value="Tạm dừng" '+((task.status==='Tạm dừng')?'selected':'')+'>🟠 Tạm dừng</option>'+
+            '<option value="Hoàn thành" '+((task.status==='Hoàn thành')?'selected':'')+'>🟢 Xong</option>'+
           '</select></td>'+
-          '<td>'+miniProgCell(task, 'data-pk="'+key+'" data-tk="'+tk+'"', 'updateTask', !canEditTaskField(p,task,'progress'))+'</td>'+
+          '<td>'+taskProgCell(task, 'data-pk="'+key+'" data-tk="'+tk+'"', 'updateTask', !canEditTaskField(p,task,'progress'))+'</td>'+
           '<td><input value="'+esc(task.note||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="note" onchange="updateTask(this)" placeholder="Mô tả hoặc link..." title="'+(task.note||'')+'"'+dis(canEditT_note)+'></td>'+
           '<td><button class="del-btn" onclick="deleteTask(\''+key+'\',\''+tk+'\')" title="Xóa task"'+(canDelete()?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
         tbody.appendChild(ttr);
@@ -1105,68 +1179,99 @@ function toggleExpand(key) {
   renderTable();
 }
 
-// ── 11. Biểu đồ Gantt đơn giản cho từng dự án ──
+// ── 11. Biểu đồ Gantt đơn giản cho từng dự án — mục đích: thấy lịch task có chồng chéo không, và đang chậm/nhanh so với hôm nay ──
 function toggleGantt(key) {
   expandedGantt[key] = !expandedGantt[key];
   renderTable();
 }
-var GANTT_COLORS = {'Hoàn thành':'#3B6D11','Đang thực hiện':'#993C1D','Tạm dừng':'#888780','Chờ xử lý':'#534AB7'};
+var GANTT_COLORS = STATUS_COLORS;
 function buildGanttHtml(p, taskEntries) {
-  var items = [{label:'📦 '+(p.name||p.id), start:p.start, end:p.end, status:p.status, isProj:true}];
+  var items = [{label:p.name||p.id, start:p.start, end:p.end, status:p.status, progress:computeProjectProgress(p), isProj:true}];
   taskEntries.forEach(function(te){
     var t = te[1];
-    items.push({label:'· '+(t.name||'(chưa đặt tên)'), start:t.start, end:t.end, status:t.status, isProj:false});
+    items.push({label:t.name||'(chưa đặt tên)', start:t.start, end:t.end, status:t.status, progress:parseInt(t.progress,10)||0, isProj:false});
   });
   var validItems = items.filter(function(it){ return it.start && it.end; });
-  if (!validItems.length) return '<div style="font-size:11px;color:var(--muted);padding:6px 10px;">Chưa đủ ngày bắt đầu/kết thúc để vẽ Gantt.</div>';
+  if (!validItems.length) return '<div style="font-size:11px;color:var(--muted);padding:6px 10px;">Chưa đủ ngày bắt đầu/kết thúc (của dự án và task) để vẽ Gantt.</div>';
   var minD = validItems.reduce(function(a,it){ return it.start<a?it.start:a; }, validItems[0].start);
   var maxD = validItems.reduce(function(a,it){ return it.end>a?it.end:a; }, validItems[0].end);
   var minT = new Date(minD).getTime(), maxT = new Date(maxD).getTime();
   var span = Math.max(maxT-minT, 86400000);
-  var html = '<div style="padding:6px 4px;">';
+  var today = todayStr();
+  var todayT = new Date(today).getTime();
+  var todayPct = (todayT>=minT && todayT<=maxT) ? (todayT-minT)/span*100 : null;
+
+  var html = '<div class="gantt-box">';
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📶 Timeline dự án và các task — xem lịch có bị chồng chéo (2 task cùng chạy 1 lúc) và tiến độ so với hôm nay.</div>';
+  html += '<div class="gantt-scale"><span>'+fmtDate(minD)+'</span><span>'+fmtDate(maxD)+'</span></div>';
+  html += '<div class="gantt-grid">';
   items.forEach(function(it){
-    html += '<div class="gantt-lbl">'+esc(it.label)+(it.isProj?' <b>(dự án)</b>':'')+'</div>';
+    var dotColor = STATUS_COLORS[it.status] || '#888780';
+    html += '<div class="gantt-label">'+(it.isProj?'<b>📦 '+esc(it.label)+'</b>':'· '+esc(it.label))+'</div>';
     if (!it.start || !it.end) {
-      html += '<div class="gantt-track" style="margin-bottom:8px;"></div>';
+      html += '<div class="gantt-track2"><div class="gantt-bartxt" style="color:var(--muted);">Chưa có ngày bắt đầu/kết thúc</div></div>';
       return;
     }
     var st = new Date(it.start).getTime(), en = new Date(it.end).getTime();
     var left = Math.max(0, (st-minT)/span*100);
     var width = Math.max(2, (en-st)/span*100);
-    var color = GANTT_COLORS[it.status] || '#888780';
-    html += '<div class="gantt-track" style="margin-bottom:8px;"><div class="gantt-bar" style="left:'+left+'%;width:'+width+'%;background:'+color+';" title="'+fmtDate(it.start)+' → '+fmtDate(it.end)+'">'+fmtDate(it.start)+'→'+fmtDate(it.end)+'</div></div>';
+    var overdue = it.end < today && it.status !== 'Hoàn thành';
+    var color = overdue ? STATUS_COLORS['Quá hạn'] : dotColor;
+    var fillW = width * (Math.min(it.progress,100)/100);
+    html += '<div class="gantt-track2">'+
+      '<div class="gantt-bar2" style="left:'+left+'%;width:'+width+'%;background:'+color+';"></div>'+
+      '<div class="gantt-fill" style="left:'+left+'%;width:'+fillW+'%;background:'+color+';"></div>'+
+      '<div class="gantt-bartxt" style="left:'+left+'%;">'+fmtDate(it.start)+' → '+fmtDate(it.end)+' · '+it.progress+'%'+(overdue?' ⚠️':'')+'</div>'+
+    '</div>';
   });
+  if (todayPct!==null) {
+    html += '<div style="grid-column:2;position:relative;height:0;">'+
+      '<div class="gantt-today" style="left:'+todayPct+'%;height:'+(items.length*27)+'px;top:-'+(items.length*27)+'px;"><span class="gantt-today-tag">Hôm nay</span></div>'+
+    '</div>';
+  }
+  html += '</div>';
+  html += '<div class="gantt-legend">'+
+    '<span><span class="status-dot" style="background:'+STATUS_COLORS['Chờ xử lý']+'"></span>Chờ xử lý</span>'+
+    '<span><span class="status-dot" style="background:'+STATUS_COLORS['Đang thực hiện']+'"></span>Đang thực hiện</span>'+
+    '<span><span class="status-dot" style="background:'+STATUS_COLORS['Tạm dừng']+'"></span>Tạm dừng</span>'+
+    '<span><span class="status-dot" style="background:'+STATUS_COLORS['Hoàn thành']+'"></span>Hoàn thành</span>'+
+    '<span><span class="status-dot" style="background:'+STATUS_COLORS['Quá hạn']+'"></span>Quá hạn</span>'+
+    '<span>Phần đậm trong thanh = % tiến độ đã hoàn thành</span>'+
+  '</div>';
   html += '</div>';
   return html;
 }
 
 // ── 5. Chế độ xem Kanban ──
+// ── Bảng màu trạng thái thống nhất — dùng chung cho: màu tô nền dòng, Kanban, biểu đồ, Gantt ──
 var KANBAN_COLS = ['Chờ xử lý','Đang thực hiện','Tạm dừng','Hoàn thành'];
-var KANBAN_ICON = {'Chờ xử lý':'⬜','Đang thực hiện':'🔵','Tạm dừng':'🟡','Hoàn thành':'✅'};
+var KANBAN_ICON = {'Chờ xử lý':'⚪','Đang thực hiện':'🔵','Tạm dừng':'🟠','Hoàn thành':'🟢'};
 function renderKanban() {
   var wrap = document.getElementById('kanbanWrap');
   if (!wrap) return;
   var filtered = filterProjects();
   var today = todayStr();
-  wrap.innerHTML = KANBAN_COLS.map(function(st){
+  var html = '';
+  KANBAN_COLS.forEach(function(st){
     var items = filtered.filter(function(e){ return e[1].status===st; });
-    return '<div class="kcol" data-status="'+st+'" ondragover="kanbanDragOver(event)" ondragleave="kanbanDragLeave(event)" ondrop="kanbanDrop(event,\''+st+'\')">'+
+    var cardsHtml = items.map(function(e){
+      var key=e[0], p=e[1];
+      var overdue = p.end && p.end<today && p.status!=='Hoàn thành';
+      var ex = resolveAll(p.exec,'person',p.dept);
+      var prog = computeProjectProgress(p);
+      var draggable = canEditProjectField(p,'status') || canStaffOrAdmin();
+      return '<div class="kcard" draggable="'+(draggable?'true':'false')+'" data-key="'+key+'" ondragstart="kanbanDragStart(event,\''+key+'\')" ondragend="kanbanDragEnd(event)">'+
+        (overdue?'<span class="overdue-flag">⚠️</span>':'')+'<span class="kc-id">'+esc(p.id)+'</span>'+
+        '<div class="kc-name">'+esc(p.name)+'</div>'+
+        '<div class="kc-meta">'+esc(p.dept||'')+(ex?' · '+esc(ex.split(',')[0])+(ex.split(',').length>1?'...':''):'')+' · '+prog+'%</div>'+
+      '</div>';
+    }).join('') || '<p style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;">Trống</p>';
+    html += '<div class="kcol" data-status="'+st+'" style="border-top:3px solid '+STATUS_COLORS[st]+';" ondragover="kanbanDragOver(event)" ondragleave="kanbanDragLeave(event)" ondrop="kanbanDrop(event,\''+st+'\')">'+
       '<h4><span>'+KANBAN_ICON[st]+' '+st+'</span><span>'+items.length+'</span></h4>'+
-      items.map(function(e){
-        var key=e[0], p=e[1];
-        var overdue = p.end && p.end<today && p.status!=='Hoàn thành';
-        var ex = resolveAll(p.exec,'person',p.dept);
-        var prog = p.progress!==undefined&&p.progress!==null&&p.progress!=='' ? p.progress : '0';
-        var draggable = canEditProjectField(p,'status');
-        return '<div class="kcard" draggable="'+(draggable?'true':'false')+'" data-key="'+key+'" ondragstart="kanbanDragStart(event,\''+key+'\')" ondragend="kanbanDragEnd(event)">'+
-          (overdue?'<span class="overdue-flag">⚠️</span>':'')+'<span class="kc-id">'+esc(p.id)+'</span>'+
-          '<div class="kc-name">'+esc(p.name)+'</div>'+
-          '<div class="kc-meta">'+esc(p.dept||'')+(ex?' · '+esc(ex.split(',')[0])+(ex.split(',').length>1?'...':''):'')+'</div>'+
-          '<div class="mini-prog-wrap"><div class="mini-prog-bar" style="width:'+prog+'%"></div></div>'+
-        '</div>';
-      }).join('') || '<p style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;">Trống</p>';
-    return '';
-  }).join('');
+      cardsHtml +
+    '</div>';
+  });
+  wrap.innerHTML = html;
 }
 function kanbanDragStart(ev, key) {
   ev.dataTransfer.setData('text/plain', key);
@@ -1191,7 +1296,7 @@ function kanbanDrop(ev, newStatus) {
 
 // ── CRUD Projects ──
 function openAddProject() {
-  if (!canAddProject()) { showToast('⛔ Chỉ Quản lý DA mới được thêm dự án mới.'); return; }
+  if (!canAddProject()) { showToast('⛔ Bạn cần đăng nhập với vai trò Nhân sự hoặc Admin để thêm dự án.'); return; }
   document.getElementById('mDate').value = todayStr();
   document.getElementById('mName').value='';
   document.getElementById('mPm').value='';
@@ -1202,7 +1307,6 @@ function openAddProject() {
   document.getElementById('mStatus').value='Chờ xử lý';
   document.getElementById('mType').value='';
   document.getElementById('mNote').value='';
-  document.getElementById('mProgress').innerHTML = progressOptions('0');
   document.getElementById('idPreview').textContent='Chọn ngày và loại để xem ID';
   var btn = document.getElementById('mSubmitBtn'); if (btn) btn.disabled = false;
   openModal('addModal');
@@ -1235,7 +1339,7 @@ function submitAddProject() {
       start: document.getElementById('mStart').value,
       end: document.getElementById('mEnd').value,
       status: document.getElementById('mStatus').value,
-      progress: document.getElementById('mProgress').value || '0',
+      progress: '0',
       note: document.getElementById('mNote').value.trim(),
       createdAt: Date.now()
     };
@@ -1309,7 +1413,7 @@ function updateField(el) {
 }
 
 function deleteProject(key) {
-  if (!canDelete()) { showToast('⛔ Chỉ Quản lý DA mới được xóa dự án.'); return; }
+  if (!canDelete()) { showToast('⛔ Chỉ Admin mới được xóa dự án.'); return; }
   if (!confirm('Xóa dự án "'+projects[key].name+'"?')) return;
   var nameForLog = projects[key].id+' - '+projects[key].name;
   fbDel('/projects/'+key, function() {
@@ -1328,7 +1432,8 @@ function addTask(projKey) {
     if (!projects[projKey].tasks) projects[projKey].tasks = {};
     projects[projKey].tasks[res.name] = task;
     expanded[projKey] = true;
-    renderTable();
+    syncProjectProgress(projKey);
+    renderTable(); renderStats();
     writeLog('Thêm task mới', 'trong dự án '+(projects[projKey].id||projKey));
     setTimeout(function(){
       var rows = document.querySelectorAll('.task-row input[placeholder="Tên task..."]');
@@ -1351,15 +1456,17 @@ function updateTask(el) {
   var patch = {}; patch[f] = el.value;
   fbPatch('/projects/'+pk+'/tasks/'+tk, patch);
   writeLog('Sửa task trong '+(projects[pk].id||pk), (task.name||'task')+' · '+f+': "'+(oldVal||'')+'" → "'+(el.value||'')+'"');
-  if (f==='status'||f==='progress') { renderStats(); }
+  if (f==='progress') { syncProjectProgress(pk); renderTable(); }
+  if (f==='status'||f==='progress') { renderStats(); renderKanban(); }
 }
 
 function deleteTask(projKey, taskKey) {
-  if (!canDelete()) { showToast('⛔ Chỉ Quản lý DA mới được xóa task.'); return; }
+  if (!canDelete()) { showToast('⛔ Chỉ Admin mới được xóa task.'); return; }
   if (!confirm('Xóa task này?')) return;
   fbDel('/projects/'+projKey+'/tasks/'+taskKey, function() {
     delete projects[projKey].tasks[taskKey];
-    renderTable(); showToast('🗑 Đã xóa task.');
+    syncProjectProgress(projKey);
+    renderTable(); renderStats(); showToast('🗑 Đã xóa task.');
     writeLog('Xóa task', 'trong dự án '+(projects[projKey]?projects[projKey].id:projKey));
   });
 }
@@ -1447,8 +1554,8 @@ function drawCharts(filtered,s) {
   }
 
   mkPct('chartProjType', ['MAIN','SUPP','OPER'], [s.main,s.supp,s.oper], ['#185FA5','#854F0B','#0F6E56']);
-  mkPct('chartProjStatus', ['Hoàn thành','Đang TH','Chờ/Tạm dừng'], [s.done,s.inprog,s.pend], ['#3B6D11','#993C1D','#888780']);
-  mkPct('chartTaskStatus', ['Hoàn thành','Đang TH','Chờ/Tạm dừng'], [s.tDone,s.tInprog,s.tPaused+s.tWait], ['#3B6D11','#993C1D','#888780']);
+  mkPct('chartProjStatus', ['Hoàn thành','Đang TH','Chờ/Tạm dừng'], [s.done,s.inprog,s.pend], ['#3B6D11','#185FA5','#888780']);
+  mkPct('chartTaskStatus', ['Hoàn thành','Đang TH','Chờ/Tạm dừng'], [s.tDone,s.tInprog,s.tPaused+s.tWait], ['#3B6D11','#185FA5','#888780']);
 
   var projOD = document.getElementById('projOverdueLine');
   if (projOD) projOD.textContent = '⚠️ Quá hạn: '+(s.total?Math.round(s.overdue/s.total*100):0)+'% ('+s.overdue+'/'+s.total+' dự án)';
@@ -1515,14 +1622,51 @@ function renderPersonCharts(filtered) {
     return {name:name, role:role, projItems:projItems, taskItems:taskItems};
   });
 
-  var WORKLOAD_THRESHOLD = 3;
+  // ── 8. Quá tải: xét TRÙNG LỊCH (concurrent overlap) thay vì chỉ đếm số lượng ──
+  // Chuẩn tham chiếu: ~1-2 task/ngày là bình thường, quá 10 task chạy trong 1 tuần hoặc >2 task
+  // trùng ngày cùng lúc là quá tải; tương tự 1-2 dự án/tuần, tối đa 5-6 dự án/tháng.
+  function maxConcurrentOverlap(intervals) {
+    var events = [];
+    intervals.forEach(function(iv){
+      if (!iv.start || !iv.end) return;
+      events.push([iv.start, 1]);
+      var endPlus = new Date(iv.end); endPlus.setDate(endPlus.getDate()+1);
+      events.push([endPlus.toISOString().slice(0,10), -1]);
+    });
+    events.sort(function(a,b){ return a[0]<b[0]?-1:(a[0]>b[0]?1:a[1]-b[1]); });
+    var cur=0, max=0;
+    events.forEach(function(e){ cur+=e[1]; if(cur>max) max=cur; });
+    return max;
+  }
+  var now = new Date();
+  var dow = now.getDay();
+  var daysSinceMonday = (dow===0)?6:dow-1;
+  var monday = new Date(now); monday.setDate(now.getDate()-daysSinceMonday); monday.setHours(0,0,0,0);
+  var sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  var weekStart = monday.toISOString().slice(0,10), weekEnd = sunday.toISOString().slice(0,10);
+  var mm = String(now.getMonth()+1).padStart(2,'0');
+  var lastDay = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  var monthStart = now.getFullYear()+'-'+mm+'-01', monthEnd = now.getFullYear()+'-'+mm+'-'+String(lastDay).padStart(2,'0');
+  function computeWorkload(pd) {
+    var activeTasks = pd.taskItems.filter(function(t){ return t.status==='Đang thực hiện' && t.start && t.end; });
+    var activeProjs = pd.projItems.filter(function(p){ return p.status==='Đang thực hiện' && p.start && p.end; });
+    var taskOverlap = maxConcurrentOverlap(activeTasks);
+    var projOverlap = maxConcurrentOverlap(activeProjs);
+    var tasksThisWeek = activeTasks.filter(function(t){ return t.start<=weekEnd && t.end>=weekStart; }).length;
+    var projsThisMonth = activeProjs.filter(function(p){ return p.start<=monthEnd && p.end>=monthStart; }).length;
+    var reasons = [];
+    if (taskOverlap > 2) reasons.push(taskOverlap+' task trùng lịch cùng lúc');
+    if (tasksThisWeek > 10) reasons.push(tasksThisWeek+' task đang chạy trong tuần này');
+    if (projOverlap > 2) reasons.push(projOverlap+' dự án trùng lịch cùng lúc');
+    if (projsThisMonth > 6) reasons.push(projsThisMonth+' dự án đang chạy trong tháng này');
+    return {overloaded: reasons.length>0, reasons: reasons};
+  }
+
   grid.innerHTML = personData.map(function(pd,idx){
-    var activeCount = pd.projItems.filter(function(p){ return p.status==='Đang thực hiện'; }).length +
-                       pd.taskItems.filter(function(t){ return t.status==='Đang thực hiện'; }).length;
-    var overload = activeCount > WORKLOAD_THRESHOLD;
+    var wl = computeWorkload(pd);
     return '<div class="person-chart-card">'+
-      '<div class="pcc-name">'+esc(pd.name)+(overload?'<span class="workload-flag" title="Đang có '+activeCount+' việc đang thực hiện cùng lúc">⚠️ Quá tải ('+activeCount+')</span>':'')+'</div>'+
-      '<div class="pcc-meta">'+(pd.role?esc(pd.role)+' · ':'')+pd.projItems.length+' dự án · '+pd.taskItems.length+' task</div>'+
+      '<div class="pcc-name">'+esc(pd.name)+(wl.overloaded?'<span class="workload-flag" title="'+esc(wl.reasons.join('; '))+'">⚠️ Quá tải</span>':'')+'</div>'+
+      '<div class="pcc-meta">'+(pd.role?esc(pd.role)+' · ':'')+pd.projItems.length+' dự án · '+pd.taskItems.length+' task'+(wl.overloaded?'<br><span style="color:#c0392b;">'+esc(wl.reasons.join(' · '))+'</span>':'')+'</div>'+
       '<div class="pcc-charts">'+
         '<div class="pcc-chart-box"><div class="pcc-lbl">Dự án theo loại</div><canvas id="pcProj_'+idx+'"></canvas><div class="pcc-overdue" id="pcProjOD_'+idx+'"></div></div>'+
         '<div class="pcc-chart-box"><div class="pcc-lbl">Task theo trạng thái</div><canvas id="pcTask_'+idx+'"></canvas><div class="pcc-overdue" id="pcTaskOD_'+idx+'"></div></div>'+
@@ -1545,7 +1689,7 @@ function renderPersonCharts(filtered) {
       else statusCounts.pend++;
     });
     drawPersonBreakdown('pcTask_'+idx, 'pc_task_'+idx,
-      ['Hoàn thành','Đang TH','Chờ/Tạm dừng'], [statusCounts.done,statusCounts.inprog,statusCounts.pend], ['#3B6D11','#993C1D','#888780']);
+      ['Hoàn thành','Đang TH','Chờ/Tạm dừng'], [statusCounts.done,statusCounts.inprog,statusCounts.pend], ['#3B6D11','#185FA5','#888780']);
     var taskOverdue = pd.taskItems.filter(function(t){ return t.end && t.end<today && t.status!=='Hoàn thành'; }).length;
     var todEl = document.getElementById('pcTaskOD_'+idx);
     if (todEl) todEl.textContent = taskOverdue ? '⚠️ '+taskOverdue+' quá hạn' : '';
@@ -1621,6 +1765,16 @@ function renderDataTab() {
       '<input value="'+esc(d.name||'')+'" placeholder="Tên phòng/bộ phận..." onchange="updateDept(\''+k+'\',\'name\',this.value)" style="flex:1;border:none;background:transparent;font-size:13px;">'+
       '<button onclick="deleteDept(\''+k+'\')" class="del-btn">✕</button></div>';
   }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có phòng/bộ phận.</p>';
+
+  var acp = document.getElementById('adminCodePanel');
+  if (acp) acp.style.display = canChangeAdminCode() ? '' : 'none';
+  var addStaffBtn = document.querySelector('.btn-p.btn-sm[onclick="addStaff()"]');
+  if (addStaffBtn) addStaffBtn.style.display = canEditAll() ? '' : 'none';
+  var addDeptBtn = document.querySelector('.btn-p.btn-sm[onclick="addDept()"]');
+  if (addDeptBtn) addDeptBtn.style.display = canEditAll() ? '' : 'none';
+  document.querySelectorAll('#staffList input, #deptListEl input, #staffList .del-btn, #deptListEl .del-btn').forEach(function(el){
+    if (!canEditAll()) { el.setAttribute('disabled','disabled'); el.style.pointerEvents='none'; el.style.opacity = el.classList.contains('del-btn')?'.25':'1'; }
+  });
 }
 
 function addStaff() {
@@ -1676,7 +1830,7 @@ function switchTab(tab) {
 function exportCSV() {
   var data = filterProjects().map(function(e){ return e[1]; });
   var hdrs=['Project ID','Project Name','Full Name','Loại','Quản lý DA','Người thực hiện','Phòng/Bộ phận','Ngày bắt đầu','Dự kiến kết thúc','Trạng thái','Tiến độ (%)','Mô tả / Link'];
-  var rows=data.map(function(p){ return [p.id,p.name,p.fullName,p.type,p.pm,p.exec,p.dept,fmtDate(p.start),fmtDate(p.end),p.status,(p.progress!=null?p.progress:'0'),p.note||'']; });
+  var rows=data.map(function(p){ return [p.id,p.name,p.fullName,p.type,p.pm,p.exec,p.dept,fmtDate(p.start),fmtDate(p.end),p.status,computeProjectProgress(p),p.note||'']; });
   var csv=[hdrs].concat(rows).map(function(r){ return r.map(function(c){ return '"'+(c||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
   var a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
@@ -1734,7 +1888,7 @@ function computeStats(filtered) {
   var pendOnTime = pend - overduePend;
 
   // Tiến độ trung bình các dự án (đang lọc)
-  var progressSum = filtered.reduce(function(a,p){ return a + (parseInt(p.progress,10)||0); }, 0);
+  var progressSum = filtered.reduce(function(a,p){ return a + computeProjectProgress(p); }, 0);
   var avgProgress = total ? Math.round(progressSum/total) : 0;
 
   var deptMap={};
@@ -1804,7 +1958,7 @@ function executePrint() {
     start:{label:'Bắt đầu', get:function(p){ return fmtDate(p.start); }},
     end:{label:'Kết thúc', get:function(p){ return fmtDate(p.end); }},
     status:{label:'Trạng thái', get:function(p){ return p.status||''; }},
-    progress:{label:'Tiến độ', get:function(p){ return (p.progress!==undefined&&p.progress!==null&&p.progress!=='') ? p.progress+'%' : '0%'; }},
+    progress:{label:'Tiến độ', get:function(p){ return computeProjectProgress(p)+'%'; }},
     note:{label:'Mô tả / Link', get:function(p){ return p.note||''; }}
   };
 
@@ -1883,8 +2037,8 @@ function executePrint() {
           'tooltip:{callbacks:{label:function(ctx){return " "+ctx.label+": "+ctx.raw+(t?" ("+Math.round(ctx.raw/t*100)+"%)":"");}}}},responsive:false},'+
           'plugins:[prnPctLabel]});}'+
         'mkPrn("prnChartProjType",["MAIN","SUPP","OPER"],['+s.main+','+s.supp+','+s.oper+'],["#185FA5","#854F0B","#0F6E56"]);'+
-        'mkPrn("prnChartProjStatus",["Hoàn thành","Đang TH","Chờ/Tạm dừng"],['+s.done+','+s.inprog+','+s.pend+'],["#3B6D11","#993C1D","#888780"]);'+
-        'mkPrn("prnChartTaskStatus",["Hoàn thành","Đang TH","Chờ/Tạm dừng"],['+s.tDone+','+s.tInprog+','+(s.tPaused+s.tWait)+'],["#3B6D11","#993C1D","#888780"]);'+
+        'mkPrn("prnChartProjStatus",["Hoàn thành","Đang TH","Chờ/Tạm dừng"],['+s.done+','+s.inprog+','+s.pend+'],["#3B6D11","#185FA5","#888780"]);'+
+        'mkPrn("prnChartTaskStatus",["Hoàn thành","Đang TH","Chờ/Tạm dừng"],['+s.tDone+','+s.tInprog+','+(s.tPaused+s.tWait)+'],["#3B6D11","#185FA5","#888780"]);'+
       '});'+
       '<\/script>';
     var deptKeys = Object.keys(s.deptMap).sort();
