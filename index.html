@@ -192,6 +192,20 @@ th.sortable.sort-active .sort-ind{opacity:1;}
 .log-item{border-bottom:.5px solid var(--bdr);padding:8px 4px;font-size:12px;}
 .log-item .lg-time{color:var(--muted);font-size:10.5px;}
 .log-item b{color:var(--p800);}
+
+/* ── Multi-select (Người thực hiện / Phòng-Bộ phận): chọn tick nhiều thay vì gõ tay ── */
+input.ms-person,input.ms-dept{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 8px) center,calc(100% - 3px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:16px !important;}
+input.ms-person:not(:disabled),input.ms-dept:not(:disabled){cursor:pointer;}
+input.ms-person:not(:disabled):hover,input.ms-dept:not(:disabled):hover{background-color:var(--p50);}
+input.ms-person:disabled,input.ms-dept:disabled{background-image:none;cursor:default;}
+#msPopup{display:none;position:fixed;z-index:9999;background:#fff;border:2px solid var(--p600);border-radius:8px;padding:8px;box-shadow:0 6px 24px rgba(83,74,183,.22);max-height:320px;min-width:220px;max-width:300px;display:none;flex-direction:column;}
+#msPopup.open{display:flex;}
+#msPopupList{overflow-y:auto;max-height:250px;padding-right:2px;}
+#msPopupList label{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:4px 3px;border-radius:5px;cursor:pointer;}
+#msPopupList label:hover{background:var(--p50);}
+#msPopupList label.ms-all-row{font-weight:600;border-bottom:1px solid var(--bdr);margin-bottom:4px;padding-bottom:7px;}
+#msPopupList input[type=checkbox]{width:auto;margin:0;flex-shrink:0;}
+#msPopupBtns{display:flex;justify-content:flex-end;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr);}
 </style>
 </head>
 <body>
@@ -350,7 +364,7 @@ th.sortable.sort-active .sort-ind{opacity:1;}
   <div class="sec-title">Chi tiết theo nhân sự (Dự án &amp; Task)</div>
   <div class="person-charts-grid" id="personChartsGrid"></div>
   <div class="sec-title">Theo phòng / bộ phận</div>
-  <div class="cc"><h4>Số dự án theo phòng / bộ phận</h4><canvas id="chartDept" style="max-height:220px;"></canvas></div>
+  <div class="cc"><h4>Số dự án &amp; số task theo phòng / bộ phận</h4><canvas id="chartDept" style="max-height:240px;"></canvas></div>
 </div>
 
 <div id="section-data" class="section">
@@ -483,7 +497,7 @@ th.sortable.sort-active .sort-ind{opacity:1;}
       <div class="gi"><strong>↕️ Sắp xếp cột</strong>Bấm vào tiêu đề cột (Project ID, Loại, Trạng thái, Tiến độ...) để sắp xếp tăng/giảm.</div>
       <div class="gi"><strong>🗂 Kanban</strong>Tab riêng — kéo-thả thẻ dự án giữa 4 cột trạng thái để cập nhật nhanh (Nhân sự và Admin đều dùng được).</div>
       <div class="gi"><strong>📶 Gantt đơn giản</strong>Mở rộng 1 dự án (▶) rồi bấm "Xem Gantt" để thấy timeline dự án và các task.</div>
-      <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, ai đang có hơn 3 việc "Đang thực hiện" cùng lúc sẽ có nhãn "Quá tải".</div>
+      <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (với vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch chạy cùng lúc</b> sẽ có nhãn "Quá tải".</div>
       <div class="gi"><strong>🕘 Lịch sử</strong>Tab riêng ghi lại ai vừa sửa gì, lúc nào — 300 thao tác gần nhất.</div>
       <div class="gi"><strong>💾 Sao lưu JSON</strong>Nút "Sao lưu JSON" ở tab Danh sách — tải toàn bộ dữ liệu (dự án, nhân sự, phòng ban, lịch sử) về máy đề phòng sự cố.</div>
       <div class="gi"><strong>🔒 Phân quyền theo Mã Admin</strong>Admin (nhập đúng mã) sửa mọi trường, xóa được, quản lý nhân sự/phòng ban và đổi mã Admin. Nhân sự thêm được dự án/task, sửa Trạng thái, Ghi chú/Link (Tiến độ dự án tự tính từ task; tiến độ task nhân sự vẫn chỉnh được). Khách chỉ xem.</div>
@@ -514,8 +528,8 @@ th.sortable.sort-active .sort-ind{opacity:1;}
     <div class="id-preview" id="idPreview">Chọn ngày và loại để xem ID</div>
     <div class="form-row"><label>Project Name</label><input type="text" id="mName" placeholder="Tên ngắn gọn..."></div>
     <div class="form-row"><label>Quản lý DA</label><input type="text" id="mPm" list="dlPerson" placeholder="Chọn hoặc nhập..."></div>
-    <div class="form-row"><label>Người thực hiện</label><input type="text" id="mExec" list="dlPerson" placeholder="Tên, all, hoặc A,B,C..."></div>
-    <div class="form-row"><label>Phòng / Bộ phận</label><input type="text" id="mDept" list="dlDept" placeholder="Chọn hoặc nhập..."></div>
+    <div class="form-row"><label>Người thực hiện</label><input type="text" id="mExec" class="ms-person" readonly placeholder="▾ Bấm để chọn (nhiều người)..." title="Bấm để chọn nhiều người thực hiện"></div>
+    <div class="form-row"><label>Phòng / Bộ phận</label><input type="text" id="mDept" class="ms-dept" readonly placeholder="▾ Bấm để chọn (nhiều phòng/BP)..." title="Bấm để chọn nhiều phòng/bộ phận"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-row"><label>Ngày bắt đầu</label><input type="date" id="mStart"></div>
       <div class="form-row"><label>Dự kiến kết thúc</label><input type="date" id="mEnd"></div>
@@ -566,6 +580,13 @@ th.sortable.sort-active .sort-ind{opacity:1;}
 <datalist id="dlDept"></datalist>
 <div class="toast" id="toast"></div>
 <input id="inputPopup" type="text" autocomplete="off" spellcheck="false">
+<div id="msPopup">
+  <div id="msPopupList"></div>
+  <div id="msPopupBtns">
+    <button type="button" class="btn btn-o btn-sm" onclick="closeMsSelector(false)">Hủy</button>
+    <button type="button" class="btn btn-p btn-sm" onclick="closeMsSelector(true)">✓ Xong</button>
+  </div>
+</div>
 
 <script>
 var FB_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -1113,8 +1134,8 @@ function renderTable() {
         '<option value="OPER" '+((p.type==='OPER')?'selected':'')+'>OPER</option>'+
       '</select></td>'+
       '<td><input value="'+esc(p.pm)+'" data-key="'+key+'" data-f="pm" list="dlPerson" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
-      '<td><input value="'+esc(p.exec)+'" data-key="'+key+'" data-f="exec" list="dlPerson" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
-      '<td><input value="'+esc(p.dept)+'" data-key="'+key+'" data-f="dept" list="dlDept" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
+      '<td><input value="'+esc(p.exec)+'" data-key="'+key+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
+      '<td><input value="'+esc(p.dept)+'" data-key="'+key+'" data-f="dept" class="ms-dept" readonly title="Bấm để chọn nhiều phòng/bộ phận" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input type="date" value="'+(p.start||'')+'" data-key="'+key+'" data-f="start" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input type="date" value="'+(p.end||'')+'" data-key="'+key+'" data-f="end" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><select data-key="'+key+'" data-f="status" onchange="updateField(this)" style="border-left:3px solid '+(pOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[p.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditP_status)+'>'+
@@ -1146,8 +1167,8 @@ function renderTable() {
           '<td></td>'+
           '<td></td>'+
           '<td></td>'+
-          '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" list="dlPerson" onchange="updateTask(this)" placeholder="Người thực hiện..."'+dis(canEditT_id)+'></td>'+
-          '<td><input value="'+esc(task.dept||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" list="dlDept" onchange="updateTask(this)" placeholder="'+(p.dept?'Mặc định: '+esc(p.dept):'Phòng/bộ phận...')+'"'+dis(canEditT_id)+'></td>'+
+          '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateTask(this)" placeholder="▾ Người thực hiện..."'+dis(canEditT_id)+'></td>'+
+          '<td><input value="'+esc(task.dept||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" class="ms-dept" readonly title="Bấm để chọn nhiều phòng/bộ phận" onchange="updateTask(this)" placeholder="'+(p.dept?'Mặc định: '+esc(p.dept):'▾ Phòng/bộ phận...')+'"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.start||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="start" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="end" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)" style="border-left:3px solid '+(tOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[task.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditT_status)+'>'+
@@ -1572,18 +1593,18 @@ function drawCharts(filtered,s) {
   if (charts['chartDept']) { charts['chartDept'].destroy(); delete charts['chartDept']; }
   var dc = document.getElementById('chartDept');
   if (dc) {
-    var deptMap={};
-    filtered.forEach(function(p){
-      var dr=resolveAll(p.dept,'dept');
-      dr.split(',').map(function(x){ return x.trim(); }).filter(Boolean)
-        .forEach(function(d){ deptMap[d]=(deptMap[d]||0)+1; });
-    });
-    var dLabels=Object.keys(deptMap).sort();
-    var dColors=['#534AB7','#185FA5','#0F6E56','#854F0B','#993C1D','#3B6D11','#888780'];
+    var deptMap = s.deptMap, deptTaskMap = s.deptTaskMap;
+    var dLabelSet = {};
+    Object.keys(deptMap).forEach(function(d){ dLabelSet[d]=true; });
+    Object.keys(deptTaskMap).forEach(function(d){ dLabelSet[d]=true; });
+    var dLabels = Object.keys(dLabelSet).sort(function(a,b){ return a.localeCompare(b,'vi'); });
     charts['chartDept'] = new Chart(dc.getContext('2d'),{type:'bar',
-      data:{labels:dLabels,datasets:[{label:'Dự án',data:dLabels.map(function(d){ return deptMap[d]; }),backgroundColor:dLabels.map(function(_,i){ return dColors[i%dColors.length]; }),borderRadius:5}]},
+      data:{labels:dLabels,datasets:[
+        {label:'Số dự án',data:dLabels.map(function(d){ return deptMap[d]||0; }),backgroundColor:'#534AB7',borderRadius:5},
+        {label:'Số task',data:dLabels.map(function(d){ return deptTaskMap[d]||0; }),backgroundColor:'#0F6E56',borderRadius:5}
+      ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,
-        plugins:{legend:{display:false}},
+        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10}}}},
         scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}});
   }
 }
@@ -1634,9 +1655,8 @@ function renderPersonCharts(filtered) {
     return {name:name, role:role, projItems:projItems, execProjItems:execProjItems, taskItems:taskItems};
   });
 
-  // ── 8. Quá tải: xét TRÙNG LỊCH (concurrent overlap) thay vì chỉ đếm số lượng ──
-  // Chuẩn tham chiếu: ~1-2 task/ngày là bình thường, quá 10 task chạy trong 1 tuần hoặc >2 task
-  // trùng ngày cùng lúc là quá tải; tương tự 1-2 dự án/tuần, tối đa 5-6 dự án/tháng.
+  // ── 8. Quá tải: chỉ tính dự án mà người này là NGƯỜI THỰC HIỆN (không tính vai trò Quản lý DA),
+  // đang "Đang thực hiện", và bị TRÙNG LỊCH (concurrent overlap) — quá 3 dự án chạy cùng lúc mới coi là quá tải.
   function maxConcurrentOverlap(intervals) {
     var events = [];
     intervals.forEach(function(iv){
@@ -1650,29 +1670,13 @@ function renderPersonCharts(filtered) {
     events.forEach(function(e){ cur+=e[1]; if(cur>max) max=cur; });
     return max;
   }
-  var now = new Date();
-  var dow = now.getDay();
-  var daysSinceMonday = (dow===0)?6:dow-1;
-  var monday = new Date(now); monday.setDate(now.getDate()-daysSinceMonday); monday.setHours(0,0,0,0);
-  var sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
-  var weekStart = monday.toISOString().slice(0,10), weekEnd = sunday.toISOString().slice(0,10);
-  var mm = String(now.getMonth()+1).padStart(2,'0');
-  var lastDay = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  var monthStart = now.getFullYear()+'-'+mm+'-01', monthEnd = now.getFullYear()+'-'+mm+'-'+String(lastDay).padStart(2,'0');
   function computeWorkload(pd) {
-    var activeTasks = pd.taskItems.filter(function(t){ return t.status==='Đang thực hiện' && t.start && t.end; });
-    // Chỉ xét dự án mà người này là NGƯỜI THỰC HIỆN (không tính vai trò Quản lý DA)
+    // Chỉ xét dự án mà người này là NGƯỜI THỰC HIỆN (không tính vai trò Quản lý DA), đang chạy, có đủ ngày
     var activeProjs = pd.execProjItems.filter(function(p){ return p.status==='Đang thực hiện' && p.start && p.end; });
-    var taskOverlap = maxConcurrentOverlap(activeTasks);
     var projOverlap = maxConcurrentOverlap(activeProjs);
-    var tasksThisWeek = activeTasks.filter(function(t){ return t.start<=weekEnd && t.end>=weekStart; }).length;
-    var projsThisMonth = activeProjs.filter(function(p){ return p.start<=monthEnd && p.end>=monthStart; }).length;
-    var reasons = [];
-    if (taskOverlap > 2) reasons.push(taskOverlap+' task trùng lịch cùng lúc');
-    if (tasksThisWeek > 10) reasons.push(tasksThisWeek+' task đang chạy trong tuần này');
-    if (projOverlap > 2) reasons.push(projOverlap+' dự án trùng lịch cùng lúc');
-    if (projsThisMonth > 6) reasons.push(projsThisMonth+' dự án đang chạy trong tháng này');
-    return {overloaded: reasons.length>0, reasons: reasons};
+    var overloaded = projOverlap > 3;
+    var reasons = overloaded ? [projOverlap+' dự án trùng lịch cùng lúc (vai trò người thực hiện)'] : [];
+    return {overloaded: overloaded, reasons: reasons};
   }
 
   grid.innerHTML = personData.map(function(pd,idx){
@@ -1764,7 +1768,7 @@ function renderDataTab() {
       '<div style="flex:1;min-width:0;">'+
         '<input value="'+esc(s.name||'')+'" placeholder="Họ tên..." onchange="updateStaff(\''+k+'\',\'name\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:13px;font-weight:500;">'+
         '<input value="'+esc(s.role||'')+'" placeholder="Chức vụ..." onchange="updateStaff(\''+k+'\',\'role\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--muted);">'+
-        '<input value="'+esc(s.depts||'')+'" list="dlDept" placeholder="Phòng/bộ phận (vd: R&D, QA)..." onchange="updateStaff(\''+k+'\',\'depts\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--b800);margin-top:2px;">'+
+        '<input value="'+esc(s.depts||'')+'" class="ms-dept" readonly title="Bấm để chọn nhiều phòng/bộ phận" placeholder="▾ Bấm để chọn phòng/bộ phận..." onchange="updateStaff(\''+k+'\',\'depts\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--b800);margin-top:2px;">'+
       '</div>'+
       '<button onclick="deleteStaff(\''+k+'\')" class="del-btn">✕</button></div>';
   }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có nhân sự.</p>';
@@ -1911,8 +1915,9 @@ function computeStats(filtered) {
       .forEach(function(d){ deptMap[d]=(deptMap[d]||0)+1; });
   });
 
-  // Task stats
+  // Task stats (đồng thời gom số task theo phòng/bộ phận — task để trống Phòng/BP thì mặc định theo phòng của dự án)
   var tTotal=0, tDone=0, tInprog=0, tPaused=0, tWait=0, tOverdue=0;
+  var deptTaskMap={};
   filtered.forEach(function(p){
     if (!p.tasks) return;
     Object.values(p.tasks).forEach(function(t){
@@ -1922,6 +1927,9 @@ function computeStats(filtered) {
       else if (t.status==='Tạm dừng') tPaused++;
       else tWait++;
       if (t.end && t.end < today && t.status !== 'Hoàn thành') tOverdue++;
+      var tdr = resolveAll(t.dept || p.dept, 'dept');
+      tdr.split(',').map(function(x){ return x.trim(); }).filter(Boolean)
+        .forEach(function(d){ deptTaskMap[d]=(deptTaskMap[d]||0)+1; });
     });
   });
 
@@ -1948,7 +1956,7 @@ function computeStats(filtered) {
   });
 
   return {total:total,main:main,supp:supp,oper:oper,done:done,inprog:inprog,paused:paused,wait:wait,pend:pend,pct:pct,overdue:overdue,
-    overdueInprog:overdueInprog,overduePend:overduePend,inprogOnTime:inprogOnTime,pendOnTime:pendOnTime,deptMap:deptMap,avgProgress:avgProgress,
+    overdueInprog:overdueInprog,overduePend:overduePend,inprogOnTime:inprogOnTime,pendOnTime:pendOnTime,deptMap:deptMap,deptTaskMap:deptTaskMap,avgProgress:avgProgress,
     tTotal:tTotal,tDone:tDone,tInprog:tInprog,tPaused:tPaused,tWait:tWait,tOverdue:tOverdue,
     projThisWeek:projThisWeek,projLastWeek:projLastWeek,taskThisWeek:taskThisWeek,taskLastWeek:taskLastWeek};
 }
@@ -2054,10 +2062,13 @@ function executePrint() {
         'mkPrn("prnChartTaskStatus",["Hoàn thành","Đang TH","Chờ/Tạm dừng"],['+s.tDone+','+s.tInprog+','+(s.tPaused+s.tWait)+'],["#3B6D11","#185FA5","#888780"]);'+
       '});'+
       '<\/script>';
-    var deptKeys = Object.keys(s.deptMap).sort();
+    var deptKeySet = {};
+    Object.keys(s.deptMap).forEach(function(d){ deptKeySet[d]=true; });
+    Object.keys(s.deptTaskMap).forEach(function(d){ deptKeySet[d]=true; });
+    var deptKeys = Object.keys(deptKeySet).sort();
     if (deptKeys.length) {
-      html += '<table><thead><tr><th>Phòng / Bộ phận</th><th>Số dự án</th></tr></thead><tbody>'+
-        deptKeys.map(function(d){ return '<tr><td>'+d+'</td><td>'+s.deptMap[d]+'</td></tr>'; }).join('')+
+      html += '<table><thead><tr><th>Phòng / Bộ phận</th><th>Số dự án</th><th>Số task</th></tr></thead><tbody>'+
+        deptKeys.map(function(d){ return '<tr><td>'+d+'</td><td>'+(s.deptMap[d]||0)+'</td><td>'+(s.deptTaskMap[d]||0)+'</td></tr>'; }).join('')+
         '</tbody></table>';
     }
   }
@@ -2143,6 +2154,89 @@ document.getElementById('mDate') && document.getElementById('mDate').addEventLis
   document.getElementById('mType').addEventListener('change', previewId);
 })();
 
+// ── 1. Multi-select tick chọn nhiều (Người thực hiện / Phòng-Bộ phận) — thay cho gõ tay dễ sai/thiếu ──
+var msCtx = null; // {input}
+function msOptionsFor(el) {
+  if (el.classList.contains('ms-person')) {
+    return Object.values(staffData).map(function(s){ return s.name; }).filter(Boolean).sort(function(a,b){return a.localeCompare(b,'vi');});
+  }
+  return Object.values(deptsData).map(function(d){ return d.name; }).filter(Boolean).sort(function(a,b){return a.localeCompare(b,'vi');});
+}
+function openMsSelector(el) {
+  if (el.disabled) return;
+  msCtx = {input: el};
+  var options = msOptionsFor(el);
+  var raw = el.value || '';
+  var isAll = raw.trim().toLowerCase() === 'all';
+  var selectedSet = {};
+  if (!isAll) raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean).forEach(function(n){ selectedSet[n]=true; });
+
+  var listEl = document.getElementById('msPopupList');
+  var allLabel = el.classList.contains('ms-person') ? 'Tất cả nhân sự' : 'Tất cả phòng/bộ phận';
+  var html = '<label class="ms-all-row"><input type="checkbox" id="msAllCb" '+(isAll?'checked':'')+'> ☑️ '+allLabel+'</label>';
+  html += options.length ? options.map(function(name){
+    return '<label><input type="checkbox" class="msItemCb" value="'+esc(name)+'" '+((!isAll && selectedSet[name])?'checked':'')+((isAll)?' disabled':'')+'> '+esc(name)+'</label>';
+  }).join('') : '<div style="font-size:11.5px;color:var(--muted);padding:5px 3px;">Chưa có dữ liệu — vào tab 🗃 Data để thêm.</div>';
+  listEl.innerHTML = html;
+
+  var allCb = document.getElementById('msAllCb');
+  if (allCb) {
+    allCb.addEventListener('change', function(){
+      document.querySelectorAll('.msItemCb').forEach(function(c){
+        c.disabled = allCb.checked;
+        if (allCb.checked) c.checked = false;
+      });
+    });
+  }
+
+  var popup = document.getElementById('msPopup');
+  popup.classList.add('open');
+  var rect = el.getBoundingClientRect();
+  var top = rect.bottom + 4;
+  var left = rect.left;
+  // Đo trước để tránh tràn màn hình
+  var popW = 300, popH = Math.min(320, 60 + options.length*26);
+  if (left + popW > window.innerWidth - 10) left = Math.max(10, window.innerWidth - popW - 10);
+  if (top + popH > window.innerHeight - 10) top = Math.max(10, rect.top - popH - 4);
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+}
+function closeMsSelector(apply) {
+  if (!msCtx) return;
+  var input = msCtx.input;
+  if (apply) {
+    var allCb = document.getElementById('msAllCb');
+    var val;
+    if (allCb && allCb.checked) {
+      val = 'all';
+    } else {
+      val = Array.from(document.querySelectorAll('.msItemCb:checked')).map(function(c){ return c.value; }).join(', ');
+    }
+    if (input.value !== val) {
+      input.value = val;
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+  }
+  document.getElementById('msPopup').classList.remove('open');
+  msCtx = null;
+}
+document.addEventListener('click', function(e){
+  var el = e.target.closest('input.ms-person, input.ms-dept');
+  if (el) {
+    if (msCtx && msCtx.input !== el) closeMsSelector(true);
+    openMsSelector(el);
+    return;
+  }
+  // Bấm ra ngoài popup (và không phải nút Hủy/Xong, đã xử lý riêng) → tự lưu lựa chọn hiện tại
+  var popupEl = document.getElementById('msPopup');
+  if (msCtx && popupEl.classList.contains('open') && !popupEl.contains(e.target)) {
+    closeMsSelector(true);
+  }
+});
+document.addEventListener('keydown', function(e){
+  if (msCtx && e.key === 'Escape') closeMsSelector(false);
+});
+
 // ── Popup input nổi — hiển thị toàn bộ nội dung khi click vào ô ──
 (function(){
   var popup = document.getElementById('inputPopup');
@@ -2188,7 +2282,8 @@ document.getElementById('mDate') && document.getElementById('mDate').addEventLis
   document.addEventListener('focusin', function(e) {
     var el = e.target;
     if (el === popup) return;
-    if (el.tagName === 'INPUT' && el.closest('td') && el.type !== 'date') {
+    if (el.tagName === 'INPUT' && el.closest('td') && el.type !== 'date' &&
+        !el.classList.contains('ms-person') && !el.classList.contains('ms-dept')) {
       // delay nhỏ để tránh conflict focus
       setTimeout(function(){ showPopup(el); }, 0);
     }
