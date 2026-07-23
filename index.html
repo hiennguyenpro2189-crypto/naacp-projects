@@ -306,7 +306,10 @@ th.sortable.sort-active .sort-ind{opacity:1;}
     <div class="sc inprog"><div class="sc-lbl">Đang thực hiện</div><div class="sc-val" id="sInprog">0</div><div class="sc-sub" id="sInprogPct"></div></div>
     <div class="sc pend"><div class="sc-lbl">Chờ / Tạm dừng</div><div class="sc-val" id="sPend">0</div></div>
     <div class="sc overdue"><div class="sc-lbl">⚠️ Quá hạn (DA)</div><div class="sc-val" id="sOverdue">0</div><div class="sc-sub" id="sOverdueSub"></div></div>
-    <div class="sc main"><div class="sc-lbl">Tiến độ TB (DA)</div><div class="sc-val" id="sAvgProgress">0%</div></div>
+    <div class="sc main" title="Với mỗi dự án: tính % trung bình của các task trong dự án đó. Sau đó lấy trung bình cộng của con số này qua tất cả dự án đang khớp bộ lọc.">
+      <div class="sc-lbl">Tiến độ TB (DA)</div><div class="sc-val" id="sAvgProgress">0%</div>
+      <div class="sc-sub">TB(mỗi DA = TB% các task)</div>
+    </div>
   </div>
   <div class="sec-title" style="margin-top:4px;">Thống kê task</div>
   <div class="stats-grid" id="taskStatsGrid">
@@ -413,7 +416,7 @@ th.sortable.sort-active .sort-ind{opacity:1;}
     <div style="font-size:12px;line-height:1.8;">
       <p><b>Thêm dự án:</b> bấm nút "+ Thêm dự án" ở tab Danh sách → điền form → ID hiện ra tự động khi chọn đủ Ngày + Loại.</p>
       <p><b>Sửa dự án:</b> bấm trực tiếp vào ô cần sửa ngay trong bảng (tên, người phụ trách, ngày, trạng thái...) → gõ xong rời chuột khỏi ô (hoặc bấm Tab/Enter) là tự lưu, không cần nút "Lưu" riêng.</p>
-      <p><b>Task trong dự án:</b> bấm ▶ ở đầu mỗi dòng dự án để mở rộng, xem/thêm/sửa/xóa task bên trong. Task cũng tự lưu giống dự án.</p>
+      <p><b>Task trong dự án:</b> bấm ▶ ở đầu mỗi dòng dự án để mở rộng, xem/thêm/sửa/xóa task bên trong. Mỗi task có số thứ tự riêng (1, 2, 3... trong phạm vi dự án đó) và có ô <b>Phòng/Bộ phận</b> riêng — để trống thì mặc định hiểu theo phòng của dự án, hoặc gõ tên phòng khác nếu task do phòng/bộ phận khác thực hiện. Các cột của task (Tên, Người thực hiện, Phòng/BP, ngày, Trạng thái, Tiến độ, Ghi chú) nằm đúng dưới các cột tương ứng của dự án. Task cũng tự lưu giống dự án.</p>
       <p><b>Xóa:</b> dùng nút ✕ trên dòng tương ứng, hệ thống sẽ hỏi xác nhận trước khi xóa hẳn khỏi Firebase.</p>
     </div>
   </div>
@@ -492,7 +495,7 @@ th.sortable.sort-active .sort-ind{opacity:1;}
     <div style="font-size:12px;line-height:1.8;">
       <p><b>Tiến độ task</b>: chọn nhanh mức % hoàn thành theo bước <b>10%</b> (0%, 10%, 20%... 100%). Chọn xong tự lưu như các ô khác.</p>
       <p><b>Tiến độ dự án</b>: tự động tính bằng <b>trung bình % của các task</b> bên trong — không ai sửa tay được cột này, kể cả Admin. Nếu dự án chưa có task nào, tiến độ hiện 0%.</p>
-      <p>Tab <b>Thống kê</b> hiển thị <b>Tiến độ trung bình</b> của các dự án đang khớp bộ lọc, giúp nhìn nhanh mức độ hoàn thành chung mà không cần mở từng dự án.</p>
+      <p>Tab <b>Thống kê</b> hiển thị <b>Tiến độ trung bình (DA)</b> — tính theo 2 bước: (1) mỗi dự án lấy trung bình % tiến độ của các task bên trong nó; (2) lấy trung bình cộng của các con số đó qua tất cả dự án đang khớp bộ lọc. Ví dụ: dự án A có 2 task (40%, 60% → TB 50%), dự án B có 1 task (20%) → Tiến độ TB = (50%+20%)/2 = 35%.</p>
     </div>
   </div>
 
@@ -829,8 +832,8 @@ function canEditProjectField(p, field) {
 function canEditTaskField(p, t, field) {
   if (!currentUser) return false;
   if (canEditAll()) return true;
-  if (['status','progress','note'].indexOf(field)>=0) return canStaffOrAdmin();
-  return false;
+  // Nhân sự được toàn quyền điền/sửa TASK (tên, người thực hiện, phòng ban, ngày, trạng thái, tiến độ, ghi chú)
+  return canStaffOrAdmin();
 }
 function canDelete() { return canEditAll(); }
 function canAddProject() { return canStaffOrAdmin(); }
@@ -1126,7 +1129,7 @@ function renderTable() {
     tbody.appendChild(tr);
 
     if (isExp) {
-      tasks.forEach(function(te) {
+      tasks.forEach(function(te, ti) {
         var tk = te[0], task = te[1];
         var tOverdue = task.end && task.end < today && task.status !== 'Hoàn thành';
         var canEditT_id = canEditTaskField(p,task,'id'), canEditT_status = canEditTaskField(p,task,'status');
@@ -1134,13 +1137,17 @@ function renderTable() {
         var ttr = document.createElement('tr');
         ttr.className = 'task-row ' + rowStatusClass(task);
         ttr.innerHTML =
-          '<td></td><td></td>'+
-          '<td colspan="2"><div class="task-indent"><div class="task-line"></div>'+
-          '<span style="color:var(--muted);font-size:10px;">TASK</span>'+
+          '<td style="text-align:center;color:var(--muted);font-size:10px;">'+(ti+1)+'</td>'+
+          '<td></td>'+
+          '<td style="color:var(--muted);font-size:10px;text-align:center;">TASK</td>'+
+          '<td><div class="task-indent" style="padding-left:8px;"><div class="task-line"></div>'+
           (tOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+
           '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;"'+dis(canEditT_id)+'></div></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
           '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" list="dlPerson" onchange="updateTask(this)" placeholder="Người thực hiện..."'+dis(canEditT_id)+'></td>'+
-          '<td></td><td colspan="2"></td><td></td>'+
+          '<td><input value="'+esc(task.dept||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" list="dlDept" onchange="updateTask(this)" placeholder="'+(p.dept?'Mặc định: '+esc(p.dept):'Phòng/bộ phận...')+'"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.start||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="start" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="end" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)" style="border-left:3px solid '+(tOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[task.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditT_status)+'>'+
@@ -1426,7 +1433,7 @@ function deleteProject(key) {
 // ── CRUD Tasks ──
 function addTask(projKey) {
   if (!canAddTask(projects[projKey])) { showToast('⛔ Bạn không có quyền thêm task cho dự án này.'); return; }
-  var task = {name:'',exec:'',start:'',end:todayStr(),status:'Chờ xử lý',progress:'0',createdAt:Date.now()};
+  var task = {name:'',exec:'',dept:'',start:'',end:todayStr(),status:'Chờ xử lý',progress:'0',createdAt:Date.now()};
   fbPost('/projects/'+projKey+'/tasks', task, function(err, res) {
     if (err || !res || !res.name) return;
     if (!projects[projKey].tasks) projects[projKey].tasks = {};
@@ -1611,15 +1618,20 @@ function renderPersonCharts(filtered) {
       var ex = resolveAll(p.exec,'person',p.dept).split(',').map(function(x){ return x.trim(); });
       return p.pm===name || ex.indexOf(name)>=0;
     });
+    // execProjItems: chỉ tính dự án mà người này là NGƯỜI THỰC HIỆN (không tính vai trò Quản lý DA) — dùng riêng cho tính quá tải
+    var execProjItems = filtered.filter(function(p){
+      var ex = resolveAll(p.exec,'person',p.dept).split(',').map(function(x){ return x.trim(); });
+      return ex.indexOf(name)>=0;
+    });
     var taskItems = [];
     filtered.forEach(function(p){
       if (!p.tasks) return;
       Object.values(p.tasks).forEach(function(t){
-        var tex = resolveAll(t.exec,'person',p.dept).split(',').map(function(x){ return x.trim(); });
+        var tex = resolveAll(t.exec,'person',t.dept||p.dept).split(',').map(function(x){ return x.trim(); });
         if (tex.indexOf(name)>=0) taskItems.push(t);
       });
     });
-    return {name:name, role:role, projItems:projItems, taskItems:taskItems};
+    return {name:name, role:role, projItems:projItems, execProjItems:execProjItems, taskItems:taskItems};
   });
 
   // ── 8. Quá tải: xét TRÙNG LỊCH (concurrent overlap) thay vì chỉ đếm số lượng ──
@@ -1649,7 +1661,8 @@ function renderPersonCharts(filtered) {
   var monthStart = now.getFullYear()+'-'+mm+'-01', monthEnd = now.getFullYear()+'-'+mm+'-'+String(lastDay).padStart(2,'0');
   function computeWorkload(pd) {
     var activeTasks = pd.taskItems.filter(function(t){ return t.status==='Đang thực hiện' && t.start && t.end; });
-    var activeProjs = pd.projItems.filter(function(p){ return p.status==='Đang thực hiện' && p.start && p.end; });
+    // Chỉ xét dự án mà người này là NGƯỜI THỰC HIỆN (không tính vai trò Quản lý DA)
+    var activeProjs = pd.execProjItems.filter(function(p){ return p.status==='Đang thực hiện' && p.start && p.end; });
     var taskOverlap = maxConcurrentOverlap(activeTasks);
     var projOverlap = maxConcurrentOverlap(activeProjs);
     var tasksThisWeek = activeTasks.filter(function(t){ return t.start<=weekEnd && t.end>=weekStart; }).length;
