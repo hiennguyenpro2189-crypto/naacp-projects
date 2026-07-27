@@ -198,6 +198,9 @@ input.ms-person,input.ms-dept,input.ms-pm{background-image:linear-gradient(45deg
 input.ms-person:not(:disabled),input.ms-dept:not(:disabled),input.ms-pm:not(:disabled){cursor:pointer;}
 input.ms-person:not(:disabled):hover,input.ms-dept:not(:disabled):hover,input.ms-pm:not(:disabled):hover{background-color:var(--p50);}
 input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-image:none;cursor:default;}
+.ms-dept-rich{display:block;width:100%;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;padding:2px 4px;border-radius:4px;line-height:1.3;}
+.ms-dept-rich:hover{background:var(--p50);}
+.ms-dept-rich[data-disabled="1"]{cursor:default;pointer-events:none;}
 #msPopup{display:none;position:fixed;z-index:9999;background:#fff;border:2px solid var(--p600);border-radius:8px;padding:8px;box-shadow:0 6px 24px rgba(83,74,183,.22);max-height:320px;min-width:220px;max-width:300px;display:none;flex-direction:column;}
 #msPopup.open{display:flex;}
 #msPopupList{overflow-y:auto;max-height:250px;padding-right:2px;}
@@ -432,7 +435,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <div style="font-size:12px;line-height:1.8;">
       <p><b>Thêm dự án:</b> bấm nút "+ Thêm dự án" ở tab Danh sách → điền form → ID hiện ra tự động khi chọn đủ Ngày + Loại.</p>
       <p><b>Sửa dự án:</b> bấm trực tiếp vào ô cần sửa ngay trong bảng (tên, người phụ trách, ngày, trạng thái...) → gõ xong rời chuột khỏi ô (hoặc bấm Tab/Enter) là tự lưu, không cần nút "Lưu" riêng.</p>
-      <p><b>Task trong dự án:</b> bấm ▶ ở đầu mỗi dòng dự án để mở rộng, xem/thêm/sửa/xóa task bên trong. Mỗi task có số thứ tự riêng (1, 2, 3... trong phạm vi dự án đó) và có ô <b>Phòng/Bộ phận</b> riêng — để trống thì mặc định hiểu theo phòng của dự án, hoặc gõ tên phòng khác nếu task do phòng/bộ phận khác thực hiện. Các cột của task (Tên, Người thực hiện, Phòng/BP, ngày, Trạng thái, Tiến độ, Ghi chú) nằm đúng dưới các cột tương ứng của dự án. Task cũng tự lưu giống dự án.</p>
+      <p><b>Task trong dự án:</b> bấm ▶ ở đầu mỗi dòng dự án để mở rộng, xem/thêm/sửa/xóa task bên trong. Mỗi task có số thứ tự riêng (1, 2, 3... trong phạm vi dự án đó) và có ô <b>Phòng/Bộ phận</b> riêng — để trống thì mặc định hiểu theo phòng của dự án, hoặc bấm để chọn phòng/bộ phận khác nếu task do phòng/bộ phận khác thực hiện. Các cột của task (Tên, Người thực hiện, Phòng/BP, ngày, Trạng thái, Tiến độ, Ghi chú) nằm đúng dưới các cột tương ứng của dự án. Task cũng tự lưu giống dự án.</p>
       <p><b>Xóa:</b> dùng nút ✕ trên dòng tương ứng, hệ thống sẽ hỏi xác nhận trước khi xóa hẳn khỏi Firebase.</p>
     </div>
   </div>
@@ -446,7 +449,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">👤 Nhân sự, Phòng/Bộ phận &amp; từ khóa <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">all</code></h3>
     <div style="font-size:12px;line-height:1.8;">
       <p>Vào tab <b>🗃 Data</b> để quản lý danh sách Nhân sự và Phòng/Bộ phận. Mỗi nhân sự có 4 thông tin: <b>Họ tên</b>, <b>Chức vụ</b>, <b>Phòng/Bộ phận</b> mà người đó thuộc về, và <b>Trạng thái làm việc</b> (Đang làm việc / Tạm nghỉ / Đã nghỉ). Mỗi phòng/bộ phận có thêm thông tin <b>Thuộc đơn vị</b> (tự gõ tên đơn vị cấp trên nếu có).</p>
-      <p>Một người có thể thuộc <b>nhiều phòng/bộ phận cùng lúc</b> — nhập cách nhau dấu phẩy, ví dụ: <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">R&amp;D, QA</code>.</p>
+      <p>Một người có thể thuộc <b>nhiều phòng/bộ phận cùng lúc</b> — bấm vào ô Phòng/Bộ phận và tick chọn nhiều mục, ví dụ: <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">R&amp;D, QA</code>.</p>
       <p><b>Cách dùng "all" khi điền dự án:</b> ở ô <b>Người thực hiện</b>, gõ <code style="background:rgba(0,0,0,.07);padding:0 4px;border-radius:3px;">all</code> để chỉ định toàn bộ thành viên của phòng được ghi ở ô <b>Phòng/Bộ phận</b> trên cùng dự án đó.</p>
       <div style="background:var(--a50);border:1px solid var(--a100);border-radius:8px;padding:10px 13px;margin-top:6px;">
         ⚠️ <b>Bắt buộc chọn Phòng/Bộ phận trước</b> khi gõ "all" ở Người thực hiện. Nếu để trống Phòng/Bộ phận, hệ thống sẽ báo lỗi và không cho lưu — vì không biết "all" nghĩa là toàn bộ ai.
@@ -1140,7 +1143,7 @@ function renderTable() {
       '</select></td>'+
       '<td><input value="'+esc(p.pm)+'" data-key="'+key+'" data-f="pm" class="ms-pm" readonly title="Bấm để chọn Quản lý dự án" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input value="'+esc(p.exec)+'" data-key="'+key+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
-      '<td><input value="'+esc(p.dept)+'" data-key="'+key+'" data-f="dept" class="ms-dept" readonly title="Bấm để chọn nhiều phòng/bộ phận" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
+      '<td><div class="ms-dept-rich" data-key="'+key+'" data-f="dept" data-raw="'+esc(p.dept||'')+'" data-empty-html="▾ Bấm để chọn..." tabindex="0" title="Bấm để chọn nhiều phòng/bộ phận"'+(canEditP_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(p.dept) || '<span style="color:var(--muted);">▾ Bấm để chọn...</span>')+'</div></td>'+
       '<td><input type="date" value="'+(p.start||'')+'" data-key="'+key+'" data-f="start" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input type="date" value="'+(p.end||'')+'" data-key="'+key+'" data-f="end" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><select data-key="'+key+'" data-f="status" onchange="updateField(this)" style="border-left:3px solid '+(pOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[p.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditP_status)+'>'+
@@ -1173,7 +1176,7 @@ function renderTable() {
           '<td></td>'+
           '<td></td>'+
           '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateTask(this)" placeholder="▾ Người thực hiện..."'+dis(canEditT_id)+'></td>'+
-          '<td><input value="'+esc(task.dept||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" class="ms-dept" readonly title="Bấm để chọn nhiều phòng/bộ phận" onchange="updateTask(this)" placeholder="'+(p.dept?'Mặc định: '+esc(p.dept):'▾ Phòng/bộ phận...')+'"'+dis(canEditT_id)+'></td>'+
+          '<td><div class="ms-dept-rich" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" data-raw="'+esc(task.dept||'')+'" data-empty-html="'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'" tabindex="0" title="Bấm để chọn nhiều phòng/bộ phận"'+(canEditT_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(task.dept) || '<span style="color:var(--muted);">'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'</span>')+'</div></td>'+
           '<td><input type="date" value="'+(task.start||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="start" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="end" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)" style="border-left:3px solid '+(tOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[task.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditT_status)+'>'+
@@ -1568,6 +1571,21 @@ function deptStatValue(map, label, leftoverKeys) {
   if (label === DEPT_UNKNOWN_LABEL) return leftoverKeys.reduce(function(sum,k){ return sum + (map[k]||0); }, 0);
   return (map && map[label]) || 0;
 }
+// Lấy tên "Thuộc đơn vị" đã khai báo trong tab Data cho 1 phòng/bộ phận (nếu có)
+function deptUnitOf(name) {
+  var found = Object.values(deptsData).find(function(d){ return d.name===name; });
+  return (found && found.parentUnit) ? String(found.parentUnit).trim() : '';
+}
+// Hiển thị danh sách phòng/bộ phận kèm tên đơn vị (chữ nhỏ) phía sau — dùng cho cột Phòng/Bộ phận trong bảng
+function formatDeptListHtml(raw) {
+  var val = String(raw||'').trim();
+  if (!val) return '';
+  if (val.toLowerCase()==='all') return 'Tất cả phòng/bộ phận';
+  return val.split(',').map(function(x){ return x.trim(); }).filter(Boolean).map(function(name){
+    var unit = deptUnitOf(name);
+    return esc(name) + (unit ? ' <span style="font-size:9.5px;color:var(--muted);font-weight:400;">('+esc(unit)+')</span>' : '');
+  }).join(', ');
+}
 
 function drawCharts(filtered,s) {
   // Plugin vẽ % ngay trên từng lát doughnut/pie (số lượng + % chi tiết hiện khi hover)
@@ -1624,7 +1642,7 @@ function drawCharts(filtered,s) {
     var dLabels = built.labels;
     var leftoverKeys = built.leftoverKeys;
 
-    if (dcWrap) dcWrap.style.height = Math.max(150, dLabels.length*46 + 30) + 'px';
+    if (dcWrap) dcWrap.style.height = Math.max(150, dLabels.length*50 + 30) + 'px';
 
     if (!dLabels.length) {
       if (dcWrap) dcWrap.innerHTML = '<canvas id="chartDept"></canvas>';
@@ -1654,6 +1672,33 @@ function drawCharts(filtered,s) {
           ctx.restore();
         }
       };
+      // Vẽ nhãn tên phòng/bộ phận + tên đơn vị (chữ nhỏ, mờ hơn) ngay dưới — thay cho tick label mặc định (bị ẩn giữa 2 dòng)
+      var deptYLabelPlugin = {
+        id: 'deptYLabel',
+        afterDraw: function(chart) {
+          var yScale = chart.scales.y;
+          if (!yScale) return;
+          var ctx = chart.ctx;
+          ctx.save();
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          dLabels.forEach(function(label, i){
+            var y = yScale.getPixelForTick(i);
+            if (y===undefined) return;
+            var unit = (label===DEPT_UNKNOWN_LABEL) ? '' : deptUnitOf(label);
+            var xRight = yScale.right - 6;
+            ctx.font = '600 11.5px Segoe UI, sans-serif';
+            ctx.fillStyle = '#3a3936';
+            ctx.fillText(label, xRight, unit ? y-6 : y);
+            if (unit) {
+              ctx.font = '400 9px Segoe UI, sans-serif';
+              ctx.fillStyle = '#9a9890';
+              ctx.fillText('('+unit+')', xRight, y+7);
+            }
+          });
+          ctx.restore();
+        }
+      };
       charts['chartDept'] = new Chart(dc.getContext('2d'),{type:'bar',
         data:{labels:dLabels,datasets:[
           {label:'Số dự án',data:dLabels.map(function(l){ return deptStatValue(s.deptMap,l,leftoverKeys); }),backgroundColor:'#534AB7',borderRadius:4,barPercentage:0.62,categoryPercentage:0.7},
@@ -1662,12 +1707,15 @@ function drawCharts(filtered,s) {
         options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
           layout:{padding:{right:30}},
           plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11.5},boxWidth:14,padding:14}},
-            tooltip:{callbacks:{label:function(ctx){ return ' '+ctx.dataset.label+' — '+ctx.label+': '+ctx.raw; }}}},
+            tooltip:{callbacks:{label:function(ctx){
+              var unit = ctx.label===DEPT_UNKNOWN_LABEL ? '' : deptUnitOf(ctx.label);
+              return ' '+ctx.dataset.label+' — '+ctx.label+(unit?' ('+unit+')':'')+': '+ctx.raw;
+            }}}},
           scales:{
             x:{beginAtZero:true,ticks:{precision:0,font:{size:11}},grid:{color:'#ece9e2'}},
-            y:{ticks:{font:{size:12},autoSkip:false},grid:{display:false}}
+            y:{ticks:{color:'transparent',font:{size:12},autoSkip:false},grid:{display:false},afterFit:function(scale){ scale.width += 70; }}
           }},
-        plugins:[deptValLabelPlugin]});
+        plugins:[deptValLabelPlugin, deptYLabelPlugin]});
     }
   }
 }
@@ -2136,7 +2184,11 @@ function executePrint() {
     var deptKeys = deptBuilt.labels;
     if (deptKeys.length) {
       html += '<table><thead><tr><th>Phòng / Bộ phận</th><th>Số dự án</th><th>Số task</th></tr></thead><tbody>'+
-        deptKeys.map(function(d){ return '<tr><td>'+d+'</td><td>'+deptStatValue(s.deptMap,d,deptBuilt.leftoverKeys)+'</td><td>'+deptStatValue(s.deptTaskMap,d,deptBuilt.leftoverKeys)+'</td></tr>'; }).join('')+
+        deptKeys.map(function(d){
+          var unit = (d===DEPT_UNKNOWN_LABEL) ? '' : deptUnitOf(d);
+          var lbl = esc(d) + (unit ? ' <span style="font-size:9.5px;color:#888;">('+esc(unit)+')</span>' : '');
+          return '<tr><td>'+lbl+'</td><td>'+deptStatValue(s.deptMap,d,deptBuilt.leftoverKeys)+'</td><td>'+deptStatValue(s.deptTaskMap,d,deptBuilt.leftoverKeys)+'</td></tr>';
+        }).join('')+
         '</tbody></table>';
     }
   }
@@ -2238,10 +2290,11 @@ function staffStatusBadge(st) {
   return '';
 }
 function openMsSelector(el) {
-  if (el.disabled) return;
+  if (el.disabled || (el.dataset && el.dataset.disabled)) return;
   var isSingle = el.classList.contains('ms-pm');
   var isPerson = isSingle || el.classList.contains('ms-person');
-  msCtx = {input: el, mode: isSingle ? 'single' : 'multi'};
+  var isRich = el.classList.contains('ms-dept-rich');
+  msCtx = {input: el, mode: isSingle ? 'single' : 'multi', rich: isRich};
   var entries = isPerson ? msStaffEntries() : msDeptEntries();
   var listEl = document.getElementById('msPopupList');
   var btnsEl = document.getElementById('msPopupBtns');
@@ -2256,14 +2309,14 @@ function openMsSelector(el) {
     listEl.innerHTML = html;
     if (btnsEl) btnsEl.style.display = 'none';
   } else {
-    var raw = el.value || '';
+    var raw = isRich ? (el.dataset.raw||'') : (el.value || '');
     var isAll = raw.trim().toLowerCase() === 'all';
     var selectedSet = {};
     if (!isAll) raw.split(',').map(function(s2){ return s2.trim(); }).filter(Boolean).forEach(function(n){ selectedSet[n]=true; });
     var allLabel = isPerson ? 'Tất cả nhân sự' : 'Tất cả phòng/bộ phận';
     var html = '<label class="ms-all-row"><input type="checkbox" id="msAllCb" '+(isAll?'checked':'')+'> ☑️ '+allLabel+'</label>';
     html += entries.length ? entries.map(function(item){
-      var badge = isPerson ? staffStatusBadge(item.status) : '';
+      var badge = isPerson ? staffStatusBadge(item.status) : (item.parentUnit ? ' <span style="font-size:10px;color:var(--muted);">('+esc(item.parentUnit)+')</span>' : '');
       return '<label><input type="checkbox" class="msItemCb" value="'+esc(item.name)+'" '+((!isAll && selectedSet[item.name])?'checked':'')+((isAll)?' disabled':'')+'> '+esc(item.name)+badge+'</label>';
     }).join('') : '<div style="font-size:11.5px;color:var(--muted);padding:5px 3px;">Chưa có dữ liệu — vào tab 🗃 Data để thêm.</div>';
     listEl.innerHTML = html;
@@ -2302,7 +2355,16 @@ function closeMsSelector(apply) {
     } else {
       val = Array.from(document.querySelectorAll('.msItemCb:checked')).map(function(c){ return c.value; }).join(', ');
     }
-    if (input.value !== val) {
+    if (msCtx.rich) {
+      // Div hiển thị (Phòng/Bộ phận): lưu qua updateField/updateTask sẵn có, rồi vẽ lại hiển thị kèm tên đơn vị (chữ nhỏ)
+      input.value = val;
+      if (input.dataset.key) updateField(input);
+      else if (input.dataset.pk) updateTask(input);
+      // Đồng bộ lại hiển thị đúng theo giá trị THỰC SỰ được lưu (có thể bị hoàn tác nếu không đủ quyền)
+      input.dataset.raw = input.value;
+      var emptyHtml = '<span style="color:var(--muted);">'+esc(input.dataset.emptyHtml||'▾ Bấm để chọn...')+'</span>';
+      input.innerHTML = formatDeptListHtml(input.value) || emptyHtml;
+    } else if (input.value !== val) {
       input.value = val;
       input.dispatchEvent(new Event('change', {bubbles:true}));
     }
@@ -2324,8 +2386,9 @@ document.getElementById('msPopupList').addEventListener('click', function(e){
   msCtx = null;
 });
 document.addEventListener('click', function(e){
-  var el = e.target.closest('input.ms-person, input.ms-dept, input.ms-pm');
+  var el = e.target.closest('input.ms-person, input.ms-dept, input.ms-pm, .ms-dept-rich');
   if (el) {
+    if (el.disabled || (el.dataset && el.dataset.disabled)) return;
     if (msCtx && msCtx.input !== el) closeMsSelector(msCtx.mode==='multi');
     openMsSelector(el);
     return;
