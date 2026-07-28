@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
+<meta name="app-version" content="2026.07.28-081001">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -215,24 +220,24 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 </head>
 <body>
 
-<!-- GATE: nhập tên + mã Admin (nếu có) trước khi vào app -->
+<!-- Banner báo có bản cập nhật mới (ẩn mặc định) -->
+<div id="updateBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:6000;background:#26215C;color:#fff;padding:10px 18px;font-size:13px;display:none;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.2);">
+  <span>🔄 Có bản cập nhật mới cho ứng dụng.</span>
+  <button onclick="location.reload(true)" style="background:#fff;color:#26215C;border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:600;cursor:pointer;">Tải lại ngay</button>
+  <button onclick="dismissUpdateBanner()" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;font-size:12.5px;cursor:pointer;">Để sau</button>
+</div>
+
+<!-- GATE: chọn tên trước khi vào app -->
 <div id="gateBg">
   <div class="gate-card">
     <h2>👋 Xin chào!</h2>
-    <p>Nhập tên của bạn. Nếu bạn là Admin, nhập thêm Mã Admin để có toàn quyền; nếu không, chọn vai trò Nhân sự hoặc Khách.</p>
-    <div class="form-row" style="text-align:left;"><label style="font-size:12px;color:var(--muted);">Họ tên</label>
-      <input type="text" id="gateName" placeholder="Nhập họ tên..." style="width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;margin-bottom:8px;">
+    <p>Chọn tên của bạn trong danh sách. Nhân sự sẽ tự động vào với vai trò "Nhân sự", chọn "🙋 Khách" nếu bạn chỉ cần xem. Nếu bạn là Admin, chọn tên rồi nhập thêm Mã Admin để có toàn quyền.</p>
+    <div class="form-row" style="text-align:left;"><label style="font-size:12px;color:var(--muted);">Chọn tên</label>
+      <select id="gateSelect" onchange="gateSelectChange()" style="margin-bottom:8px;"><option value="">-- Chọn tên --</option></select>
     </div>
-    <select id="gateSelect" onchange="gateSelectChange()"><option value="">-- hoặc chọn từ danh sách nhân sự --</option></select>
-    <div class="form-row" style="text-align:left;">
-      <label style="font-size:12px;color:var(--muted);">Vai trò (nếu không nhập Mã Admin)</label>
-      <select id="gateRole" style="margin-bottom:8px;">
-        <option value="staff">👷 Nhân sự — điền dự án/task, sửa trạng thái, tiến độ task, ghi chú</option>
-        <option value="guest">👀 Khách — chỉ xem</option>
-      </select>
-    </div>
-    <div class="form-row" style="text-align:left;"><label style="font-size:12px;color:var(--muted);">Mã Admin (tùy chọn — bỏ trống nếu không phải Admin)</label>
-      <input type="password" id="gateCode" placeholder="Nhập mã Admin để có toàn quyền..." style="width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;margin-bottom:14px;">
+    <div id="gateRoleHint" style="font-size:11.5px;color:var(--muted);margin:-4px 0 12px;min-height:16px;"></div>
+    <div class="form-row" style="text-align:left;"><label style="font-size:12px;color:var(--muted);">Mã Admin (tùy chọn — chỉ Admin mới cần nhập)</label>
+      <input type="password" id="gateCode" placeholder="Nhập mã Admin để có toàn quyền..." oninput="gateSelectChange()" style="width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;margin-bottom:14px;">
     </div>
     <button onclick="confirmGateUser()">Vào hệ thống</button>
   </div>
@@ -782,36 +787,56 @@ var DEFAULT_ADMIN_CODE = 'NAACP2026'; // mã mặc định — Admin có thể �
 function getAdminCode() {
   return (window._cfg && window._cfg.adminCode) ? window._cfg.adminCode : DEFAULT_ADMIN_CODE;
 }
+var GATE_GUEST_VAL = '__KHACH__'; // giá trị đặc biệt cho lựa chọn "Khách" trong dropdown, tránh trùng tên nhân sự thật
 function populateGateSelect() {
   var sel = document.getElementById('gateSelect');
   if (!sel) return;
-  var names = Object.values(staffData).map(function(s){ return s.name; }).filter(Boolean).sort();
+  var names = Object.values(staffData).map(function(s){ return s.name; }).filter(Boolean).sort(function(a,b){ return a.localeCompare(b,'vi'); });
   var cur = sel.value;
-  sel.innerHTML = '<option value="">-- Chọn tên (hoặc tự nhập ở ô trên) --</option>' +
+  sel.innerHTML = '<option value="">-- Chọn tên --</option>' +
+    '<option value="'+GATE_GUEST_VAL+'"'+(cur===GATE_GUEST_VAL?' selected':'')+'>🙋 Khách</option>' +
     names.map(function(n){ return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
 }
 function openGate() {
   populateGateSelect();
-  document.getElementById('gateName').value = currentUser && !currentUser.guest ? currentUser.name : '';
+  var sel = document.getElementById('gateSelect');
+  if (currentUser) {
+    sel.value = (currentUser.role==='guest') ? GATE_GUEST_VAL : currentUser.name;
+  } else {
+    sel.value = '';
+  }
   document.getElementById('gateCode').value = '';
-  document.getElementById('gateRole').value = currentUser && currentUser.role==='staff' ? 'staff' : 'guest';
+  gateSelectChange();
   document.getElementById('gateBg').classList.remove('hidden');
 }
 function gateSelectChange() {
   var sel = document.getElementById('gateSelect');
-  if (sel.value) document.getElementById('gateName').value = sel.value;
+  var hint = document.getElementById('gateRoleHint');
+  if (!hint) return;
+  if (!sel.value) { hint.textContent = ''; return; }
+  var codeEl = document.getElementById('gateCode');
+  var hasCode = codeEl && codeEl.value.trim().length>0;
+  if (hasCode) {
+    hint.textContent = '➡️ Đang nhập Mã Admin: nếu đúng, vai trò sẽ là 🔑 Admin (toàn quyền).';
+  } else if (sel.value === GATE_GUEST_VAL) {
+    hint.textContent = '➡️ Vai trò mặc định: 👀 Khách — chỉ xem.';
+  } else {
+    hint.textContent = '➡️ Vai trò mặc định: 👷 Nhân sự — điền dự án/task, cập nhật trạng thái/tiến độ, ghi chú.';
+  }
 }
 function confirmGateUser() {
-  var name = document.getElementById('gateName').value.trim();
+  var sel = document.getElementById('gateSelect');
+  var selVal = sel.value;
   var code = document.getElementById('gateCode').value.trim();
-  var roleSel = document.getElementById('gateRole').value;
-  if (!name) { showToast('⚠️ Vui lòng nhập hoặc chọn tên của bạn.'); return; }
-  var role = 'guest';
+  if (!selVal) { showToast('⚠️ Vui lòng chọn tên của bạn trong danh sách.'); return; }
+  var isGuestSel = selVal === GATE_GUEST_VAL;
+  var name = isGuestSel ? 'Khách' : selVal;
+  var role;
   if (code) {
     if (code === getAdminCode()) { role = 'admin'; }
     else { showToast('⛔ Mã Admin không đúng.'); return; }
   } else {
-    role = (roleSel==='staff') ? 'staff' : 'guest';
+    role = isGuestSel ? 'guest' : 'staff';
   }
   currentUser = {name:name, role:role, guest:(role==='guest')};
   try { localStorage.setItem('naacp_user', JSON.stringify(currentUser)); } catch(e){}
@@ -2484,6 +2509,43 @@ document.addEventListener('keydown', function(e){
   document.addEventListener('scroll', function(){ hidePopup(true); }, true);
   window.addEventListener('resize', function(){ hidePopup(true); });
 })();
+
+// ── Tự kiểm tra bản mới (version-check) ──────────────────────────────────
+// Vì trình duyệt/điện thoại hay cache lại file HTML này, ta chủ động fetch lại
+// chính URL đang mở (kèm cache:'no-store' + query chống cache) theo chu kỳ,
+// đọc thẻ <meta name="app-version"> trong bản mới nhất và so với bản đang chạy.
+// Nếu khác nhau → hiện banner để người dùng chủ động bấm "Tải lại ngay".
+var APP_VERSION = (document.querySelector('meta[name="app-version"]') || {}).content || '';
+var updateBannerDismissed = false;
+
+function dismissUpdateBanner() {
+  updateBannerDismissed = true;
+  var b = document.getElementById('updateBanner');
+  if (b) { b.style.display = 'none'; }
+}
+
+function checkForUpdate() {
+  if (updateBannerDismissed || !APP_VERSION) return;
+  var url = location.href.split('#')[0].split('?')[0] + '?_vc=' + Date.now();
+  fetch(url, { cache: 'no-store' })
+    .then(function(res){ return res.text(); })
+    .then(function(html){
+      var m = html.match(/<meta\s+name=["']app-version["']\s+content=["']([^"']*)["']/i);
+      var remoteVersion = m ? m[1] : '';
+      if (remoteVersion && remoteVersion !== APP_VERSION) {
+        var b = document.getElementById('updateBanner');
+        if (b) { b.style.display = 'flex'; }
+      }
+    })
+    .catch(function(){ /* im lặng bỏ qua lỗi mạng, không làm phiền người dùng */ });
+}
+
+// Kiểm tra: sau khi tải trang vài giây, mỗi 10 phút, và mỗi khi quay lại tab
+setTimeout(checkForUpdate, 4000);
+setInterval(checkForUpdate, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'visible') checkForUpdate();
+});
 
 startPolling();
 tryRestoreUser();
