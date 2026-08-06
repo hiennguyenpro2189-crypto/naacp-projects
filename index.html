@@ -7,11 +7,12 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.07.28-081001">
+<meta name="app-version" content="2026.08.06-090248">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --p50:#EEEDFE;--p100:#CECBF6;--p600:#534AB7;--p800:#3C3489;--p900:#26215C;
@@ -225,6 +226,11 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   <span>🔄 Có bản cập nhật mới cho ứng dụng.</span>
   <button onclick="location.reload(true)" style="background:#fff;color:#26215C;border:none;border-radius:6px;padding:5px 14px;font-size:12.5px;font-weight:600;cursor:pointer;">Tải lại ngay</button>
   <button onclick="dismissUpdateBanner()" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;font-size:12.5px;cursor:pointer;">Để sau</button>
+</div>
+
+<!-- Banner báo lỗi phiên bản cũ / không còn quyền kết nối (không phụ thuộc Firebase, luôn hiện được) -->
+<div id="permDeniedBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:6001;background:#c0392b;color:#fff;padding:12px 18px;font-size:13px;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.25);text-align:center;">
+  <span>⚠️ Trang bạn đang xem đã cũ và không còn kết nối được. Vui lòng tải lại: giữ <b>Shift</b> rồi bấm nút tải lại của trình duyệt, hoặc <b>Ctrl+Shift+R</b> (Windows) / <b>Cmd+Shift+R</b> (Mac). Trên điện thoại: đóng hẳn tab/app rồi mở lại link. Nếu vẫn không được, liên hệ Hiển.</span>
 </div>
 
 <!-- GATE: chọn tên trước khi vào app -->
@@ -603,6 +609,24 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 var FB_URL = "https://naacp-projects-default-rtdb.asia-southeast1.firebasedatabase.app";
 firebase.initializeApp({ databaseURL: FB_URL });
 var db = firebase.database();
+var auth = firebase.auth();
+
+// ── Banner lỗi phiên bản cũ / mất quyền truy cập (không phụ thuộc Firebase) ──
+function showPermDeniedBanner() {
+  var b = document.getElementById('permDeniedBanner');
+  if (b) b.style.display = 'flex';
+}
+// Dùng làm callback lỗi chung cho các listener realtime: nếu là lỗi PERMISSION_DENIED
+// (dấu hiệu điển hình của trang đang chạy bản code cũ, chưa có đăng nhập ẩn danh
+// trong khi Security Rules đã yêu cầu auth) thì hiện banner cứng hướng dẫn tải lại.
+function handleFbListenError(label) {
+  return function(err) {
+    console.error(label + ' listener error:', err);
+    if (err && (err.code === 'PERMISSION_DENIED' || /permission_denied/i.test(err.message||''))) {
+      showPermDeniedBanner();
+    }
+  };
+}
 
 var projects = {};
 var staffData = {};
@@ -698,27 +722,27 @@ function startPolling() {
     // Tự động đồng bộ lại counter về đúng max thực tế mỗi khi dữ liệu thay đổi
     // → ngăn drift counter cao hơn số dự án thực tế
     syncCounters(projects);
-  }, function(err){ console.error('projects listener error:', err); });
+  }, handleFbListenError('projects'));
 
   db.ref('/staff').on('value', function(snap){
     staffData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
     if (!document.getElementById('gateBg').classList.contains('hidden')) populateGateSelect();
-  }, function(err){ console.error('staff listener error:', err); });
+  }, handleFbListenError('staff'));
 
   db.ref('/depts').on('value', function(snap){
     deptsData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
-  }, function(err){ console.error('depts listener error:', err); });
+  }, handleFbListenError('depts'));
 
   db.ref('/logs').limitToLast(300).on('value', function(snap){
     logsData = snap.val() || {};
     renderLogs();
-  }, function(err){ console.error('logs listener error:', err); });
+  }, handleFbListenError('logs'));
 
   db.ref('/config').on('value', function(snap){
     window._cfg = snap.val() || {};
-  }, function(err){ console.error('config listener error:', err); });
+  }, handleFbListenError('config'));
 }
 
 // ── Render Lịch sử (audit log) ──
@@ -2547,8 +2571,25 @@ document.addEventListener('visibilitychange', function(){
   if (document.visibilityState === 'visible') checkForUpdate();
 });
 
-startPolling();
-tryRestoreUser();
+// ── Đăng nhập ẩn danh trước khi mở kết nối realtime (khớp với Security Rules yêu cầu auth != null) ──
+function initApp() {
+  auth.signInAnonymously().catch(function(err){
+    console.error('Anonymous sign-in error:', err);
+    // Không kết nối được auth (mạng lỗi, hoặc chưa bật Anonymous trong Console) → không thể đọc/ghi dữ liệu
+    var badge = document.getElementById('connBadge');
+    if (badge) { badge.textContent = '🔴 Lỗi xác thực'; badge.style.background = 'rgba(153,60,29,0.3)'; }
+    showToast('⚠️ Không xác thực được với hệ thống. Vui lòng tải lại trang hoặc liên hệ Hiển.');
+  });
+}
+var appStarted = false;
+auth.onAuthStateChanged(function(user){
+  if (user && !appStarted) {
+    appStarted = true;
+    startPolling();
+    tryRestoreUser();
+  }
+});
+initApp();
 </script>
 </body>
 </html>
