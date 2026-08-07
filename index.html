@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.06-013943">
+<meta name="app-version" content="2026.08.07-074013">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -138,6 +138,8 @@ tr.proj-row.row-inprogress{background:#EAF2FA;}
 tr.proj-row.row-inprogress:hover{background:#DCEAF6;}
 tr.proj-row.row-overdue{background:#FCEEEC;}
 tr.proj-row.row-overdue:hover{background:#F9E1DD;}
+tr.proj-row.row-protected{background:#F1EEFB;}
+tr.proj-row.row-protected:hover{background:#E7E1F8;}
 tr.task-row.row-done{background:#F2F8EC;}
 tr.task-row.row-paused{background:#FDF3E6;}
 tr.task-row.row-inprogress{background:#EAF2FA;}
@@ -263,6 +265,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 <div class="tabs">
   <div class="tab active" onclick="switchTab('table')">📊 Danh sách dự án</div>
   <div class="tab" onclick="switchTab('kanban')">🗂 Kanban</div>
+  <div class="tab" onclick="switchTab('daily')">📅 Báo cáo ngày</div>
   <div class="tab" onclick="switchTab('stats')">📈 Thống kê</div>
   <div class="tab" onclick="switchTab('data')">🗃 Data</div>
   <div class="tab" onclick="switchTab('logs')">🕘 Lịch sử</div>
@@ -290,6 +293,9 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <button class="btn btn-o" onclick="exportCSV()">⬇ Xuất CSV</button>
     <button class="btn btn-o" onclick="openModal('printModal')">🖨 In</button>
     <button class="btn btn-o" onclick="backupJSON()">💾 Sao lưu JSON</button>
+    <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none;padding:6px 10px;border:1px solid var(--bdr);border-radius:7px;background:var(--sur);" title="Chỉ Admin đổi được — áp dụng cho TẤT CẢ mọi người dùng">
+      <input type="checkbox" id="hideDoneToggle" onchange="toggleHideDone()" style="width:auto;margin:0;">🙈 Ẩn đã hoàn thành (toàn hệ thống)
+    </label>
   </div>
   <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="rowCount"></div>
   <div class="tbl-wrap">
@@ -325,7 +331,38 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   <div class="kanban-wrap" id="kanbanWrap"></div>
 </div>
 
+<div id="section-daily" class="section">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <div class="sec-title" id="dailyReportDate" style="margin-bottom:0;">📅 Công việc trong ngày</div>
+    <div style="font-size:11px;color:var(--muted);">🔄 Tự động cập nhật khi sang ngày mới · Task được tính vào đây nếu Bắt đầu ≤ hôm nay ≤ Kết thúc dự kiến</div>
+  </div>
+  <div id="dailyReportWrap"></div>
+</div>
+
 <div id="section-stats" class="section">
+  <div class="ctrl" style="margin-bottom:16px;">
+    <span style="font-size:12px;color:var(--muted);">📅 Xem theo:</span>
+    <select class="fsel" id="statsDateMode" onchange="onStatsDateModeChange()">
+      <option value="all">Tất cả thời gian</option>
+      <option value="thisMonth">Tháng này</option>
+      <option value="lastMonth">Tháng trước</option>
+      <option value="thisQuarter">Quý này</option>
+      <option value="singleDay">Theo 1 ngày cụ thể...</option>
+      <option value="custom">Tùy chọn khoảng ngày...</option>
+    </select>
+    <input type="date" class="fsel" id="statsSingleDate" style="display:none;" onchange="renderStats()">
+    <input type="date" class="fsel" id="statsDateFrom" style="display:none;" onchange="renderStats()">
+    <span id="statsDateSep" style="display:none;font-size:12px;color:var(--muted);">→</span>
+    <input type="date" class="fsel" id="statsDateTo" style="display:none;" onchange="renderStats()">
+    <span style="font-size:11px;color:var(--muted);" id="statsRangeLabel"></span>
+  </div>
+  <div class="stats-grid" id="singleDayStatsBox" style="display:none;">
+    <div class="sc total"><div class="sc-lbl">🆕 Dự án mới tạo</div><div class="sc-val" id="sdNewProj">0</div></div>
+    <div class="sc oper"><div class="sc-lbl">🆕 Task mới tạo</div><div class="sc-val" id="sdNewTask">0</div></div>
+    <div class="sc inprog"><div class="sc-lbl">Đang thực hiện*</div><div class="sc-val" id="sdInprog">0</div></div>
+    <div class="sc done"><div class="sc-lbl">Đã hoàn thành*</div><div class="sc-val" id="sdDone">0</div></div>
+  </div>
+  <div id="singleDayStatsNote" style="display:none;font-size:10.5px;color:var(--muted);margin:-10px 0 18px;">* "Đang thực hiện"/"Đã hoàn thành" tính theo trạng thái HIỆN TẠI của các dự án có khung Bắt đầu→Kết thúc bao trùm ngày đã chọn — không phải ảnh chụp lịch sử chính xác đúng thời điểm đó (app chưa lưu lịch sử trạng thái theo từng ngày).</div>
   <div class="sec-title">Tổng quan dự án</div>
   <div class="stats-grid">
     <div class="sc total"><div class="sc-lbl">Tổng dự án</div><div class="sc-val" id="sTotal">0</div></div>
@@ -388,14 +425,20 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <div class="data-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 style="font-size:14px;font-weight:600;">👤 Nhân sự</h3>
-        <button class="btn btn-p btn-sm" onclick="addStaff()">+ Thêm</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-o btn-sm" id="mgStaffFieldsBtn" onclick="manageFields('staff')">⚙ Trường tùy chỉnh</button>
+          <button class="btn btn-p btn-sm" onclick="addStaff()">+ Thêm</button>
+        </div>
       </div>
       <div id="staffList"></div>
     </div>
     <div class="data-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 style="font-size:14px;font-weight:600;">🏢 Phòng / Bộ phận</h3>
-        <button class="btn btn-p btn-sm" onclick="addDept()">+ Thêm</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-o btn-sm" id="mgDeptFieldsBtn" onclick="manageFields('dept')">⚙ Trường tùy chỉnh</button>
+          <button class="btn btn-p btn-sm" onclick="addDept()">+ Thêm</button>
+        </div>
       </div>
       <div id="deptListEl"></div>
     </div>
@@ -421,11 +464,14 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 <div id="section-guide" class="section">
 
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🧭 Tổng quan 4 tab</h3>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🧭 Tổng quan 7 tab</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;line-height:1.7;">
-      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📊 Danh sách dự án</b><br>Xem, thêm, sửa, xóa dự án. Mỗi dự án có thể mở rộng (▶) để xem/quản lý các task bên trong.</div>
-      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📈 Thống kê</b><br>Biểu đồ và số liệu tổng quan, tự cập nhật theo bộ lọc đang chọn ở tab Danh sách.</div>
-      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form và để xác định "ai thuộc phòng nào".</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📊 Danh sách dự án</b><br>Xem, thêm, sửa, xóa dự án. Mỗi dự án có thể mở rộng (▶) để xem/quản lý các task bên trong. Admin có thể bật "🙈 Ẩn đã hoàn thành" (áp dụng cho tất cả mọi người) để giao diện chỉ còn hiện việc đang chạy. Có sẵn 1 dự án cố định 📌 "Việc không thuộc dự án" — không xóa được, luôn ghim đầu bảng, dùng để chứa các task lẻ/việc vặt.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗂 Kanban</b><br>Xem dự án dạng thẻ theo 4 cột trạng thái, kéo-thả thẻ để đổi trạng thái nhanh — tiện khi họp giao ban.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📅 Báo cáo ngày</b><br>Tự động liệt kê mọi task đang chạy đúng hôm nay (Bắt đầu ≤ hôm nay ≤ Kết thúc), nhóm theo phòng/bộ phận, kèm Loại/Người thực hiện/Tiến độ. Tự cập nhật khi sang ngày mới, không cần tải lại trang.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📈 Thống kê</b><br>Biểu đồ và số liệu tổng quan, tự cập nhật theo bộ lọc đang chọn ở tab Danh sách và theo khoảng thời gian đang chọn (Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày).</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form. Admin có thể tự thêm trường thông tin tùy chỉnh (VD: Email, SĐT...) qua nút "⚙ Trường tùy chỉnh".</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🕘 Lịch sử</b><br>Ghi lại ai vừa sửa gì, lúc nào — chỉ ghi khi có thao tác thay đổi dữ liệu thật (không ghi khi chỉ mở xem). Tự động xóa các dòng cũ hơn 45 ngày.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📖 Hướng dẫn</b><br>Trang bạn đang xem.</div>
     </div>
     <p style="font-size:11.5px;color:var(--muted);margin-top:10px;">💡 Dữ liệu đồng bộ realtime — nếu đồng nghiệp khác sửa, màn hình của bạn tự cập nhật ngay, không cần tải lại trang.</p>
@@ -439,6 +485,40 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div class="gi"><strong>Full Name tự động</strong><code>[NAACP] [ID] Tên dự án</code></div>
     </div>
     <p style="font-size:11.5px;color:var(--b800);margin-top:8px;">✅ Mã số được cấp an toàn ngay cả khi nhiều người cùng tạo dự án cùng lúc — hệ thống đảm bảo không bao giờ trùng mã, kể cả khi 2 người bấm "Thêm dự án" cùng một giây.</p>
+  </div>
+
+  <div class="guide-box">
+    <h3>🏷️ BẢNG TRA CỨU NHÃN CÔNG VIỆC (MAIN / SUPP / OPER)</h3>
+    <div style="background:var(--a50);border:1px solid var(--a100);border-radius:8px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--a800);">
+      📌 <b>Nguyên tắc tối thượng:</b> Việc gì thuộc về <b>chuyên môn cốt lõi</b> của phòng bạn → Chọn <b>MAIN</b>.
+    </div>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="background:var(--p900);">
+        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Nhãn</th>
+        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Ý nghĩa ngắn gọn</th>
+        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Từ khóa / Ví dụ trực quan</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:.5px solid var(--bdr);">
+          <td style="padding:9px 10px;font-weight:700;color:var(--b800);vertical-align:top;">MAIN</td>
+          <td style="padding:9px 10px;vertical-align:top;"><b>Chuyên môn chính của phòng</b><br><span style="color:var(--muted);font-size:11px;">(Nhiệm vụ cốt lõi trong JD)</span></td>
+          <td style="padding:9px 10px;vertical-align:top;line-height:1.7;">• <b>Kinh doanh:</b> Chốt hợp đồng.<br>• <b>Kế toán:</b> Báo cáo tài chính.<br>• <b>R&amp;D:</b> Nghiên cứu công cụ/công nghệ/sản phẩm mới.</td>
+        </tr>
+        <tr style="border-bottom:.5px solid var(--bdr);">
+          <td style="padding:9px 10px;font-weight:700;color:var(--t800);vertical-align:top;">SUPP</td>
+          <td style="padding:9px 10px;vertical-align:top;"><b>Cải tiến quy trình nội bộ</b><br><span style="color:var(--muted);font-size:11px;">(Giúp phòng ban làm việc tốt hơn)</span></td>
+          <td style="padding:9px 10px;vertical-align:top;line-height:1.7;">Viết quy trình (SOP) làm việc, Soạn tài liệu đào tạo nội bộ, Chuẩn hóa biểu mẫu của phòng...</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 10px;font-weight:700;color:var(--a800);vertical-align:top;">OPER</td>
+          <td style="padding:9px 10px;vertical-align:top;"><b>Sự vụ &amp; Thủ tục hành chính</b><br><span style="color:var(--muted);font-size:11px;">(Các tác vụ thực thi cơ học)</span></td>
+          <td style="padding:9px 10px;vertical-align:top;line-height:1.7;">In ấn, trình ký, đóng dấu, nhập liệu, 5S dọn dẹp, setup phòng họp, hỗ trợ việc vặt cho phòng khác...</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:11px;color:var(--b800);margin-top:8px;">💡 Chọn đúng Nhãn khi tạo dự án rất quan trọng — vì Loại là 1 phần cấu thành mã Project ID và ảnh hưởng số liệu thống kê MAIN/SUPP/OPER ở tab Thống kê.</p>
   </div>
 
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
@@ -518,6 +598,13 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div class="gi"><strong>🕘 Lịch sử</strong>Tab riêng ghi lại ai vừa sửa gì, lúc nào — 300 thao tác gần nhất.</div>
       <div class="gi"><strong>💾 Sao lưu JSON</strong>Nút "Sao lưu JSON" ở tab Danh sách — tải toàn bộ dữ liệu (dự án, nhân sự, phòng ban, lịch sử) về máy đề phòng sự cố.</div>
       <div class="gi"><strong>🔒 Phân quyền theo Mã Admin</strong>Admin (nhập đúng mã) sửa mọi trường, xóa được, quản lý nhân sự/phòng ban và đổi mã Admin. Nhân sự thêm được dự án/task, sửa Trạng thái, Ghi chú/Link (Tiến độ dự án tự tính từ task; tiến độ task nhân sự vẫn chỉnh được). Khách chỉ xem.</div>
+      <div class="gi"><strong>🙈 Ẩn đã hoàn thành</strong>Cài đặt chung cho cả hệ thống (chỉ Admin bật/tắt được, ở tab Danh sách) — khi bật, mọi người dùng đều chỉ thấy dự án đang chạy. Chỉ ẩn khi cả dự án lẫn toàn bộ task con bên trong đều đã "Hoàn thành".</div>
+      <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Tab Thống kê có thêm bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" sẽ hiện thêm số dự án/task mới tạo đúng ngày đó, cùng số đang thực hiện/đã hoàn thành (theo trạng thái hiện tại).</div>
+      <div class="gi"><strong>⚙ Trường thông tin tùy chỉnh</strong>Admin bấm "⚙ Trường tùy chỉnh" ở tab Data để tự thêm trường mới (VD: Email, SĐT) cho Nhân sự hoặc Phòng/Bộ phận, áp dụng ngay cho mọi dòng.</div>
+      <div class="gi"><strong>🧹 Tự dọn Lịch sử</strong>Các dòng lịch sử cũ hơn 45 ngày sẽ tự động bị xóa dần, không cần thao tác thủ công.</div>
+      <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task giờ có thể tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án) — dùng để phân loại chính xác hơn trong Báo cáo ngày.</div>
+      <div class="gi"><strong>📌 Dự án cố định "Việc không thuộc dự án"</strong>Luôn có sẵn, ghim đầu bảng, không xóa được, dùng để chứa các task lẻ/việc vặt không thuộc dự án cụ thể. Không tính vào thống kê theo dự án nhưng task bên trong vẫn thống kê task bình thường.</div>
+      <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tự tổng hợp toàn bộ task đang chạy trong ngày hôm nay, nhóm theo phòng/bộ phận, tự động cập nhật khi sang ngày mới.</div>
     </div>
   </div>
 
@@ -593,6 +680,20 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   </div>
 </div>
 
+<!-- FIELDS MANAGEMENT MODAL -->
+<div class="modal-bg" id="fieldsModal">
+  <div class="modal">
+    <h3 id="fieldsModalTitle">⚙ Quản lý trường tùy chỉnh</h3>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;">Trường mới sẽ tự hiện thêm cho mọi dòng trong danh sách bên dưới. Xóa trường chỉ ẩn khỏi giao diện, dữ liệu cũ đã nhập (nếu có) vẫn còn lưu trong hệ thống.</div>
+    <div id="fieldsModalList" style="margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="newFieldLabel" placeholder="Tên trường mới (VD: Email, SĐT...)" style="flex:1;padding:8px 10px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;">
+      <button class="btn btn-p btn-sm" onclick="submitAddField()">+ Thêm</button>
+    </div>
+    <div class="modal-btns"><button class="btn btn-o" onclick="closeModal('fieldsModal')">Đóng</button></div>
+  </div>
+</div>
+
 <datalist id="dlPerson"></datalist>
 <datalist id="dlDept"></datalist>
 <div class="toast" id="toast"></div>
@@ -640,6 +741,8 @@ var projects = {};
 var staffData = {};
 var deptsData = {};
 var logsData = {};
+var staffFieldDefs = {};
+var deptFieldDefs = {};
 var expanded = {};
 var expandedGantt = {};
 var activeFilters = {q:'',type:'',dept:'',person:'',status:''};
@@ -727,6 +830,7 @@ function startPolling() {
     renderStats();
     refreshFilters();
     renderKanban();
+    renderDailyReport();
     // Tự động đồng bộ lại counter về đúng max thực tế mỗi khi dữ liệu thay đổi
     // → ngăn drift counter cao hơn số dự án thực tế
     syncCounters(projects);
@@ -741,6 +845,7 @@ function startPolling() {
   db.ref('/depts').on('value', function(snap){
     deptsData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
+    renderDailyReport();
   }, handleFbListenError('depts'));
 
   db.ref('/logs').limitToLast(300).on('value', function(snap){
@@ -750,7 +855,42 @@ function startPolling() {
 
   db.ref('/config').on('value', function(snap){
     window._cfg = snap.val() || {};
+    updateHideDoneCheckbox();
+    renderTable();
   }, handleFbListenError('config'));
+
+  db.ref('/staffFieldDefs').on('value', function(snap){
+    staffFieldDefs = snap.val() || {};
+    renderDataTab();
+  }, handleFbListenError('staffFieldDefs'));
+
+  db.ref('/deptFieldDefs').on('value', function(snap){
+    deptFieldDefs = snap.val() || {};
+    renderDataTab();
+  }, handleFbListenError('deptFieldDefs'));
+
+  cleanupOldLogs();
+  ensureUnassignedProject();
+}
+
+// ── 2. Dự án cố định "Việc không thuộc dự án" — luôn tồn tại, không xóa được, ghim đầu bảng,
+// loại trừ khỏi các thống kê MANG TÍNH DỰ ÁN nhưng task bên trong vẫn thống kê bình thường ──
+var UNASSIGNED_KEY = 'UNASSIGNED';
+function ensureUnassignedProject() {
+  db.ref('/projects/'+UNASSIGNED_KEY).once('value', function(snap){
+    if (snap.exists()) return; // đã có sẵn, không tạo lại (tránh ghi đè task đã thêm bên trong)
+    var proj = {
+      id: UNASSIGNED_KEY,
+      name: 'Việc không thuộc dự án',
+      fullName: '[NAACP] Việc không thuộc dự án',
+      type: '', pm: '', exec: '', dept: '', start: '', end: '',
+      status: 'Đang thực hiện', progress: '0',
+      note: 'Nơi chứa các task lẻ / việc vặt không thuộc dự án cụ thể nào. Dự án này không xóa được và không tính vào thống kê theo dự án (tổng số dự án, MAIN/SUPP/OPER...), nhưng task bên trong vẫn được thống kê task bình thường.',
+      protected: true,
+      createdAt: Date.now()
+    };
+    db.ref('/projects/'+UNASSIGNED_KEY).set(proj);
+  }, function(err){ console.error('ensureUnassignedProject error:', err); });
 }
 
 // ── Render Lịch sử (audit log) ──
@@ -771,7 +911,7 @@ function renderLogs() {
 
 // ── Helpers ──
 function todayStr() {
-  return new Date().toISOString().slice(0,10);
+  return fmtISO(new Date());
 }
 function esc(v) {
   return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -887,6 +1027,7 @@ function updateUserBadge() {
   if (addBtn) addBtn.style.display = (currentUser.role!=='guest') ? '' : 'none';
   var importBtnWrap = document.querySelector('.btn-t[onclick*="csvIn"]');
   if (importBtnWrap) importBtnWrap.style.display = mgr ? '' : 'none';
+  updateHideDoneCheckbox();
 }
 function tryRestoreUser() {
   try {
@@ -910,6 +1051,10 @@ function canStaffOrAdmin() { return !!currentUser && (currentUser.role==='admin'
 // field 'progress' của PROJECT luôn tự tính -> không ai sửa tay được (kể cả admin), chỉ sửa qua task
 function canEditProjectField(p, field) {
   if (!currentUser) return false;
+  if (p && p.protected) {
+    // Dự án cố định "Việc không thuộc dự án": khóa toàn bộ trường, chỉ Ghi chú/Link sửa được
+    return field==='note' ? canStaffOrAdmin() : false;
+  }
   if (field==='progress') return false;
   if (canEditAll()) return true;
   if (['status','note'].indexOf(field)>=0) return canStaffOrAdmin();
@@ -943,6 +1088,25 @@ function writeLog(action, detail) {
   if (!currentUser) return;
   var entry = { who: currentUser.name, role: currentUser.role, action: action, detail: detail||'', time: Date.now() };
   fbPost('/logs', entry);
+}
+
+// ── Tự động dọn log cũ hơn 45 ngày, xóa cuốn chiếu (chỉ chạy 1 lần/phiên để tránh gọi lặp) ──
+var LOG_RETENTION_DAYS = 45;
+var logsCleanupDone = false;
+function cleanupOldLogs() {
+  if (logsCleanupDone) return;
+  logsCleanupDone = true;
+  var cutoff = Date.now() - LOG_RETENTION_DAYS*24*60*60*1000;
+  db.ref('/logs').orderByChild('time').endAt(cutoff).once('value', function(snap){
+    var updates = {};
+    var n = 0;
+    snap.forEach(function(child){ updates[child.key] = null; n++; });
+    if (n > 0) {
+      db.ref('/logs').update(updates).then(function(){
+        console.log('Đã dọn ' + n + ' dòng lịch sử cũ hơn ' + LOG_RETENTION_DAYS + ' ngày.');
+      }).catch(function(err){ console.error('cleanupOldLogs update error:', err); });
+    }
+  }, function(err){ console.error('cleanupOldLogs query error:', err); });
 }
 
 // resolveAll: chuyển từ khóa "all" thành danh sách thật.
@@ -1148,13 +1312,61 @@ function sortByCol(field) {
   renderTable();
 }
 
+// ── 1. Ẩn dự án/task đã hoàn thành hoàn toàn — cài đặt CHUNG cho cả hệ thống, chỉ Admin đổi được ──
+// Quy ước: 1 dự án chỉ được coi là "hoàn thành thật sự" (và bị ẩn) khi TRẠNG THÁI dự án = Hoàn thành
+// VÀ tất cả task con bên trong (nếu có) cũng đã Hoàn thành — tránh ẩn nhầm dự án gắn nhãn
+// "Hoàn thành" nhưng thực chất vẫn còn task dang dở bên trong.
+function getHideDonePref() {
+  return !!(window._cfg && window._cfg.hideDoneGlobal);
+}
+function isProjectFullyDone(p) {
+  if (!p || p.status !== 'Hoàn thành') return false;
+  var tasks = p.tasks ? Object.values(p.tasks) : [];
+  return tasks.every(function(t){ return t.status === 'Hoàn thành'; });
+}
+function toggleHideDone() {
+  var cb = document.getElementById('hideDoneToggle');
+  if (!canEditAll()) {
+    showToast('⛔ Chỉ Admin mới đổi được cài đặt này (áp dụng cho tất cả mọi người).');
+    cb.checked = getHideDonePref();
+    return;
+  }
+  var val = cb.checked;
+  db.ref('/config').update({hideDoneGlobal: val}, function(err){
+    if (err) { showToast('⚠️ Lỗi khi lưu cài đặt.'); cb.checked = !val; return; }
+    window._cfg = window._cfg || {}; window._cfg.hideDoneGlobal = val;
+    renderTable();
+    writeLog('Đổi cài đặt "Ẩn đã hoàn thành"', val ? 'Bật — áp dụng cho tất cả mọi người' : 'Tắt');
+  });
+}
+function updateHideDoneCheckbox() {
+  var cb = document.getElementById('hideDoneToggle');
+  if (!cb) return;
+  cb.checked = getHideDonePref();
+  cb.disabled = !canEditAll();
+}
+
 // ── Render Table ──
 function renderTable() {
   var filtered = filterProjects();
+  var hideDone = getHideDonePref();
+  var hiddenCount = 0;
+  if (hideDone) {
+    var beforeCount = filtered.length;
+    filtered = filtered.filter(function(e){ return !isProjectFullyDone(e[1]); });
+    hiddenCount = beforeCount - filtered.length;
+  }
+  // Ghim "Việc không thuộc dự án" luôn ở đầu bảng, bất kể đang sort theo cột nào
+  var pinnedIdx = filtered.findIndex(function(e){ return e[1] && e[1].protected; });
+  if (pinnedIdx > 0) {
+    var pinnedEntry = filtered.splice(pinnedIdx,1)[0];
+    filtered.unshift(pinnedEntry);
+  }
   var tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
   document.getElementById('rowCount').textContent =
-    'Hiển thị ' + filtered.length + ' / ' + Object.keys(projects).length + ' dự án';
+    'Hiển thị ' + filtered.length + ' / ' + Object.keys(projects).length + ' dự án' +
+    (hiddenCount ? ' · 🙈 đang ẩn ' + hiddenCount + ' dự án đã hoàn thành hết' : '');
 
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:30px;color:var(--muted);">Chưa có dự án. Nhấn "+ Thêm dự án" để bắt đầu.</td></tr>';
@@ -1185,12 +1397,12 @@ function renderTable() {
     var dis = function(ok){ return ok?'':' disabled'; };
 
     var tr = document.createElement('tr');
-    tr.className = 'proj-row ' + rowStatusClass(p);
+    tr.className = 'proj-row ' + rowStatusClass(p) + (p.protected ? ' row-protected' : '');
     tr.innerHTML =
       '<td style="text-align:center;color:var(--muted);font-size:11px;">'+(i+1)+'</td>'+
       '<td style="text-align:center;"><button class="expand-btn" onclick="toggleExpand(\''+key+'\')">'+(isExp?'▼':'▶')+'</button></td>'+
       '<td><div style="display:flex;align-items:center;gap:3px;">'+(pOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+'<input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"'+dis(canEditP_id)+'></div></td>'+
-      '<td><input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
+      '<td><div style="display:flex;align-items:center;gap:4px;">'+(p.protected?'<span title="Dự án cố định, không xóa được" style="font-size:12px;">📌</span>':'')+'<input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)"'+dis(canEditP_id)+' style="flex:1;"></div></td>'+
       '<td><input value="'+esc(p.fullName)+'" data-key="'+key+'" data-f="fullName" onchange="updateField(this)" style="font-size:11px;" disabled></td>'+
       '<td><select data-key="'+key+'" data-f="type" onchange="updateField(this)"'+dis(canEditP_id)+'>'+
         '<option value="" '+((!p.type)?'selected':'')+'>—</option>'+
@@ -1211,7 +1423,7 @@ function renderTable() {
       '</select></td>'+
       '<td style="text-align:center;font-weight:600;color:var(--p800);" title="Tự tính theo trung bình tiến độ các task">'+computeProjectProgress(p)+'%</td>'+
       '<td><input value="'+esc(p.note||'')+'" data-key="'+key+'" data-f="note" onchange="updateField(this)" placeholder="Mô tả hoặc dán link..." title="'+(p.note||'')+'"'+dis(canEditP_note)+'></td>'+
-      '<td><button class="del-btn" onclick="deleteProject(\''+key+'\')" title="Xóa"'+(canDelete()?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
+      '<td><button class="del-btn" onclick="deleteProject(\''+key+'\')" title="'+(p.protected?'Không thể xóa dự án cố định':'Xóa')+'"'+((canDelete() && !p.protected)?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
     tbody.appendChild(tr);
 
     if (isExp) {
@@ -1230,7 +1442,12 @@ function renderTable() {
           (tOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+
           '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;"'+dis(canEditT_id)+'></div></td>'+
           '<td></td>'+
-          '<td></td>'+
+          '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="type" onchange="updateTask(this)" title="Loại task (mặc định theo Loại của dự án nếu để trống)"'+dis(canEditT_id)+'>'+
+            '<option value="" '+((!task.type)?'selected':'')+'>— (theo dự án)</option>'+
+            '<option value="MAIN" '+((task.type==='MAIN')?'selected':'')+'>MAIN</option>'+
+            '<option value="SUPP" '+((task.type==='SUPP')?'selected':'')+'>SUPP</option>'+
+            '<option value="OPER" '+((task.type==='OPER')?'selected':'')+'>OPER</option>'+
+          '</select></td>'+
           '<td></td>'+
           '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateTask(this)" placeholder="▾ Người thực hiện..."'+dis(canEditT_id)+'></td>'+
           '<td><div class="ms-dept-rich" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" data-raw="'+esc(task.dept||'')+'" data-empty-html="'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'" tabindex="0" title="Bấm để chọn nhiều phòng/bộ phận"'+(canEditT_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(task.dept) || '<span style="color:var(--muted);">'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'</span>')+'</div></td>'+
@@ -1387,6 +1604,93 @@ function kanbanDrop(ev, newStatus) {
   renderKanban(); safeRenderTable(); renderStats();
 }
 
+// ── 3. Báo cáo ngày — tổng hợp mọi task đang "chạy" đúng hôm nay, nhóm theo phòng/bộ phận ──
+function renderDailyReport() {
+  var wrap = document.getElementById('dailyReportWrap');
+  var titleEl = document.getElementById('dailyReportDate');
+  if (!wrap) return;
+  var today = todayStr();
+  if (titleEl) titleEl.textContent = '📅 Công việc trong ngày ' + fmtDate(today);
+
+  // Gom mọi task có khung Bắt đầu→Kết thúc bao trùm hôm nay, kể cả task thuộc "Việc không thuộc dự án"
+  var rows = [];
+  Object.entries(projects).forEach(function(pe){
+    var p = pe[1];
+    if (!p.tasks) return;
+    Object.values(p.tasks).forEach(function(t){
+      if (!t.start || !t.end) return;
+      if (!(t.start <= today && t.end >= today)) return;
+      rows.push({
+        taskName: t.name || '(chưa đặt tên)',
+        projectName: p.name || p.id || '',
+        type: t.type || p.type || '',
+        exec: resolveAll(t.exec, 'person', t.dept||p.dept),
+        deptRaw: resolveAll(t.dept || p.dept, 'dept'),
+        progress: parseInt(t.progress,10)||0,
+        status: t.status || 'Chờ xử lý'
+      });
+    });
+  });
+
+  var typeCounts = {MAIN:0,SUPP:0,OPER:0};
+  rows.forEach(function(r){ if (typeCounts.hasOwnProperty(r.type)) typeCounts[r.type]++; });
+
+  var html = '<div class="stats-grid" style="margin-bottom:18px;">' +
+    '<div class="sc total"><div class="sc-lbl">Tổng task hôm nay</div><div class="sc-val">'+rows.length+'</div></div>' +
+    '<div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val">'+typeCounts.MAIN+'</div></div>' +
+    '<div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val">'+typeCounts.SUPP+'</div></div>' +
+    '<div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val">'+typeCounts.OPER+'</div></div>' +
+  '</div>';
+
+  // Nhóm theo phòng/bộ phận CHUẨN lấy từ tab Data — 1 task có thể thuộc nhiều phòng nên có thể xuất hiện ở nhiều nhóm
+  var canonicalDepts = Object.values(deptsData).map(function(d){ return (d.name||'').trim(); }).filter(Boolean).sort(function(a,b){ return a.localeCompare(b,'vi'); });
+  var UNKNOWN_DEPT_LBL = '❓ Chưa phân loại phòng';
+  var groups = {};
+  canonicalDepts.forEach(function(d){ groups[d]=[]; });
+  groups[UNKNOWN_DEPT_LBL]=[];
+  rows.forEach(function(r){
+    var depts = r.deptRaw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    if (!depts.length) { groups[UNKNOWN_DEPT_LBL].push(r); return; }
+    depts.forEach(function(d){
+      if (groups[d]) groups[d].push(r);
+      else groups[UNKNOWN_DEPT_LBL].push(r);
+    });
+  });
+
+  var groupKeys = canonicalDepts.concat([UNKNOWN_DEPT_LBL]).filter(function(g){ return groups[g] && groups[g].length; });
+
+  if (!groupKeys.length) {
+    html += '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">Không có task nào đang chạy trong ngày hôm nay.</p>';
+  } else {
+    groupKeys.forEach(function(g){
+      var items = groups[g];
+      html += '<div class="cc" style="margin-bottom:14px;">' +
+        '<h4>🏢 '+esc(g)+' <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">('+items.length+' task)</span></h4>' +
+        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+        '<thead><tr style="border-bottom:1.5px solid var(--bdr);">' +
+        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Task</th>' +
+        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Dự án</th>' +
+        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Loại</th>' +
+        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Người thực hiện</th>' +
+        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Trạng thái</th>' +
+        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Tiến độ</th>' +
+        '</tr></thead><tbody>' +
+        items.map(function(r){
+          return '<tr style="border-bottom:.5px solid var(--bdr);">' +
+            '<td style="padding:6px 8px;">'+esc(r.taskName)+'</td>' +
+            '<td style="padding:6px 8px;color:var(--muted);">'+esc(r.projectName)+'</td>' +
+            '<td style="padding:6px 8px;">'+(r.type?esc(r.type):'—')+'</td>' +
+            '<td style="padding:6px 8px;">'+esc(r.exec)+'</td>' +
+            '<td style="padding:6px 8px;white-space:nowrap;"><span class="status-dot" style="background:'+(STATUS_COLORS[r.status]||'#888780')+'"></span>'+esc(r.status)+'</td>' +
+            '<td style="padding:6px 8px;">'+r.progress+'%</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table></div></div>';
+    });
+  }
+  wrap.innerHTML = html;
+}
+
 // ── CRUD Projects ──
 function openAddProject() {
   if (!canAddProject()) { showToast('⛔ Bạn cần đăng nhập với vai trò Nhân sự hoặc Admin để thêm dự án.'); return; }
@@ -1506,6 +1810,7 @@ function updateField(el) {
 }
 
 function deleteProject(key) {
+  if (projects[key] && projects[key].protected) { showToast('⛔ Dự án này được cố định trong hệ thống, không thể xóa.'); return; }
   if (!canDelete()) { showToast('⛔ Chỉ Admin mới được xóa dự án.'); return; }
   if (!confirm('Xóa dự án "'+projects[key].name+'"?')) return;
   var nameForLog = projects[key].id+' - '+projects[key].name;
@@ -1519,7 +1824,7 @@ function deleteProject(key) {
 // ── CRUD Tasks ──
 function addTask(projKey) {
   if (!canAddTask(projects[projKey])) { showToast('⛔ Bạn không có quyền thêm task cho dự án này.'); return; }
-  var task = {name:'',exec:'',dept:'',start:'',end:todayStr(),status:'Chờ xử lý',progress:'0',createdAt:Date.now()};
+  var task = {name:'',exec:'',dept:'',type:'',start:'',end:todayStr(),status:'Chờ xử lý',progress:'0',createdAt:Date.now()};
   fbPost('/projects/'+projKey+'/tasks', task, function(err, res) {
     if (err || !res || !res.name) return;
     if (!projects[projKey].tasks) projects[projKey].tasks = {};
@@ -1564,10 +1869,102 @@ function deleteTask(projKey, taskKey) {
   });
 }
 
+// ── 2. Thống kê theo tháng / khoảng thời gian / 1 ngày cụ thể ──
+// (dự án được tính vào khoảng nếu có phần thời gian [start,end] giao với khoảng đang chọn)
+// Lưu ý: dùng getFullYear/getMonth/getDate (giờ địa phương) thay vì toISOString() (giờ UTC)
+// để tránh lệch 1 ngày do múi giờ Việt Nam (UTC+7) — ví dụ new Date(2026,7,1) lúc 00:00 giờ VN
+// nếu đổi qua .toISOString() sẽ ra "2026-07-31" (lùi 1 ngày), sai với ý định "ngày 1/8".
+function fmtISO(d) {
+  var mm = String(d.getMonth()+1); if (mm.length<2) mm='0'+mm;
+  var dd = String(d.getDate()); if (dd.length<2) dd='0'+dd;
+  return d.getFullYear()+'-'+mm+'-'+dd;
+}
+function statsDateRange() {
+  var modeEl = document.getElementById('statsDateMode');
+  var mode = modeEl ? modeEl.value : 'all';
+  var now = new Date();
+  if (mode === 'thisMonth') {
+    var s = new Date(now.getFullYear(), now.getMonth(), 1);
+    var e = new Date(now.getFullYear(), now.getMonth()+1, 0);
+    return {start: fmtISO(s), end: fmtISO(e), label: 'Tháng ' + (now.getMonth()+1) + '/' + now.getFullYear()};
+  }
+  if (mode === 'lastMonth') {
+    var s2 = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    var e2 = new Date(now.getFullYear(), now.getMonth(), 0);
+    return {start: fmtISO(s2), end: fmtISO(e2), label: 'Tháng ' + (s2.getMonth()+1) + '/' + s2.getFullYear()};
+  }
+  if (mode === 'thisQuarter') {
+    var q = Math.floor(now.getMonth()/3);
+    var s3 = new Date(now.getFullYear(), q*3, 1);
+    var e3 = new Date(now.getFullYear(), q*3+3, 0);
+    return {start: fmtISO(s3), end: fmtISO(e3), label: 'Quý ' + (q+1) + '/' + now.getFullYear()};
+  }
+  if (mode === 'singleDay') {
+    var day = (document.getElementById('statsSingleDate')||{}).value;
+    if (day) return {start: day, end: day, label: 'Ngày ' + fmtDate(day), singleDay: true};
+    return null;
+  }
+  if (mode === 'custom') {
+    var from = (document.getElementById('statsDateFrom')||{}).value;
+    var to = (document.getElementById('statsDateTo')||{}).value;
+    if (from && to) return {start: from, end: to, label: fmtDate(from) + ' → ' + fmtDate(to)};
+    return null;
+  }
+  return null; // 'all' — không lọc
+}
+function projectOverlapsRange(p, range) {
+  if (!range) return true;
+  if (!p.start || !p.end) return false;
+  return p.start <= range.end && p.end >= range.start;
+}
+function onStatsDateModeChange() {
+  var mode = document.getElementById('statsDateMode').value;
+  var isCustom = mode === 'custom';
+  var isSingle = mode === 'singleDay';
+  document.getElementById('statsDateFrom').style.display = isCustom ? '' : 'none';
+  document.getElementById('statsDateSep').style.display = isCustom ? '' : 'none';
+  document.getElementById('statsDateTo').style.display = isCustom ? '' : 'none';
+  document.getElementById('statsSingleDate').style.display = isSingle ? '' : 'none';
+  renderStats();
+}
+
 // ── Stats ──
 function renderStats() {
-  var filtered = filterProjects().map(function(e){ return e[1]; });
+  var baseFiltered = filterProjects().map(function(e){ return e[1]; });
+  var filtered = baseFiltered;
+  var range = statsDateRange();
+  if (range) filtered = filtered.filter(function(p){ return projectOverlapsRange(p, range); });
+  var rangeLbl = document.getElementById('statsRangeLabel');
+  if (rangeLbl) rangeLbl.textContent = range ? ('Đang xem: ' + range.label + ' (' + filtered.length + ' dự án đang chạy trong khoảng này)') : '';
   var s = computeStats(filtered);
+
+  // Khối riêng cho chế độ "Theo 1 ngày cụ thể": số dự án/task MỚI TẠO đúng ngày đó
+  // (tính trên toàn bộ dữ liệu đang lọc ở tab Danh sách, KHÔNG giới hạn theo overlap start/end,
+  // vì ngày tạo có thể khác ngày bắt đầu dự kiến)
+  var sdBox = document.getElementById('singleDayStatsBox');
+  var sdNote = document.getElementById('singleDayStatsNote');
+  if (range && range.singleDay) {
+    var dayStr = range.start;
+    var newProjCount = baseFiltered.filter(function(p){
+      return !p.protected && p.createdAt && fmtISO(new Date(p.createdAt)) === dayStr;
+    }).length;
+    var newTaskCount = 0;
+    baseFiltered.forEach(function(p){
+      if (!p.tasks) return;
+      Object.values(p.tasks).forEach(function(t){
+        if (t.createdAt && fmtISO(new Date(t.createdAt)) === dayStr) newTaskCount++;
+      });
+    });
+    document.getElementById('sdNewProj').textContent = newProjCount;
+    document.getElementById('sdNewTask').textContent = newTaskCount;
+    document.getElementById('sdInprog').textContent = s.inprog;
+    document.getElementById('sdDone').textContent = s.done;
+    if (sdBox) sdBox.style.display = '';
+    if (sdNote) sdNote.style.display = '';
+  } else {
+    if (sdBox) sdBox.style.display = 'none';
+    if (sdNote) sdNote.style.display = 'none';
+  }
 
   document.getElementById('sTotal').textContent=s.total;
   document.getElementById('sMain').textContent=s.main;
@@ -1941,6 +2338,10 @@ function renderDataTab() {
         '<select onchange="updateStaff(\''+k+'\',\'status\',this.value)" style="display:block;width:auto;max-width:100%;border:1px solid var(--bdr);background:#fff;border-radius:5px;font-size:10.5px;color:'+(STAFF_STATUS_COLORS[st]||'var(--muted)')+';font-weight:600;margin-top:4px;padding:2px 6px;">'+
           STAFF_STATUS_OPTS.map(function(opt){ return '<option value="'+opt+'" '+(st===opt?'selected':'')+'>'+opt+'</option>'; }).join('')+
         '</select>'+
+        Object.entries(staffFieldDefs).sort(function(a,b){ return (a[1].order||0)-(b[1].order||0); }).map(function(fe){
+          var fk=fe[0], fdef=fe[1];
+          return '<input value="'+esc(s[fk]||'')+'" placeholder="'+esc(fdef.label)+'..." title="'+esc(fdef.label)+'" onchange="updateStaff(\''+k+'\',\''+fk+'\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--txt);margin-top:4px;">';
+        }).join('')+
       '</div>'+
       '<button onclick="deleteStaff(\''+k+'\')" class="del-btn">✕</button></div>';
   }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có nhân sự.</p>';
@@ -1954,6 +2355,10 @@ function renderDataTab() {
       '<div style="flex:1;min-width:0;">'+
         '<input value="'+esc(d.name||'')+'" placeholder="Tên phòng/bộ phận..." onchange="updateDept(\''+k+'\',\'name\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:13px;font-weight:500;">'+
         '<input value="'+esc(d.parentUnit||'')+'" placeholder="Thuộc đơn vị / phòng ban cấp trên (tự điền)..." onchange="updateDept(\''+k+'\',\'parentUnit\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--t800);margin-top:2px;">'+
+        Object.entries(deptFieldDefs).sort(function(a,b){ return (a[1].order||0)-(b[1].order||0); }).map(function(fe){
+          var fk=fe[0], fdef=fe[1];
+          return '<input value="'+esc(d[fk]||'')+'" placeholder="'+esc(fdef.label)+'..." title="'+esc(fdef.label)+'" onchange="updateDept(\''+k+'\',\''+fk+'\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:11px;color:var(--txt);margin-top:4px;">';
+        }).join('')+
       '</div>'+
       '<button onclick="deleteDept(\''+k+'\')" class="del-btn">✕</button></div>';
   }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có phòng/bộ phận.</p>';
@@ -1964,6 +2369,10 @@ function renderDataTab() {
   if (addStaffBtn) addStaffBtn.style.display = canEditAll() ? '' : 'none';
   var addDeptBtn = document.querySelector('.btn-p.btn-sm[onclick="addDept()"]');
   if (addDeptBtn) addDeptBtn.style.display = canEditAll() ? '' : 'none';
+  var mgStaffBtn = document.getElementById('mgStaffFieldsBtn');
+  if (mgStaffBtn) mgStaffBtn.style.display = canEditAll() ? '' : 'none';
+  var mgDeptBtn = document.getElementById('mgDeptFieldsBtn');
+  if (mgDeptBtn) mgDeptBtn.style.display = canEditAll() ? '' : 'none';
   document.querySelectorAll('#staffList input, #staffList select, #deptListEl input, #deptListEl select, #staffList .del-btn, #deptListEl .del-btn').forEach(function(el){
     if (!canEditAll()) { el.setAttribute('disabled','disabled'); el.style.pointerEvents='none'; el.style.opacity = el.classList.contains('del-btn')?'.25':'1'; }
   });
@@ -2004,9 +2413,50 @@ function deleteDept(k) {
   fbDel('/depts/'+k, function(){ delete deptsData[k]; renderDataTab(); refreshSuggestions(); });
 }
 
+// ── 4. Admin tự thêm trường thông tin tùy chỉnh cho Nhân sự & Phòng/Bộ phận ──
+var fieldsModalType = 'staff';
+function manageFields(type) {
+  if (!canEditAll()) { showToast('⛔ Chỉ Admin mới quản lý được trường tùy chỉnh.'); return; }
+  fieldsModalType = type;
+  document.getElementById('fieldsModalTitle').textContent = '⚙ Quản lý trường tùy chỉnh — ' + (type==='staff' ? 'Nhân sự' : 'Phòng/Bộ phận');
+  document.getElementById('newFieldLabel').value = '';
+  renderFieldsModalList();
+  openModal('fieldsModal');
+}
+function renderFieldsModalList() {
+  var defs = fieldsModalType==='staff' ? staffFieldDefs : deptFieldDefs;
+  var list = document.getElementById('fieldsModalList');
+  var entries = Object.entries(defs).sort(function(a,b){ return (a[1].order||0)-(b[1].order||0); });
+  list.innerHTML = entries.length ? entries.map(function(e){
+    var k=e[0], d=e[1];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--p50);border-radius:6px;margin-bottom:5px;font-size:12.5px;"><span>'+esc(d.label)+'</span><button class="del-btn" onclick="removeField(\''+k+'\')">✕</button></div>';
+  }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có trường tùy chỉnh nào.</p>';
+}
+function submitAddField() {
+  var label = document.getElementById('newFieldLabel').value.trim();
+  if (!label) { showToast('⚠️ Nhập tên trường.'); return; }
+  var path = fieldsModalType==='staff' ? '/staffFieldDefs' : '/deptFieldDefs';
+  fbPost(path, {label:label, order:Date.now()}, function(err,res){
+    if (err || !res || !res.name) { showToast('⚠️ Lỗi khi thêm trường.'); return; }
+    document.getElementById('newFieldLabel').value='';
+    showToast('✅ Đã thêm trường "'+label+'".');
+    writeLog('Thêm trường tùy chỉnh', (fieldsModalType==='staff'?'Nhân sự':'Phòng/Bộ phận')+' — '+label);
+    setTimeout(renderFieldsModalList, 150);
+  });
+}
+function removeField(key) {
+  if (!confirm('Xóa trường này khỏi giao diện? (dữ liệu cũ đã nhập, nếu có, vẫn còn lưu trong hệ thống)')) return;
+  var path = fieldsModalType==='staff' ? '/staffFieldDefs' : '/deptFieldDefs';
+  fbDel(path+'/'+key, function(){
+    showToast('🗑 Đã xóa trường.');
+    writeLog('Xóa trường tùy chỉnh', key);
+    setTimeout(renderFieldsModalList, 150);
+  });
+}
+
 // ── Tabs ──
 function switchTab(tab) {
-  var tabs=['table','kanban','stats','data','logs','guide'];
+  var tabs=['table','kanban','daily','stats','data','logs','guide'];
   document.querySelectorAll('.tab').forEach(function(el,i){ el.classList.toggle('active',tabs[i]===tab); });
   tabs.forEach(function(t){ document.getElementById('section-'+t).classList.toggle('active',t===tab); });
   if (tab==='stats') {
@@ -2016,6 +2466,7 @@ function switchTab(tab) {
   if (tab==='data') renderDataTab();
   if (tab==='kanban') renderKanban();
   if (tab==='logs') renderLogs();
+  if (tab==='daily') renderDailyReport();
 }
 
 // ── Export / Print ──
@@ -2053,44 +2504,49 @@ function toggleColPicker() {
 
 // Tính số liệu thống kê dùng chung cho cả renderStats() và bản in
 function computeStats(filtered) {
-  var total = filtered.length;
-  var main  = filtered.filter(function(p){ return p.type==='MAIN'; }).length;
-  var supp  = filtered.filter(function(p){ return p.type==='SUPP'; }).length;
-  var oper  = filtered.filter(function(p){ return p.type==='OPER'; }).length;
-  var done  = filtered.filter(function(p){ return p.status==='Hoàn thành'; }).length;
-  var inprog= filtered.filter(function(p){ return p.status==='Đang thực hiện'; }).length;
-  var paused= filtered.filter(function(p){ return p.status==='Tạm dừng'; }).length;
-  var wait  = filtered.filter(function(p){ return p.status==='Chờ xử lý'; }).length;
+  // "Việc không thuộc dự án" (protected) KHÔNG tính vào các thống kê MANG TÍNH DỰ ÁN
+  // (tổng số dự án, MAIN/SUPP/OPER, trạng thái dự án, quá hạn dự án, tiến độ TB, dự án mới trong tuần...)
+  // nhưng TASK bên trong nó vẫn được cộng vào thống kê task như bình thường (dùng `filtered` đầy đủ ở phần task).
+  var projList = filtered.filter(function(p){ return !p.protected; });
+  var total = projList.length;
+  var main  = projList.filter(function(p){ return p.type==='MAIN'; }).length;
+  var supp  = projList.filter(function(p){ return p.type==='SUPP'; }).length;
+  var oper  = projList.filter(function(p){ return p.type==='OPER'; }).length;
+  var done  = projList.filter(function(p){ return p.status==='Hoàn thành'; }).length;
+  var inprog= projList.filter(function(p){ return p.status==='Đang thực hiện'; }).length;
+  var paused= projList.filter(function(p){ return p.status==='Tạm dừng'; }).length;
+  var wait  = projList.filter(function(p){ return p.status==='Chờ xử lý'; }).length;
   var pend  = paused + wait;
   var pct   = total ? Math.round(done/total*100) : 0;
 
   // Dự án quá hạn: có ngày kết thúc, chưa hoàn thành, đã qua hôm nay
   var today = todayStr();
-  var overdue = filtered.filter(function(p){
+  var overdue = projList.filter(function(p){
     return p.end && p.end < today && p.status !== 'Hoàn thành';
   }).length;
   // Tách quá hạn ra khỏi "Đang thực hiện" / "Chờ/Tạm dừng" (quá hạn = 2 nhóm này mà đã trễ hạn)
-  var overdueInprog = filtered.filter(function(p){
+  var overdueInprog = projList.filter(function(p){
     return p.status==='Đang thực hiện' && p.end && p.end < today;
   }).length;
-  var overduePend = filtered.filter(function(p){
+  var overduePend = projList.filter(function(p){
     return (p.status==='Tạm dừng'||p.status==='Chờ xử lý') && p.end && p.end < today;
   }).length;
   var inprogOnTime = inprog - overdueInprog;
   var pendOnTime = pend - overduePend;
 
   // Tiến độ trung bình các dự án (đang lọc)
-  var progressSum = filtered.reduce(function(a,p){ return a + computeProjectProgress(p); }, 0);
+  var progressSum = projList.reduce(function(a,p){ return a + computeProjectProgress(p); }, 0);
   var avgProgress = total ? Math.round(progressSum/total) : 0;
 
   var deptMap={};
-  filtered.forEach(function(p){
+  projList.forEach(function(p){
     var dr=resolveAll(p.dept,'dept');
     dr.split(',').map(function(x){ return x.trim(); }).filter(Boolean)
       .forEach(function(d){ deptMap[d]=(deptMap[d]||0)+1; });
   });
 
-  // Task stats (đồng thời gom số task theo phòng/bộ phận — task để trống Phòng/BP thì mặc định theo phòng của dự án)
+  // Task stats — TÍNH TRÊN TOÀN BỘ `filtered` (kể cả task trong "Việc không thuộc dự án"),
+  // vì task lẻ vẫn cần được thống kê đầy đủ dù không thuộc dự án cụ thể nào
   var tTotal=0, tDone=0, tInprog=0, tPaused=0, tWait=0, tOverdue=0;
   var deptTaskMap={};
   filtered.forEach(function(p){
@@ -2117,11 +2573,14 @@ function computeStats(filtered) {
   var thisMondayMs = thisMonday.getTime();
   var lastMondayMs = lastMonday.getTime();
 
+  // Dự án mới trong tuần: chỉ tính dự án thật (projList). Task mới trong tuần: tính trên toàn bộ filtered.
   var projThisWeek=0, projLastWeek=0, taskThisWeek=0, taskLastWeek=0;
-  filtered.forEach(function(p){
+  projList.forEach(function(p){
     var ca = p.createdAt||0;
     if (ca >= thisMondayMs) projThisWeek++;
     else if (ca >= lastMondayMs) projLastWeek++;
+  });
+  filtered.forEach(function(p){
     if (!p.tasks) return;
     Object.values(p.tasks).forEach(function(t){
       var tc = t.createdAt||0;
@@ -2578,6 +3037,20 @@ setInterval(checkForUpdate, 10 * 60 * 1000);
 document.addEventListener('visibilitychange', function(){
   if (document.visibilityState === 'visible') checkForUpdate();
 });
+
+// ── Tự phát hiện sang ngày mới (qua nửa đêm mà vẫn để tab mở) → tự cập nhật Báo cáo ngày ──
+// và các dấu hiệu "quá hạn" vốn phụ thuộc vào ngày hôm nay.
+var lastKnownDate = todayStr();
+setInterval(function(){
+  var nowDate = todayStr();
+  if (nowDate !== lastKnownDate) {
+    lastKnownDate = nowDate;
+    renderDailyReport();
+    safeRenderTable();
+    renderKanban();
+    if (document.getElementById('section-stats').classList.contains('active')) renderStats();
+  }
+}, 60 * 1000);
 
 // ── Đăng nhập ẩn danh trước khi mở kết nối realtime (khớp với Security Rules yêu cầu auth != null) ──
 function initApp() {
