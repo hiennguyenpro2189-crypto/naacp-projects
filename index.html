@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.07-041251">
+<meta name="app-version" content="2026.08.07-043322">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -334,8 +334,12 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 <div id="section-daily" class="section">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <div class="sec-title" id="dailyReportDate" style="margin-bottom:0;">📅 Công việc trong ngày</div>
-    <div style="font-size:11px;color:var(--muted);">🔄 Tự động cập nhật khi sang ngày mới · Task được tính vào đây nếu Bắt đầu ≤ hôm nay ≤ Kết thúc dự kiến</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <input type="date" class="fsel" id="dailyReportDatePicker" onchange="onDailyReportDateChange()">
+      <button class="btn btn-o btn-sm" onclick="jumpDailyReportToday()">📍 Hôm nay</button>
+    </div>
   </div>
+  <div style="font-size:11px;color:var(--muted);margin:-8px 0 14px;">🔄 Ngày hôm nay tự động cập nhật khi qua nửa đêm (nếu đang xem "Hôm nay") · Task được tính vào 1 ngày nếu Bắt đầu ≤ ngày đó ≤ Kết thúc dự kiến</div>
   <div id="dailyReportWrap"></div>
 </div>
 
@@ -615,7 +619,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <div style="font-size:12px;font-weight:700;color:var(--p800);margin:14px 0 8px;">📊 Thống kê &amp; báo cáo</div>
     <div class="gg" style="margin-bottom:16px;">
       <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" hiện thêm số dự án/task mới tạo đúng ngày đó.</div>
-      <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tự tổng hợp toàn bộ task đang chạy hôm nay, nhóm theo phòng/bộ phận (chỉ hiện đúng người của phòng đó), tự cập nhật khi sang ngày mới.</div>
+      <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tổng hợp task đang chạy trong 1 ngày (mặc định hôm nay, có thể chọn ngày bất kỳ), nhóm theo phòng/bộ phận (chỉ hiện đúng người của phòng đó). Tự cập nhật sang ngày mới nếu đang xem "Hôm nay".</div>
       <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án).</div>
       <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch</b> sẽ có nhãn "Quá tải".</div>
     </div>
@@ -1680,21 +1684,35 @@ function kanbanDrop(ev, newStatus) {
 }
 
 // ── 3. Báo cáo ngày — tổng hợp mọi task đang "chạy" đúng hôm nay, nhóm theo phòng/bộ phận ──
+// ── Chọn ngày để xem Báo cáo ngày — mặc định là hôm nay, có thể chọn ngày bất kỳ khác ──
+function onDailyReportDateChange() {
+  renderDailyReport();
+}
+function jumpDailyReportToday() {
+  var picker = document.getElementById('dailyReportDatePicker');
+  if (picker) picker.value = todayStr();
+  renderDailyReport();
+}
 function renderDailyReport() {
   var wrap = document.getElementById('dailyReportWrap');
   var titleEl = document.getElementById('dailyReportDate');
+  var picker = document.getElementById('dailyReportDatePicker');
   if (!wrap) return;
   var today = todayStr();
-  if (titleEl) titleEl.textContent = '📅 Công việc trong ngày ' + fmtDate(today);
+  // Mặc định hiện ngày hôm nay nếu người dùng chưa từng chọn ngày nào trong ô date picker
+  if (picker && !picker.value) picker.value = today;
+  var viewDate = (picker && picker.value) ? picker.value : today;
+  var isToday = (viewDate === today);
+  if (titleEl) titleEl.textContent = '📅 Công việc trong ngày ' + fmtDate(viewDate) + (isToday ? ' (hôm nay)' : '');
 
-  // Gom mọi task có khung Bắt đầu→Kết thúc bao trùm hôm nay, kể cả task thuộc "Việc không thuộc dự án"
+  // Gom mọi task có khung Bắt đầu→Kết thúc bao trùm ngày đang xem, kể cả task thuộc "Việc không thuộc dự án"
   var rows = [];
   Object.entries(projects).forEach(function(pe){
     var p = pe[1];
     if (!p.tasks) return;
     Object.values(p.tasks).forEach(function(t){
       if (!t.start || !t.end) return;
-      if (!(t.start <= today && t.end >= today)) return;
+      if (!(t.start <= viewDate && t.end >= viewDate)) return;
       rows.push({
         taskName: t.name || '(chưa đặt tên)',
         projectName: p.name || p.id || '',
@@ -1711,7 +1729,7 @@ function renderDailyReport() {
   rows.forEach(function(r){ if (typeCounts.hasOwnProperty(r.type)) typeCounts[r.type]++; });
 
   var html = '<div class="stats-grid" style="margin-bottom:18px;">' +
-    '<div class="sc total"><div class="sc-lbl">Tổng task hôm nay</div><div class="sc-val">'+rows.length+'</div></div>' +
+    '<div class="sc total"><div class="sc-lbl">Tổng task trong ngày</div><div class="sc-val">'+rows.length+'</div></div>' +
     '<div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val">'+typeCounts.MAIN+'</div></div>' +
     '<div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val">'+typeCounts.SUPP+'</div></div>' +
     '<div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val">'+typeCounts.OPER+'</div></div>' +
@@ -1747,7 +1765,7 @@ function renderDailyReport() {
   var groupKeys = canonicalDepts.concat([UNKNOWN_DEPT_LBL]).filter(function(g){ return groups[g] && groups[g].length; });
 
   if (!groupKeys.length) {
-    html += '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">Không có task nào đang chạy trong ngày hôm nay.</p>';
+    html += '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">Không có task nào đang chạy trong ngày '+fmtDate(viewDate)+'.</p>';
   } else {
     groupKeys.forEach(function(g){
       var items = groups[g];
@@ -3235,7 +3253,12 @@ var lastKnownDate = todayStr();
 setInterval(function(){
   var nowDate = todayStr();
   if (nowDate !== lastKnownDate) {
+    var picker = document.getElementById('dailyReportDatePicker');
+    // Chỉ tự chuyển sang ngày mới trong Báo cáo ngày nếu người dùng ĐANG xem đúng "hôm nay" cũ
+    // (chưa cố ý chọn 1 ngày khác) — tránh ghi đè lựa chọn xem ngày quá khứ/tương lai của họ.
+    var wasViewingToday = !picker || !picker.value || picker.value === lastKnownDate;
     lastKnownDate = nowDate;
+    if (wasViewingToday && picker) picker.value = nowDate;
     renderDailyReport();
     safeRenderTable();
     renderKanban();
