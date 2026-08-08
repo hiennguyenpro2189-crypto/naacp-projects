@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.07-074013">
+<meta name="app-version" content="2026.08.07-041251">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -446,6 +446,14 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   <div style="background:var(--b50);border:1px solid #b5d4f4;border-radius:8px;padding:11px 14px;font-size:12px;color:var(--b800);">
     💡 Nhân sự và phòng/bộ phận sẽ được gợi ý khi điền dự án. Điền <code style="background:rgba(0,0,0,.07);padding:0 3px;border-radius:3px;">all</code> vào Người thực hiện hoặc Phòng/Bộ phận để chọn tất cả.
   </div>
+  <div class="data-panel" style="margin-top:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="font-size:14px;font-weight:600;">📋 Bảng dữ liệu tùy chỉnh</h3>
+      <button class="btn btn-p btn-sm" id="addCustomTableBtn" onclick="addCustomTable()">+ Tạo bảng mới</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;">Admin tự tạo thêm các "mục" dữ liệu mới có cấu trúc tương tự Nhân sự/Phòng ban (VD: Thiết bị, Tài sản, Nhà cung cấp...) — mỗi bảng tự định nghĩa trường riêng và quản lý danh sách dòng riêng.</div>
+    <div id="customTablesWrap"></div>
+  </div>
   <div class="data-panel" id="adminCodePanel" style="margin-top:18px;">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">🔑 Mã Admin</h3>
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Chỉ Admin mới thấy và đổi được mã này. Người nhập đúng mã khi vào hệ thống sẽ có toàn quyền (sửa mọi trường, xóa, quản lý nhân sự/phòng ban).</div>
@@ -470,7 +478,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗂 Kanban</b><br>Xem dự án dạng thẻ theo 4 cột trạng thái, kéo-thả thẻ để đổi trạng thái nhanh — tiện khi họp giao ban.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📅 Báo cáo ngày</b><br>Tự động liệt kê mọi task đang chạy đúng hôm nay (Bắt đầu ≤ hôm nay ≤ Kết thúc), nhóm theo phòng/bộ phận, kèm Loại/Người thực hiện/Tiến độ. Tự cập nhật khi sang ngày mới, không cần tải lại trang.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📈 Thống kê</b><br>Biểu đồ và số liệu tổng quan, tự cập nhật theo bộ lọc đang chọn ở tab Danh sách và theo khoảng thời gian đang chọn (Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày).</div>
-      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form. Admin có thể tự thêm trường thông tin tùy chỉnh (VD: Email, SĐT...) qua nút "⚙ Trường tùy chỉnh".</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form. Admin có thể tự thêm trường thông tin tùy chỉnh, hoặc tự tạo hẳn 1 bảng dữ liệu tùy chỉnh mới (VD: Thiết bị, Tài sản...).</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🕘 Lịch sử</b><br>Ghi lại ai vừa sửa gì, lúc nào — chỉ ghi khi có thao tác thay đổi dữ liệu thật (không ghi khi chỉ mở xem). Tự động xóa các dòng cũ hơn 45 ngày.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📖 Hướng dẫn</b><br>Trang bạn đang xem.</div>
     </div>
@@ -489,36 +497,32 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 
   <div class="guide-box">
     <h3>🏷️ BẢNG TRA CỨU NHÃN CÔNG VIỆC (MAIN / SUPP / OPER)</h3>
-    <div style="background:var(--a50);border:1px solid var(--a100);border-radius:8px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--a800);">
-      📌 <b>Nguyên tắc tối thượng:</b> Việc gì thuộc về <b>chuyên môn cốt lõi</b> của phòng bạn → Chọn <b>MAIN</b>.
+    <div style="background:var(--a50);border:1px solid var(--a100);border-radius:8px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--a800);line-height:1.7;">
+      📌 <b>Cách phân biệt nhanh:</b> Tạo kết quả cốt lõi → <b>MAIN</b>; giúp MAIN hoàn thành → <b>SUPP</b>; duy trì hoạt động ổn định → <b>OPER</b>.
     </div>
     <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <thead><tr style="background:var(--p900);">
-        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Nhãn</th>
-        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Ý nghĩa ngắn gọn</th>
-        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Từ khóa / Ví dụ trực quan</th>
+        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;width:70px;">Nhãn</th>
+        <th style="padding:8px 10px;text-align:left;color:#fff;font-size:11px;">Ý nghĩa</th>
       </tr></thead>
       <tbody>
         <tr style="border-bottom:.5px solid var(--bdr);">
           <td style="padding:9px 10px;font-weight:700;color:var(--b800);vertical-align:top;">MAIN</td>
-          <td style="padding:9px 10px;vertical-align:top;"><b>Chuyên môn chính của phòng</b><br><span style="color:var(--muted);font-size:11px;">(Nhiệm vụ cốt lõi trong JD)</span></td>
-          <td style="padding:9px 10px;vertical-align:top;line-height:1.7;">• <b>Kinh doanh:</b> Chốt hợp đồng.<br>• <b>Kế toán:</b> Báo cáo tài chính.<br>• <b>R&amp;D:</b> Nghiên cứu công cụ/công nghệ/sản phẩm mới.</td>
+          <td style="padding:9px 10px;vertical-align:top;line-height:1.6;"><b>Công việc chính:</b> Trực tiếp tạo ra kết quả/sản phẩm cốt lõi và phục vụ mục tiêu trọng tâm của đơn vị.</td>
         </tr>
         <tr style="border-bottom:.5px solid var(--bdr);">
           <td style="padding:9px 10px;font-weight:700;color:var(--t800);vertical-align:top;">SUPP</td>
-          <td style="padding:9px 10px;vertical-align:top;"><b>Cải tiến quy trình nội bộ</b><br><span style="color:var(--muted);font-size:11px;">(Giúp phòng ban làm việc tốt hơn)</span></td>
-          <td style="padding:9px 10px;vertical-align:top;line-height:1.7;">Viết quy trình (SOP) làm việc, Soạn tài liệu đào tạo nội bộ, Chuẩn hóa biểu mẫu của phòng...</td>
+          <td style="padding:9px 10px;vertical-align:top;line-height:1.6;"><b>Công việc hỗ trợ:</b> Hỗ trợ nguồn lực, dữ liệu, kỹ thuật hoặc phối hợp để công việc chính được hoàn thành; không trực tiếp tạo ra kết quả cốt lõi.</td>
         </tr>
         <tr>
           <td style="padding:9px 10px;font-weight:700;color:var(--a800);vertical-align:top;">OPER</td>
-          <td style="padding:9px 10px;vertical-align:top;"><b>Sự vụ &amp; Thủ tục hành chính</b><br><span style="color:var(--muted);font-size:11px;">(Các tác vụ thực thi cơ học)</span></td>
-          <td style="padding:9px 10px;vertical-align:top;line-height:1.7;">In ấn, trình ký, đóng dấu, nhập liệu, 5S dọn dẹp, setup phòng họp, hỗ trợ việc vặt cho phòng khác...</td>
+          <td style="padding:9px 10px;vertical-align:top;line-height:1.6;"><b>Công việc vận hành:</b> Công việc thường xuyên nhằm duy trì hoạt động hằng ngày của hệ thống, thiết bị, quy trình hoặc bộ phận.</td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p style="font-size:11px;color:var(--b800);margin-top:8px;">💡 Chọn đúng Nhãn khi tạo dự án rất quan trọng — vì Loại là 1 phần cấu thành mã Project ID và ảnh hưởng số liệu thống kê MAIN/SUPP/OPER ở tab Thống kê.</p>
+    <p style="font-size:11px;color:var(--b800);margin-top:8px;">💡 Chọn đúng Nhãn khi tạo dự án/task rất quan trọng — vì Loại là 1 phần cấu thành mã Project ID và ảnh hưởng số liệu thống kê MAIN/SUPP/OPER ở tab Thống kê và Báo cáo ngày.</p>
   </div>
 
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
@@ -584,36 +588,51 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     </div>
   </div>
 
-  <div class="guide-box">
-    <h3>🆕 Các tính năng mới</h3>
-    <div class="gg">
-      <div class="gi"><strong>👤 Nhập tên khi vào app</strong>Nhập tên + chọn vai trò (Nhân sự/Khách), hoặc nhập Mã Admin để có toàn quyền. Bấm vào tên ở góc phải để đổi người/vai trò.</div>
-      <div class="gi"><strong>🎨 Màu dòng &amp; ⚠️ quá hạn</strong>Dòng xanh nhạt = hoàn thành, vàng nhạt = tạm dừng, đỏ nhạt = quá hạn. Icon ⚠️ hiện ngay ở cột STT.</div>
-      <div class="gi"><strong>📶 Thanh tiến độ mini</strong>Mỗi dòng dự án/task có thanh % ngay trong bảng, không cần mở riêng.</div>
-      <div class="gi"><strong>↕️ Sắp xếp cột</strong>Bấm vào tiêu đề cột (Project ID, Loại, Trạng thái, Tiến độ...) để sắp xếp tăng/giảm.</div>
-      <div class="gi"><strong>🗂 Kanban</strong>Tab riêng — kéo-thả thẻ dự án giữa 4 cột trạng thái để cập nhật nhanh (Nhân sự và Admin đều dùng được).</div>
-      <div class="gi"><strong>📶 Gantt đơn giản</strong>Mở rộng 1 dự án (▶) rồi bấm "Xem Gantt" để thấy timeline dự án và các task.</div>
-      <div class="gi"><strong>✅ Chọn từ danh sách (không gõ tay)</strong>Quản lý DA (chọn 1), Người thực hiện &amp; Phòng/Bộ phận (tick chọn nhiều) đều bấm để hiện danh sách thả xuống lấy đúng từ tab Data — tránh gõ sai/thiếu tên.</div>
-      <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (với vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch chạy cùng lúc</b> sẽ có nhãn "Quá tải".</div>
-      <div class="gi"><strong>🕘 Lịch sử</strong>Tab riêng ghi lại ai vừa sửa gì, lúc nào — 300 thao tác gần nhất.</div>
-      <div class="gi"><strong>💾 Sao lưu JSON</strong>Nút "Sao lưu JSON" ở tab Danh sách — tải toàn bộ dữ liệu (dự án, nhân sự, phòng ban, lịch sử) về máy đề phòng sự cố.</div>
-      <div class="gi"><strong>🔒 Phân quyền theo Mã Admin</strong>Admin (nhập đúng mã) sửa mọi trường, xóa được, quản lý nhân sự/phòng ban và đổi mã Admin. Nhân sự thêm được dự án/task, sửa Trạng thái, Ghi chú/Link (Tiến độ dự án tự tính từ task; tiến độ task nhân sự vẫn chỉnh được). Khách chỉ xem.</div>
-      <div class="gi"><strong>🙈 Ẩn đã hoàn thành</strong>Cài đặt chung cho cả hệ thống (chỉ Admin bật/tắt được, ở tab Danh sách) — khi bật, mọi người dùng đều chỉ thấy dự án đang chạy. Chỉ ẩn khi cả dự án lẫn toàn bộ task con bên trong đều đã "Hoàn thành".</div>
-      <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Tab Thống kê có thêm bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" sẽ hiện thêm số dự án/task mới tạo đúng ngày đó, cùng số đang thực hiện/đã hoàn thành (theo trạng thái hiện tại).</div>
-      <div class="gi"><strong>⚙ Trường thông tin tùy chỉnh</strong>Admin bấm "⚙ Trường tùy chỉnh" ở tab Data để tự thêm trường mới (VD: Email, SĐT) cho Nhân sự hoặc Phòng/Bộ phận, áp dụng ngay cho mọi dòng.</div>
-      <div class="gi"><strong>🧹 Tự dọn Lịch sử</strong>Các dòng lịch sử cũ hơn 45 ngày sẽ tự động bị xóa dần, không cần thao tác thủ công.</div>
-      <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task giờ có thể tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án) — dùng để phân loại chính xác hơn trong Báo cáo ngày.</div>
-      <div class="gi"><strong>📌 Dự án cố định "Việc không thuộc dự án"</strong>Luôn có sẵn, ghim đầu bảng, không xóa được, dùng để chứa các task lẻ/việc vặt không thuộc dự án cụ thể. Không tính vào thống kê theo dự án nhưng task bên trong vẫn thống kê task bình thường.</div>
-      <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tự tổng hợp toàn bộ task đang chạy trong ngày hôm nay, nhóm theo phòng/bộ phận, tự động cập nhật khi sang ngày mới.</div>
-    </div>
-  </div>
-
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📶 Cột Tiến độ</h3>
     <div style="font-size:12px;line-height:1.8;">
       <p><b>Tiến độ task</b>: chọn nhanh mức % hoàn thành theo bước <b>10%</b> (0%, 10%, 20%... 100%). Chọn xong tự lưu như các ô khác.</p>
       <p><b>Tiến độ dự án</b>: tự động tính bằng <b>trung bình % của các task</b> bên trong — không ai sửa tay được cột này, kể cả Admin. Nếu dự án chưa có task nào, tiến độ hiện 0%.</p>
       <p>Tab <b>Thống kê</b> hiển thị <b>Tiến độ trung bình (DA)</b> — tính theo 2 bước: (1) mỗi dự án lấy trung bình % tiến độ của các task bên trong nó; (2) lấy trung bình cộng của các con số đó qua tất cả dự án đang khớp bộ lọc. Ví dụ: dự án A có 2 task (40%, 60% → TB 50%), dự án B có 1 task (20%) → Tiến độ TB = (50%+20%)/2 = 35%.</p>
+    </div>
+  </div>
+
+  <div class="guide-box">
+    <h3>🧩 Các tính năng trong app</h3>
+
+    <div style="font-size:12px;font-weight:700;color:var(--p800);margin:2px 0 8px;">🖥️ Giao diện &amp; xem</div>
+    <div class="gg" style="margin-bottom:16px;">
+      <div class="gi"><strong>🎨 Màu dòng &amp; ⚠️ quá hạn</strong>Dòng xanh nhạt = hoàn thành, vàng nhạt = tạm dừng, đỏ nhạt = quá hạn. Icon ⚠️ hiện ngay ở cột STT.</div>
+      <div class="gi"><strong>📶 Thanh tiến độ mini</strong>Mỗi dòng dự án/task có thanh % ngay trong bảng, không cần mở riêng.</div>
+      <div class="gi"><strong>↕️ Sắp xếp cột</strong>Bấm vào tiêu đề cột (Project ID, Loại, Trạng thái, Tiến độ...) để sắp xếp tăng/giảm.</div>
+      <div class="gi"><strong>🗂 Kanban</strong>Tab riêng — kéo-thả thẻ dự án giữa 4 cột trạng thái để cập nhật nhanh (Nhân sự và Admin đều dùng được).</div>
+      <div class="gi"><strong>📶 Gantt đơn giản</strong>Mở rộng 1 dự án (▶) rồi bấm "Xem Gantt" để thấy timeline dự án và các task.</div>
+      <div class="gi"><strong>✅ Chọn từ danh sách (không gõ tay)</strong>Quản lý DA (chọn 1), Người thực hiện &amp; Phòng/Bộ phận (tick chọn nhiều) đều bấm để hiện danh sách thả xuống lấy đúng từ tab Data — tránh gõ sai/thiếu tên.</div>
+      <div class="gi"><strong>🙈 Ẩn đã hoàn thành</strong>Cài đặt chung toàn hệ thống (chỉ Admin bật/tắt) — khi bật, mọi người chỉ thấy dự án đang chạy. Chỉ ẩn khi cả dự án lẫn toàn bộ task con đều đã "Hoàn thành".</div>
+      <div class="gi"><strong>📐 Cột tự giãn theo nội dung</strong>Các ô Tên, Người thực hiện, Phòng/BP, Mô tả/Link tự nới rộng vừa đủ khi nội dung dài, tránh bị cắt chữ.</div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--p800);margin:14px 0 8px;">📊 Thống kê &amp; báo cáo</div>
+    <div class="gg" style="margin-bottom:16px;">
+      <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" hiện thêm số dự án/task mới tạo đúng ngày đó.</div>
+      <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tự tổng hợp toàn bộ task đang chạy hôm nay, nhóm theo phòng/bộ phận (chỉ hiện đúng người của phòng đó), tự cập nhật khi sang ngày mới.</div>
+      <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án).</div>
+      <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch</b> sẽ có nhãn "Quá tải".</div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--p800);margin:14px 0 8px;">🗃️ Dữ liệu &amp; vận hành</div>
+    <div class="gg" style="margin-bottom:16px;">
+      <div class="gi"><strong>📌 Dự án cố định "Việc không thuộc dự án"</strong>Luôn có sẵn, ghim đầu bảng, không xóa được — chứa task lẻ/việc vặt. Không tính vào thống kê dự án nhưng task bên trong vẫn thống kê bình thường.</div>
+      <div class="gi"><strong>⚙ Trường thông tin tùy chỉnh</strong>Admin tự thêm trường mới (VD: Email, SĐT) cho Nhân sự/Phòng-Bộ phận qua nút "⚙ Trường tùy chỉnh".</div>
+      <div class="gi"><strong>📋 Bảng dữ liệu tùy chỉnh</strong>Admin tự tạo hẳn 1 "mục" dữ liệu mới có cấu trúc như Nhân sự/Phòng ban (VD: Thiết bị, Tài sản...) ở tab Data.</div>
+      <div class="gi"><strong>💾 Sao lưu JSON</strong>Nút "Sao lưu JSON" ở tab Danh sách — tải toàn bộ dữ liệu về máy đề phòng sự cố.</div>
+      <div class="gi"><strong>🕘 Lịch sử &amp; tự dọn</strong>Ghi lại ai vừa sửa gì, lúc nào (300 thao tác gần nhất). Các dòng cũ hơn 45 ngày tự động bị xóa dần.</div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--p800);margin:14px 0 8px;">🔒 Đăng nhập &amp; phân quyền</div>
+    <div class="gg">
+      <div class="gi"><strong>👤 Nhập tên khi vào app</strong>Nhập tên + chọn vai trò (Nhân sự/Khách), hoặc nhập Mã Admin để có toàn quyền. Bấm vào tên ở góc phải để đổi người/vai trò.</div>
+      <div class="gi"><strong>🔒 Phân quyền theo Mã Admin</strong>Admin sửa mọi trường, xóa được, quản lý nhân sự/phòng ban/dữ liệu tùy chỉnh. Nhân sự thêm được dự án/task, sửa Trạng thái, Ghi chú/Link. Khách chỉ xem.</div>
     </div>
   </div>
 
@@ -725,6 +744,13 @@ function showPermDeniedBanner() {
   var b = document.getElementById('permDeniedBanner');
   if (b) b.style.display = 'flex';
 }
+// Ẩn lại banner ngay khi có bất kỳ listener nào đọc dữ liệu THÀNH CÔNG — tránh banner bị "kẹt"
+// hiển thị mãi nếu lỗi trước đó chỉ là tạm thời (ví dụ: 1 listener lỗi thoáng qua lúc mới đăng nhập
+// nhưng các listener khác vẫn kết nối bình thường ngay sau đó).
+function hidePermDeniedBanner() {
+  var b = document.getElementById('permDeniedBanner');
+  if (b) b.style.display = 'none';
+}
 // Dùng làm callback lỗi chung cho các listener realtime: nếu là lỗi PERMISSION_DENIED
 // (dấu hiệu điển hình của trang đang chạy bản code cũ, chưa có đăng nhập ẩn danh
 // trong khi Security Rules đã yêu cầu auth) thì hiện banner cứng hướng dẫn tải lại.
@@ -743,6 +769,8 @@ var deptsData = {};
 var logsData = {};
 var staffFieldDefs = {};
 var deptFieldDefs = {};
+var customTables = {};
+var customTableData = {};
 var expanded = {};
 var expandedGantt = {};
 var activeFilters = {q:'',type:'',dept:'',person:'',status:''};
@@ -825,6 +853,7 @@ function startPolling() {
   });
 
   db.ref('/projects').on('value', function(snap){
+    hidePermDeniedBanner();
     projects = snap.val() || {};
     safeRenderTable();
     renderStats();
@@ -837,37 +866,56 @@ function startPolling() {
   }, handleFbListenError('projects'));
 
   db.ref('/staff').on('value', function(snap){
+    hidePermDeniedBanner();
     staffData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
+    renderDailyReport();
     if (!document.getElementById('gateBg').classList.contains('hidden')) populateGateSelect();
   }, handleFbListenError('staff'));
 
   db.ref('/depts').on('value', function(snap){
+    hidePermDeniedBanner();
     deptsData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
     renderDailyReport();
   }, handleFbListenError('depts'));
 
   db.ref('/logs').limitToLast(300).on('value', function(snap){
+    hidePermDeniedBanner();
     logsData = snap.val() || {};
     renderLogs();
   }, handleFbListenError('logs'));
 
   db.ref('/config').on('value', function(snap){
+    hidePermDeniedBanner();
     window._cfg = snap.val() || {};
     updateHideDoneCheckbox();
     renderTable();
   }, handleFbListenError('config'));
 
   db.ref('/staffFieldDefs').on('value', function(snap){
+    hidePermDeniedBanner();
     staffFieldDefs = snap.val() || {};
     renderDataTab();
   }, handleFbListenError('staffFieldDefs'));
 
   db.ref('/deptFieldDefs').on('value', function(snap){
+    hidePermDeniedBanner();
     deptFieldDefs = snap.val() || {};
     renderDataTab();
   }, handleFbListenError('deptFieldDefs'));
+
+  db.ref('/customTables').on('value', function(snap){
+    hidePermDeniedBanner();
+    customTables = snap.val() || {};
+    renderDataTab();
+  }, handleFbListenError('customTables'));
+
+  db.ref('/customTableData').on('value', function(snap){
+    hidePermDeniedBanner();
+    customTableData = snap.val() || {};
+    renderDataTab();
+  }, handleFbListenError('customTableData'));
 
   cleanupOldLogs();
   ensureUnassignedProject();
@@ -1482,6 +1530,33 @@ function renderTable() {
       }
     }
   });
+  autoSizeAllCells();
+}
+
+// ── 5. Tự giãn rộng cột theo nội dung — đo độ rộng chữ thực tế rồi ép min-width cho ô,
+// nhờ bảng dùng table-layout mặc định (auto) nên cột sẽ tự nới theo ô rộng nhất trong cột đó.
+// Giới hạn 1 mức max hợp lý để tránh 1 dòng ghi chú quá dài kéo cả cột phình bất thường —
+// vượt quá mức đó vẫn xem đầy đủ được bằng cách bấm vào ô (popup nổi hiện toàn bộ nội dung).
+function measureTextPx(text, font) {
+  if (!measureTextPx._cv) measureTextPx._cv = document.createElement('canvas');
+  var cx = measureTextPx._cv.getContext('2d');
+  cx.font = font || '12px Segoe UI, system-ui, sans-serif';
+  return cx.measureText(text||'').width;
+}
+function autoSizeAllCells() {
+  var font = '12px Segoe UI, system-ui, sans-serif';
+  document.querySelectorAll('#tbody input[data-f="name"], #tbody input.ms-pm, #tbody input.ms-person').forEach(function(el){
+    var w = measureTextPx(el.value, font) + 22;
+    el.style.minWidth = Math.max(Math.min(w, 300), 90) + 'px';
+  });
+  document.querySelectorAll('#tbody input[data-f="note"]').forEach(function(el){
+    var w = measureTextPx(el.value, font) + 22;
+    el.style.minWidth = Math.max(Math.min(w, 380), 100) + 'px';
+  });
+  document.querySelectorAll('#tbody .ms-dept-rich').forEach(function(el){
+    var w = measureTextPx(el.textContent, font) + 22;
+    el.style.minWidth = Math.max(Math.min(w, 300), 90) + 'px';
+  });
 }
 
 function toggleExpand(key) {
@@ -1642,18 +1717,30 @@ function renderDailyReport() {
     '<div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val">'+typeCounts.OPER+'</div></div>' +
   '</div>';
 
-  // Nhóm theo phòng/bộ phận CHUẨN lấy từ tab Data — 1 task có thể thuộc nhiều phòng nên có thể xuất hiện ở nhiều nhóm
+  // Nhóm theo phòng/bộ phận CHUẨN lấy từ tab Data — 1 task có thể thuộc nhiều phòng nên có thể xuất hiện ở nhiều nhóm.
+  // Trong mỗi nhóm, cột Người thực hiện chỉ hiện đúng người THỰC SỰ thuộc phòng đó (theo Data),
+  // chứ không lặp lại y nguyên toàn bộ danh sách người thực hiện của cả task như ở tab Danh sách dự án.
+  function staffDeptsOf(name) {
+    var s = Object.values(staffData).find(function(x){ return x.name===name; });
+    if (!s || !s.depts) return [];
+    return String(s.depts).split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  }
   var canonicalDepts = Object.values(deptsData).map(function(d){ return (d.name||'').trim(); }).filter(Boolean).sort(function(a,b){ return a.localeCompare(b,'vi'); });
   var UNKNOWN_DEPT_LBL = '❓ Chưa phân loại phòng';
   var groups = {};
   canonicalDepts.forEach(function(d){ groups[d]=[]; });
   groups[UNKNOWN_DEPT_LBL]=[];
   rows.forEach(function(r){
+    var execNames = r.exec.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
     var depts = r.deptRaw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
-    if (!depts.length) { groups[UNKNOWN_DEPT_LBL].push(r); return; }
+    if (!depts.length) { groups[UNKNOWN_DEPT_LBL].push(Object.assign({}, r, {execForGroup: r.exec})); return; }
     depts.forEach(function(d){
-      if (groups[d]) groups[d].push(r);
-      else groups[UNKNOWN_DEPT_LBL].push(r);
+      var target = groups[d] ? d : UNKNOWN_DEPT_LBL;
+      // Chỉ giữ người thực hiện thực sự thuộc phòng d; nếu không xác định được ai (dữ liệu Nhân sự
+      // chưa khai đủ, hoặc tên không khớp) thì fallback hiện đầy đủ để không làm mất thông tin.
+      var filteredExec = execNames.filter(function(n){ return staffDeptsOf(n).indexOf(d)>=0; });
+      var execForGroup = filteredExec.length ? filteredExec.join(', ') : r.exec;
+      groups[target].push(Object.assign({}, r, {execForGroup: execForGroup}));
     });
   });
 
@@ -1680,7 +1767,7 @@ function renderDailyReport() {
             '<td style="padding:6px 8px;">'+esc(r.taskName)+'</td>' +
             '<td style="padding:6px 8px;color:var(--muted);">'+esc(r.projectName)+'</td>' +
             '<td style="padding:6px 8px;">'+(r.type?esc(r.type):'—')+'</td>' +
-            '<td style="padding:6px 8px;">'+esc(r.exec)+'</td>' +
+            '<td style="padding:6px 8px;">'+esc(r.execForGroup)+'</td>' +
             '<td style="padding:6px 8px;white-space:nowrap;"><span class="status-dot" style="background:'+(STATUS_COLORS[r.status]||'#888780')+'"></span>'+esc(r.status)+'</td>' +
             '<td style="padding:6px 8px;">'+r.progress+'%</td>' +
           '</tr>';
@@ -2376,6 +2463,7 @@ function renderDataTab() {
   document.querySelectorAll('#staffList input, #staffList select, #deptListEl input, #deptListEl select, #staffList .del-btn, #deptListEl .del-btn').forEach(function(el){
     if (!canEditAll()) { el.setAttribute('disabled','disabled'); el.style.pointerEvents='none'; el.style.opacity = el.classList.contains('del-btn')?'.25':'1'; }
   });
+  renderCustomTables();
 }
 
 function addStaff() {
@@ -2413,18 +2501,30 @@ function deleteDept(k) {
   fbDel('/depts/'+k, function(){ delete deptsData[k]; renderDataTab(); refreshSuggestions(); });
 }
 
-// ── 4. Admin tự thêm trường thông tin tùy chỉnh cho Nhân sự & Phòng/Bộ phận ──
-var fieldsModalType = 'staff';
-function manageFields(type) {
+// ── 4. Admin tự thêm trường thông tin tùy chỉnh cho Nhân sự & Phòng/Bộ phận, VÀ tự tạo bảng dữ liệu tùy chỉnh mới ──
+var fieldsModalTarget = {kind:'staff', tableId:null};
+function manageFields(kind, tableId) {
   if (!canEditAll()) { showToast('⛔ Chỉ Admin mới quản lý được trường tùy chỉnh.'); return; }
-  fieldsModalType = type;
-  document.getElementById('fieldsModalTitle').textContent = '⚙ Quản lý trường tùy chỉnh — ' + (type==='staff' ? 'Nhân sự' : 'Phòng/Bộ phận');
+  fieldsModalTarget = {kind:kind, tableId:tableId||null};
+  var title = kind==='staff' ? 'Nhân sự' : kind==='dept' ? 'Phòng/Bộ phận' : ((customTables[tableId]&&customTables[tableId].name)||'Bảng tùy chỉnh');
+  document.getElementById('fieldsModalTitle').textContent = '⚙ Quản lý trường tùy chỉnh — ' + title;
   document.getElementById('newFieldLabel').value = '';
   renderFieldsModalList();
   openModal('fieldsModal');
 }
+function fieldsDefPath() {
+  if (fieldsModalTarget.kind==='staff') return '/staffFieldDefs';
+  if (fieldsModalTarget.kind==='dept') return '/deptFieldDefs';
+  return '/customTables/'+fieldsModalTarget.tableId+'/fields';
+}
+function fieldsDefObject() {
+  if (fieldsModalTarget.kind==='staff') return staffFieldDefs;
+  if (fieldsModalTarget.kind==='dept') return deptFieldDefs;
+  var t = customTables[fieldsModalTarget.tableId];
+  return (t && t.fields) || {};
+}
 function renderFieldsModalList() {
-  var defs = fieldsModalType==='staff' ? staffFieldDefs : deptFieldDefs;
+  var defs = fieldsDefObject();
   var list = document.getElementById('fieldsModalList');
   var entries = Object.entries(defs).sort(function(a,b){ return (a[1].order||0)-(b[1].order||0); });
   list.innerHTML = entries.length ? entries.map(function(e){
@@ -2435,22 +2535,100 @@ function renderFieldsModalList() {
 function submitAddField() {
   var label = document.getElementById('newFieldLabel').value.trim();
   if (!label) { showToast('⚠️ Nhập tên trường.'); return; }
-  var path = fieldsModalType==='staff' ? '/staffFieldDefs' : '/deptFieldDefs';
+  var path = fieldsDefPath();
   fbPost(path, {label:label, order:Date.now()}, function(err,res){
     if (err || !res || !res.name) { showToast('⚠️ Lỗi khi thêm trường.'); return; }
     document.getElementById('newFieldLabel').value='';
     showToast('✅ Đã thêm trường "'+label+'".');
-    writeLog('Thêm trường tùy chỉnh', (fieldsModalType==='staff'?'Nhân sự':'Phòng/Bộ phận')+' — '+label);
+    writeLog('Thêm trường tùy chỉnh', fieldsModalTarget.kind+' — '+label);
     setTimeout(renderFieldsModalList, 150);
   });
 }
 function removeField(key) {
   if (!confirm('Xóa trường này khỏi giao diện? (dữ liệu cũ đã nhập, nếu có, vẫn còn lưu trong hệ thống)')) return;
-  var path = fieldsModalType==='staff' ? '/staffFieldDefs' : '/deptFieldDefs';
+  var path = fieldsDefPath();
   fbDel(path+'/'+key, function(){
     showToast('🗑 Đã xóa trường.');
     writeLog('Xóa trường tùy chỉnh', key);
     setTimeout(renderFieldsModalList, 150);
+  });
+}
+
+// ── Bảng dữ liệu tùy chỉnh — Admin tự tạo hẳn 1 "mục" mới có cấu trúc như Nhân sự/Phòng ban ──
+function addCustomTable() {
+  if (!canEditAll()) { showToast('⛔ Chỉ Admin mới tạo được bảng dữ liệu tùy chỉnh.'); return; }
+  var name = prompt('Tên bảng dữ liệu mới (VD: Thiết bị, Tài sản, Nhà cung cấp...):');
+  if (!name || !name.trim()) return;
+  fbPost('/customTables', {name: name.trim(), fields: {}, createdAt: Date.now()}, function(err,res){
+    if (err || !res || !res.name) { showToast('⚠️ Lỗi khi tạo bảng.'); return; }
+    showToast('✅ Đã tạo bảng "'+name.trim()+'". Bấm "⚙ Trường" để thêm cột dữ liệu.');
+    writeLog('Tạo bảng dữ liệu tùy chỉnh', name.trim());
+  });
+}
+function deleteCustomTable(tid) {
+  if (!canEditAll()) { showToast('⛔ Chỉ Admin mới xóa được.'); return; }
+  var tbl = customTables[tid];
+  if (!confirm('Xóa cả bảng "'+(tbl?tbl.name:tid)+'" và TOÀN BỘ dữ liệu bên trong? Không thể hoàn tác.')) return;
+  fbDel('/customTables/'+tid);
+  fbDel('/customTableData/'+tid);
+  showToast('🗑 Đã xóa bảng.');
+  writeLog('Xóa bảng dữ liệu tùy chỉnh', tbl?tbl.name:tid);
+}
+function addCustomRecord(tid) {
+  if (!canEditAll()) { showToast('⛔ Chỉ Admin mới thêm được dòng.'); return; }
+  fbPost('/customTableData/'+tid, {}, function(err,res){
+    if (err || !res || !res.name) { showToast('⚠️ Lỗi khi thêm dòng.'); return; }
+    writeLog('Thêm dòng dữ liệu tùy chỉnh', (customTables[tid]?customTables[tid].name:tid));
+  });
+}
+function updateCustomRecord(tid, rid, fk, val) {
+  if (!canEditAll()) { showToast('⛔ Chỉ Admin mới sửa được.'); return; }
+  var patch = {}; patch[fk] = val;
+  fbPatch('/customTableData/'+tid+'/'+rid, patch);
+}
+function deleteCustomRecord(tid, rid) {
+  if (!canEditAll()) { showToast('⛔ Chỉ Admin mới xóa được.'); return; }
+  if (!confirm('Xóa dòng dữ liệu này?')) return;
+  fbDel('/customTableData/'+tid+'/'+rid);
+  writeLog('Xóa dòng dữ liệu tùy chỉnh', (customTables[tid]?customTables[tid].name:tid));
+}
+function renderCustomTables() {
+  var wrap = document.getElementById('customTablesWrap');
+  if (!wrap) return;
+  var entries = Object.entries(customTables);
+  if (!entries.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted);">Chưa có bảng dữ liệu tùy chỉnh nào. Admin bấm "+ Tạo bảng mới" để bắt đầu.</p>';
+  } else {
+    wrap.innerHTML = entries.map(function(e){
+      var tid=e[0], tbl=e[1];
+      var fields = Object.entries(tbl.fields||{}).sort(function(a,b){ return (a[1].order||0)-(b[1].order||0); });
+      var records = Object.entries(customTableData[tid]||{});
+      var rowsHtml = records.length ? records.map(function(re){
+        var rid=re[0], rec=re[1];
+        var cellsHtml = fields.length ? fields.map(function(fe){
+          var fk=fe[0], fdef=fe[1];
+          return '<input value="'+esc(rec[fk]||'')+'" placeholder="'+esc(fdef.label)+'..." onchange="updateCustomRecord(\''+tid+'\',\''+rid+'\',\''+fk+'\',this.value)" style="display:block;width:100%;border:none;background:transparent;font-size:12.5px;margin-bottom:3px;">';
+        }).join('') : '<span style="font-size:11px;color:var(--muted);">Bảng chưa có trường nào — bấm "⚙ Trường" để thêm.</span>';
+        return '<div class="data-item" style="align-items:flex-start;"><div style="flex:1;min-width:0;">'+cellsHtml+'</div><button onclick="deleteCustomRecord(\''+tid+'\',\''+rid+'\')" class="del-btn">✕</button></div>';
+      }).join('') : '<p style="font-size:12px;color:var(--muted);">Chưa có dòng dữ liệu nào.</p>';
+      return '<div style="border:1px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:14px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">' +
+          '<b style="font-size:13px;">📋 '+esc(tbl.name||'(chưa đặt tên)')+'</b>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button class="btn btn-o btn-sm" onclick="manageFields(\'custom\',\''+tid+'\')">⚙ Trường</button>' +
+            '<button class="btn btn-p btn-sm" onclick="addCustomRecord(\''+tid+'\')">+ Thêm dòng</button>' +
+            '<button class="del-btn" onclick="deleteCustomTable(\''+tid+'\')" title="Xóa cả bảng">🗑</button>' +
+          '</div>' +
+        '</div>' + rowsHtml + '</div>';
+    }).join('');
+  }
+  var addBtn = document.getElementById('addCustomTableBtn');
+  if (addBtn) addBtn.style.display = canEditAll() ? '' : 'none';
+  document.querySelectorAll('#customTablesWrap input, #customTablesWrap .del-btn, #customTablesWrap .btn').forEach(function(el){
+    if (!canEditAll()) {
+      el.setAttribute('disabled','disabled'); el.style.pointerEvents='none';
+      el.style.opacity = (el.tagName==='INPUT') ? '1' : '.3';
+    }
   });
 }
 
@@ -2930,11 +3108,8 @@ document.addEventListener('keydown', function(e){
     popup.value = el.value;
     popup.placeholder = el.placeholder || '';
 
-    // Tính vị trí: căn theo ô gốc (position:fixed dùng viewport coords, không cộng scroll)
     var rect = el.getBoundingClientRect();
     popup.style.display = 'block';
-    popup.style.top  = (rect.top - 2) + 'px';
-    popup.style.left = (rect.left - 2) + 'px';
     popup.style.minWidth = Math.max(rect.width, 200) + 'px';
 
     // Đo độ rộng thực của nội dung bằng canvas
@@ -2942,7 +3117,18 @@ document.addEventListener('keydown', function(e){
     var cx = cv.getContext('2d');
     cx.font = '13px Segoe UI, system-ui, sans-serif';
     var tw = cx.measureText(popup.value || popup.placeholder || '').width + 40;
-    popup.style.width = Math.min(Math.max(tw, rect.width), 520) + 'px';
+    var finalWidth = Math.min(Math.max(tw, rect.width), 520);
+    popup.style.width = finalWidth + 'px';
+
+    // Tính vị trí: căn theo ô gốc (position:fixed dùng viewport coords, không cộng scroll),
+    // nhưng ÉP không cho tràn ra ngoài màn hình bên phải/dưới — đây là lỗi khiến các cột nằm
+    // gần mép phải bảng (như Mô tả/Link) hiện nội dung bị che khuất khi popup mở rộng ra khi gõ.
+    var top = rect.top - 2;
+    var left = rect.left - 2;
+    if (left + finalWidth > window.innerWidth - 10) left = Math.max(10, window.innerWidth - finalWidth - 10);
+    if (top + 40 > window.innerHeight - 10) top = Math.max(10, window.innerHeight - 50);
+    popup.style.top = top + 'px';
+    popup.style.left = left + 'px';
 
     popup.focus();
     popup.setSelectionRange(popup.value.length, popup.value.length);
@@ -2971,13 +3157,18 @@ document.addEventListener('keydown', function(e){
     }
   });
 
-  // Popup: gõ → cập nhật width
+  // Popup: gõ → cập nhật width, đồng thời kéo lại vị trí nếu việc mở rộng khiến popup tràn mép phải
   popup.addEventListener('input', function() {
     var cv = document.createElement('canvas');
     var cx = cv.getContext('2d');
     cx.font = '13px Segoe UI, system-ui, sans-serif';
     var tw = cx.measureText(popup.value).width + 40;
-    popup.style.width = Math.min(Math.max(tw, parseInt(popup.style.minWidth)||200), 520) + 'px';
+    var newWidth = Math.min(Math.max(tw, parseInt(popup.style.minWidth)||200), 520);
+    popup.style.width = newWidth + 'px';
+    var curLeft = parseInt(popup.style.left)||0;
+    if (curLeft + newWidth > window.innerWidth - 10) {
+      popup.style.left = Math.max(10, window.innerWidth - newWidth - 10) + 'px';
+    }
   });
 
   // Enter hoặc Tab → commit và đóng
