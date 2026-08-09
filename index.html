@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.07-043322">
+<meta name="app-version" content="2026.08.07-232759">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -266,6 +266,8 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   <div class="tab active" onclick="switchTab('table')">📊 Danh sách dự án</div>
   <div class="tab" onclick="switchTab('kanban')">🗂 Kanban</div>
   <div class="tab" onclick="switchTab('daily')">📅 Báo cáo ngày</div>
+  <div class="tab" onclick="switchTab('weekplan')">📝 Kế hoạch tuần</div>
+  <div class="tab" onclick="switchTab('weekreport')">📆 Báo cáo tuần</div>
   <div class="tab" onclick="switchTab('stats')">📈 Thống kê</div>
   <div class="tab" onclick="switchTab('data')">🗃 Data</div>
   <div class="tab" onclick="switchTab('logs')">🕘 Lịch sử</div>
@@ -341,6 +343,30 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   </div>
   <div style="font-size:11px;color:var(--muted);margin:-8px 0 14px;">🔄 Ngày hôm nay tự động cập nhật khi qua nửa đêm (nếu đang xem "Hôm nay") · Task được tính vào 1 ngày nếu Bắt đầu ≤ ngày đó ≤ Kết thúc dự kiến</div>
   <div id="dailyReportWrap"></div>
+</div>
+
+<div id="section-weekplan" class="section">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-o btn-sm" onclick="shiftWeekPlanWeek(-1)">◀</button>
+      <div class="sec-title" id="weekPlanLabel" style="margin-bottom:0;">📝 Kế hoạch tuần</div>
+      <button class="btn btn-o btn-sm" onclick="shiftWeekPlanWeek(1)">▶</button>
+      <button class="btn btn-o btn-sm" onclick="jumpWeekPlanThisWeek()">📍 Tuần này</button>
+    </div>
+    <button class="btn btn-p" onclick="openAddWeekPlan()">+ Thêm kế hoạch</button>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">📝 Điền kế hoạch việc dự kiến trong tuần — chọn "➕ Dự án mới" để lập kế hoạch cho 1 dự án chưa từng có, hoặc chọn 1 dự án đã có sẵn để lập kế hoạch task cho dự án đó. Bấm "✅ Xác nhận" khi việc đã thực sự triển khai để tự động đưa vào tab 📊 Danh sách dự án.</div>
+  <div id="weekPlanWrap"></div>
+</div>
+
+<div id="section-weekreport" class="section">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+    <button class="btn btn-o btn-sm" onclick="shiftWeekReportWeek(-1)">◀</button>
+    <div class="sec-title" id="weekReportLabel" style="margin-bottom:0;">📆 Công việc trong tuần</div>
+    <button class="btn btn-o btn-sm" onclick="shiftWeekReportWeek(1)">▶</button>
+    <button class="btn btn-o btn-sm" onclick="jumpWeekReportThisWeek()">📍 Tuần này</button>
+  </div>
+  <div id="weekReportWrap"></div>
 </div>
 
 <div id="section-stats" class="section">
@@ -476,11 +502,13 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
 <div id="section-guide" class="section">
 
   <div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:10px;padding:18px;margin-bottom:18px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🧭 Tổng quan 7 tab</h3>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🧭 Tổng quan 9 tab</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;line-height:1.7;">
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📊 Danh sách dự án</b><br>Xem, thêm, sửa, xóa dự án. Mỗi dự án có thể mở rộng (▶) để xem/quản lý các task bên trong. Admin có thể bật "🙈 Ẩn đã hoàn thành" (áp dụng cho tất cả mọi người) để giao diện chỉ còn hiện việc đang chạy. Có sẵn 1 dự án cố định 📌 "Việc không thuộc dự án" — không xóa được, luôn ghim đầu bảng, dùng để chứa các task lẻ/việc vặt.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗂 Kanban</b><br>Xem dự án dạng thẻ theo 4 cột trạng thái, kéo-thả thẻ để đổi trạng thái nhanh — tiện khi họp giao ban.</div>
-      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📅 Báo cáo ngày</b><br>Tự động liệt kê mọi task đang chạy đúng hôm nay (Bắt đầu ≤ hôm nay ≤ Kết thúc), nhóm theo phòng/bộ phận, kèm Loại/Người thực hiện/Tiến độ. Tự cập nhật khi sang ngày mới, không cần tải lại trang.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📅 Báo cáo ngày</b><br>Liệt kê mọi task đang chạy trong 1 ngày (mặc định hôm nay, có thể chọn ngày bất kỳ), nhóm theo phòng/bộ phận, kèm Loại/Người thực hiện/Tiến độ. Tự cập nhật khi sang ngày mới nếu đang xem "Hôm nay".</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📝 Kế hoạch tuần</b><br>Nhân sự điền kế hoạch việc dự kiến trong tuần (dự án mới, hoặc task cho dự án đã có). Bấm "✅ Xác nhận" khi việc đã thực sự triển khai để tự động đưa vào tab Danh sách dự án.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📆 Báo cáo tuần</b><br>Giống Báo cáo ngày nhưng tổng hợp theo cả tuần — mặc định tuần hiện tại, có thể xem tuần trước/sau bằng nút ◀ ▶.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📈 Thống kê</b><br>Biểu đồ và số liệu tổng quan, tự cập nhật theo bộ lọc đang chọn ở tab Danh sách và theo khoảng thời gian đang chọn (Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày).</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form. Admin có thể tự thêm trường thông tin tùy chỉnh, hoặc tự tạo hẳn 1 bảng dữ liệu tùy chỉnh mới (VD: Thiết bị, Tài sản...).</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🕘 Lịch sử</b><br>Ghi lại ai vừa sửa gì, lúc nào — chỉ ghi khi có thao tác thay đổi dữ liệu thật (không ghi khi chỉ mở xem). Tự động xóa các dòng cũ hơn 45 ngày.</div>
@@ -613,13 +641,16 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div class="gi"><strong>📶 Gantt đơn giản</strong>Mở rộng 1 dự án (▶) rồi bấm "Xem Gantt" để thấy timeline dự án và các task.</div>
       <div class="gi"><strong>✅ Chọn từ danh sách (không gõ tay)</strong>Quản lý DA (chọn 1), Người thực hiện &amp; Phòng/Bộ phận (tick chọn nhiều) đều bấm để hiện danh sách thả xuống lấy đúng từ tab Data — tránh gõ sai/thiếu tên.</div>
       <div class="gi"><strong>🙈 Ẩn đã hoàn thành</strong>Cài đặt chung toàn hệ thống (chỉ Admin bật/tắt) — khi bật, mọi người chỉ thấy dự án đang chạy. Chỉ ẩn khi cả dự án lẫn toàn bộ task con đều đã "Hoàn thành".</div>
-      <div class="gi"><strong>📐 Cột tự giãn theo nội dung</strong>Các ô Tên, Người thực hiện, Phòng/BP, Mô tả/Link tự nới rộng vừa đủ khi nội dung dài, tránh bị cắt chữ.</div>
+      <div class="gi"><strong>📐 Cột tự giãn theo nội dung</strong>Các ô Tên, Người thực hiện, Phòng/BP tự nới rộng vừa đủ khi nội dung dài, tránh bị cắt chữ. Để chuột lên ô (không cần bấm) cũng thấy được toàn bộ nội dung qua tooltip.</div>
+      <div class="gi"><strong>⤢ Mở rộng ô Mô tả/Link</strong>Bấm nút ⤢ cạnh ô Mô tả/Link để mở popup lớn hơn khi cần xem/sửa nội dung dài — việc bấm trực tiếp vào ô để định vị con trỏ giữa chữ (sửa/xóa) vẫn hoạt động bình thường như mọi ô khác.</div>
     </div>
 
     <div style="font-size:12px;font-weight:700;color:var(--p800);margin:14px 0 8px;">📊 Thống kê &amp; báo cáo</div>
     <div class="gg" style="margin-bottom:16px;">
       <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" hiện thêm số dự án/task mới tạo đúng ngày đó.</div>
       <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tổng hợp task đang chạy trong 1 ngày (mặc định hôm nay, có thể chọn ngày bất kỳ), nhóm theo phòng/bộ phận (chỉ hiện đúng người của phòng đó). Tự cập nhật sang ngày mới nếu đang xem "Hôm nay".</div>
+      <div class="gi"><strong>📆 Báo cáo tuần</strong>Giống Báo cáo ngày nhưng gộp cả tuần — mặc định tuần hiện tại, dùng nút ◀ ▶ để xem tuần trước/sau.</div>
+      <div class="gi"><strong>📝 Kế hoạch tuần</strong>Nhân sự điền kế hoạch việc dự kiến (dự án mới hoặc task cho dự án đã có). Bấm "✅ Xác nhận" khi đã thực sự triển khai → tự động tạo dự án mới, hoặc thêm/cập nhật đúng task vào đúng dự án trong tab Danh sách dự án.</div>
       <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án).</div>
       <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch</b> sẽ có nhãn "Quá tải".</div>
     </div>
@@ -775,6 +806,7 @@ var staffFieldDefs = {};
 var deptFieldDefs = {};
 var customTables = {};
 var customTableData = {};
+var weeklyPlansData = {};
 var expanded = {};
 var expandedGantt = {};
 var activeFilters = {q:'',type:'',dept:'',person:'',status:''};
@@ -864,6 +896,8 @@ function startPolling() {
     refreshFilters();
     renderKanban();
     renderDailyReport();
+    renderWeekReport();
+    renderWeekPlan();
     // Tự động đồng bộ lại counter về đúng max thực tế mỗi khi dữ liệu thay đổi
     // → ngăn drift counter cao hơn số dự án thực tế
     syncCounters(projects);
@@ -874,6 +908,7 @@ function startPolling() {
     staffData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
     renderDailyReport();
+    renderWeekReport();
     if (!document.getElementById('gateBg').classList.contains('hidden')) populateGateSelect();
   }, handleFbListenError('staff'));
 
@@ -882,6 +917,7 @@ function startPolling() {
     deptsData = snap.val() || {};
     renderDataTab(); refreshSuggestions();
     renderDailyReport();
+    renderWeekReport();
   }, handleFbListenError('depts'));
 
   db.ref('/logs').limitToLast(300).on('value', function(snap){
@@ -920,6 +956,12 @@ function startPolling() {
     customTableData = snap.val() || {};
     renderDataTab();
   }, handleFbListenError('customTableData'));
+
+  db.ref('/weeklyPlans').on('value', function(snap){
+    hidePermDeniedBanner();
+    weeklyPlansData = snap.val() || {};
+    renderWeekPlan();
+  }, handleFbListenError('weeklyPlans'));
 
   cleanupOldLogs();
   ensureUnassignedProject();
@@ -972,6 +1014,33 @@ function fmtDate(iso) {
   if (!iso) return '';
   var p = iso.split('-');
   return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
+}
+// ── Helper tính tuần ISO (Thứ 2 → Chủ nhật) — dùng chung cho tab Kế hoạch tuần & Báo cáo tuần ──
+// Dùng giờ địa phương (không qua UTC) để tránh lệch ngày giống lỗi đã sửa ở todayStr()/fmtISO().
+function getISOWeekKey(d) {
+  var date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var dayNum = date.getDay() || 7; // Thứ 2=1 ... Chủ nhật=7
+  date.setDate(date.getDate() + 4 - dayNum); // nhảy tới Thứ 5 của tuần ISO chứa ngày d
+  var yearStart = new Date(date.getFullYear(), 0, 1);
+  var weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return date.getFullYear() + '-W' + (weekNo<10?'0':'') + weekNo;
+}
+function weekKeyRange(weekKey) {
+  var parts = weekKey.split('-W');
+  var year = parseInt(parts[0],10), week = parseInt(parts[1],10);
+  var jan4 = new Date(year, 0, 4); // 4/1 luôn thuộc tuần 1 theo chuẩn ISO
+  var jan4Dow = jan4.getDay() || 7;
+  var mondayWeek1 = new Date(jan4); mondayWeek1.setDate(jan4.getDate() - jan4Dow + 1);
+  var monday = new Date(mondayWeek1); monday.setDate(mondayWeek1.getDate() + (week-1)*7);
+  var sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  var startStr = fmtISO(monday), endStr = fmtISO(sunday);
+  return {start: startStr, end: endStr, label: fmtDate(startStr)+' → '+fmtDate(endStr)};
+}
+function shiftWeekKey(weekKey, delta) {
+  var r = weekKeyRange(weekKey);
+  var monday = new Date(r.start+'T00:00:00');
+  monday.setDate(monday.getDate() + delta*7);
+  return getISOWeekKey(monday);
 }
 // Sinh options % tiến độ 0 → 100, bước 10
 // ── 5. Tiến độ dự án = trung bình tiến độ các task (tự tính, không sửa tay) ──
@@ -1453,8 +1522,8 @@ function renderTable() {
     tr.innerHTML =
       '<td style="text-align:center;color:var(--muted);font-size:11px;">'+(i+1)+'</td>'+
       '<td style="text-align:center;"><button class="expand-btn" onclick="toggleExpand(\''+key+'\')">'+(isExp?'▼':'▶')+'</button></td>'+
-      '<td><div style="display:flex;align-items:center;gap:3px;">'+(pOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+'<input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" style="font-family:monospace;font-size:11px;"'+dis(canEditP_id)+'></div></td>'+
-      '<td><div style="display:flex;align-items:center;gap:4px;">'+(p.protected?'<span title="Dự án cố định, không xóa được" style="font-size:12px;">📌</span>':'')+'<input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)"'+dis(canEditP_id)+' style="flex:1;"></div></td>'+
+      '<td><div style="display:flex;align-items:center;gap:3px;">'+(pOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+'<input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" title="'+esc(p.id)+'" style="font-family:monospace;font-size:11px;"'+dis(canEditP_id)+'></div></td>'+
+      '<td><div style="display:flex;align-items:center;gap:4px;">'+(p.protected?'<span title="Dự án cố định, không xóa được" style="font-size:12px;">📌</span>':'')+'<input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)" title="'+esc(p.name)+'"'+dis(canEditP_id)+' style="flex:1;"></div></td>'+
       '<td><input value="'+esc(p.fullName)+'" data-key="'+key+'" data-f="fullName" onchange="updateField(this)" style="font-size:11px;" disabled></td>'+
       '<td><select data-key="'+key+'" data-f="type" onchange="updateField(this)"'+dis(canEditP_id)+'>'+
         '<option value="" '+((!p.type)?'selected':'')+'>—</option>'+
@@ -1462,9 +1531,9 @@ function renderTable() {
         '<option value="SUPP" '+((p.type==='SUPP')?'selected':'')+'>SUPP</option>'+
         '<option value="OPER" '+((p.type==='OPER')?'selected':'')+'>OPER</option>'+
       '</select></td>'+
-      '<td><input value="'+esc(p.pm)+'" data-key="'+key+'" data-f="pm" class="ms-pm" readonly title="Bấm để chọn Quản lý dự án" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
-      '<td><input value="'+esc(p.exec)+'" data-key="'+key+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
-      '<td><div class="ms-dept-rich" data-key="'+key+'" data-f="dept" data-raw="'+esc(p.dept||'')+'" data-empty-html="▾ Bấm để chọn..." tabindex="0" title="Bấm để chọn nhiều phòng/bộ phận"'+(canEditP_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(p.dept) || '<span style="color:var(--muted);">▾ Bấm để chọn...</span>')+'</div></td>'+
+      '<td><input value="'+esc(p.pm)+'" data-key="'+key+'" data-f="pm" class="ms-pm" readonly title="'+(p.pm?esc(p.pm)+' — ':'')+'Bấm để chọn Quản lý dự án" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
+      '<td><input value="'+esc(p.exec)+'" data-key="'+key+'" data-f="exec" class="ms-person" readonly title="'+(p.exec?esc(p.exec)+' — ':'')+'Bấm để chọn nhiều người thực hiện" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
+      '<td><div class="ms-dept-rich" data-key="'+key+'" data-f="dept" data-raw="'+esc(p.dept||'')+'" data-empty-html="▾ Bấm để chọn..." tabindex="0" title="'+(p.dept?esc(p.dept)+' — ':'')+'Bấm để chọn nhiều phòng/bộ phận"'+(canEditP_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(p.dept) || '<span style="color:var(--muted);">▾ Bấm để chọn...</span>')+'</div></td>'+
       '<td><input type="date" value="'+(p.start||'')+'" data-key="'+key+'" data-f="start" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><input type="date" value="'+(p.end||'')+'" data-key="'+key+'" data-f="end" onchange="updateField(this)"'+dis(canEditP_id)+'></td>'+
       '<td><select data-key="'+key+'" data-f="status" onchange="updateField(this)" style="border-left:3px solid '+(pOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[p.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditP_status)+'>'+
@@ -1474,7 +1543,7 @@ function renderTable() {
         '<option value="Hoàn thành" '+((p.status==='Hoàn thành')?'selected':'')+'>🟢 Hoàn thành</option>'+
       '</select></td>'+
       '<td style="text-align:center;font-weight:600;color:var(--p800);" title="Tự tính theo trung bình tiến độ các task">'+computeProjectProgress(p)+'%</td>'+
-      '<td><input value="'+esc(p.note||'')+'" data-key="'+key+'" data-f="note" onchange="updateField(this)" placeholder="Mô tả hoặc dán link..." title="'+(p.note||'')+'"'+dis(canEditP_note)+'></td>'+
+      '<td><div style="display:flex;align-items:center;gap:2px;"><input value="'+esc(p.note||'')+'" data-key="'+key+'" data-f="note" onchange="updateField(this)" placeholder="Mô tả hoặc dán link..." title="'+esc(p.note||'')+'"'+dis(canEditP_note)+' style="flex:1;"><button type="button" class="expand-btn" title="Mở rộng để xem/sửa toàn bộ nội dung" onclick="openExpandPopup(this)">⤢</button></div></td>'+
       '<td><button class="del-btn" onclick="deleteProject(\''+key+'\')" title="'+(p.protected?'Không thể xóa dự án cố định':'Xóa')+'"'+((canDelete() && !p.protected)?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
     tbody.appendChild(tr);
 
@@ -1492,7 +1561,7 @@ function renderTable() {
           '<td style="color:var(--muted);font-size:10px;text-align:center;">TASK</td>'+
           '<td><div class="task-indent" style="padding-left:8px;"><div class="task-line"></div>'+
           (tOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+
-          '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." style="flex:1;"'+dis(canEditT_id)+'></div></td>'+
+          '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." title="'+esc(task.name)+'" style="flex:1;"'+dis(canEditT_id)+'></div></td>'+
           '<td></td>'+
           '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="type" onchange="updateTask(this)" title="Loại task (mặc định theo Loại của dự án nếu để trống)"'+dis(canEditT_id)+'>'+
             '<option value="" '+((!task.type)?'selected':'')+'>— (theo dự án)</option>'+
@@ -1501,8 +1570,8 @@ function renderTable() {
             '<option value="OPER" '+((task.type==='OPER')?'selected':'')+'>OPER</option>'+
           '</select></td>'+
           '<td></td>'+
-          '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" class="ms-person" readonly title="Bấm để chọn nhiều người thực hiện" onchange="updateTask(this)" placeholder="▾ Người thực hiện..."'+dis(canEditT_id)+'></td>'+
-          '<td><div class="ms-dept-rich" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" data-raw="'+esc(task.dept||'')+'" data-empty-html="'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'" tabindex="0" title="Bấm để chọn nhiều phòng/bộ phận"'+(canEditT_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(task.dept) || '<span style="color:var(--muted);">'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'</span>')+'</div></td>'+
+          '<td><input value="'+esc(task.exec)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="exec" class="ms-person" readonly title="'+(task.exec?esc(task.exec)+' — ':'')+'Bấm để chọn nhiều người thực hiện" onchange="updateTask(this)" placeholder="▾ Người thực hiện..."'+dis(canEditT_id)+'></td>'+
+          '<td><div class="ms-dept-rich" data-pk="'+key+'" data-tk="'+tk+'" data-f="dept" data-raw="'+esc(task.dept||'')+'" data-empty-html="'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'" tabindex="0" title="'+(task.dept?esc(task.dept)+' — ':'')+'Bấm để chọn nhiều phòng/bộ phận"'+(canEditT_id?'':' data-disabled="1"')+'>'+(formatDeptListHtml(task.dept) || '<span style="color:var(--muted);">'+esc(p.dept?'Mặc định: '+p.dept:'▾ Phòng/bộ phận...')+'</span>')+'</div></td>'+
           '<td><input type="date" value="'+(task.start||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="start" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="end" onchange="updateTask(this)"'+dis(canEditT_id)+'></td>'+
           '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="status" onchange="updateTask(this)" style="border-left:3px solid '+(tOverdue?STATUS_COLORS['Quá hạn']:STATUS_COLORS[task.status||'Chờ xử lý'])+';padding-left:4px;"'+dis(canEditT_status)+'>'+
@@ -1512,7 +1581,7 @@ function renderTable() {
             '<option value="Hoàn thành" '+((task.status==='Hoàn thành')?'selected':'')+'>🟢 Xong</option>'+
           '</select></td>'+
           '<td>'+taskProgCell(task, 'data-pk="'+key+'" data-tk="'+tk+'"', 'updateTask', !canEditTaskField(p,task,'progress'))+'</td>'+
-          '<td><input value="'+esc(task.note||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="note" onchange="updateTask(this)" placeholder="Mô tả hoặc link..." title="'+(task.note||'')+'"'+dis(canEditT_note)+'></td>'+
+          '<td><div style="display:flex;align-items:center;gap:2px;"><input value="'+esc(task.note||'')+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="note" onchange="updateTask(this)" placeholder="Mô tả hoặc link..." title="'+esc(task.note||'')+'"'+dis(canEditT_note)+' style="flex:1;"><button type="button" class="expand-btn" title="Mở rộng để xem/sửa toàn bộ nội dung" onclick="openExpandPopup(this)">⤢</button></div></td>'+
           '<td><button class="del-btn" onclick="deleteTask(\''+key+'\',\''+tk+'\')" title="Xóa task"'+(canDelete()?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
         tbody.appendChild(ttr);
       });
@@ -1683,7 +1752,98 @@ function kanbanDrop(ev, newStatus) {
   renderKanban(); safeRenderTable(); renderStats();
 }
 
-// ── 3. Báo cáo ngày — tổng hợp mọi task đang "chạy" đúng hôm nay, nhóm theo phòng/bộ phận ──
+// ── 3. Báo cáo ngày / Báo cáo tuần — dùng chung logic gom & nhóm task theo phòng/bộ phận ──
+function staffDeptsOf(name) {
+  var s = Object.values(staffData).find(function(x){ return x.name===name; });
+  if (!s || !s.depts) return [];
+  return String(s.depts).split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+}
+// Gom mọi task có khung Bắt đầu→Kết thúc GIAO với [rangeStart, rangeEnd], kể cả task thuộc "Việc không thuộc dự án"
+function collectReportRows(rangeStart, rangeEnd) {
+  var rows = [];
+  Object.entries(projects).forEach(function(pe){
+    var p = pe[1];
+    if (!p.tasks) return;
+    Object.values(p.tasks).forEach(function(t){
+      if (!t.start || !t.end) return;
+      if (!(t.start <= rangeEnd && t.end >= rangeStart)) return;
+      rows.push({
+        taskName: t.name || '(chưa đặt tên)',
+        projectName: p.name || p.id || '',
+        type: t.type || p.type || '',
+        exec: resolveAll(t.exec, 'person', t.dept||p.dept),
+        deptRaw: resolveAll(t.dept || p.dept, 'dept'),
+        progress: parseInt(t.progress,10)||0,
+        status: t.status || 'Chờ xử lý'
+      });
+    });
+  });
+  return rows;
+}
+// Nhóm theo phòng/bộ phận CHUẨN lấy từ tab Data — 1 task có thể thuộc nhiều phòng nên có thể xuất hiện ở nhiều nhóm.
+// Trong mỗi nhóm, cột Người thực hiện chỉ hiện đúng người THỰC SỰ thuộc phòng đó (theo Data),
+// chứ không lặp lại y nguyên toàn bộ danh sách người thực hiện của cả task như ở tab Danh sách dự án.
+var REPORT_UNKNOWN_DEPT_LBL = '❓ Chưa phân loại phòng';
+function groupReportRowsByDept(rows) {
+  var canonicalDepts = Object.values(deptsData).map(function(d){ return (d.name||'').trim(); }).filter(Boolean).sort(function(a,b){ return a.localeCompare(b,'vi'); });
+  var groups = {};
+  canonicalDepts.forEach(function(d){ groups[d]=[]; });
+  groups[REPORT_UNKNOWN_DEPT_LBL]=[];
+  rows.forEach(function(r){
+    var execNames = r.exec.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    var depts = r.deptRaw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    if (!depts.length) { groups[REPORT_UNKNOWN_DEPT_LBL].push(Object.assign({}, r, {execForGroup: r.exec})); return; }
+    depts.forEach(function(d){
+      var target = groups[d] ? d : REPORT_UNKNOWN_DEPT_LBL;
+      var filteredExec = execNames.filter(function(n){ return staffDeptsOf(n).indexOf(d)>=0; });
+      var execForGroup = filteredExec.length ? filteredExec.join(', ') : r.exec;
+      groups[target].push(Object.assign({}, r, {execForGroup: execForGroup}));
+    });
+  });
+  return {groups: groups, order: canonicalDepts.concat([REPORT_UNKNOWN_DEPT_LBL])};
+}
+function renderReportGroupsHtml(groups, order, emptyMsg) {
+  var groupKeys = order.filter(function(g){ return groups[g] && groups[g].length; });
+  if (!groupKeys.length) {
+    return '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">'+esc(emptyMsg||'Không có task nào.')+'</p>';
+  }
+  return groupKeys.map(function(g){
+    var items = groups[g];
+    return '<div class="cc" style="margin-bottom:14px;">' +
+      '<h4>🏢 '+esc(g)+' <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">('+items.length+' task)</span></h4>' +
+      '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+      '<thead><tr style="border-bottom:1.5px solid var(--bdr);">' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Task</th>' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Dự án</th>' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Loại</th>' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Người thực hiện</th>' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Trạng thái</th>' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Tiến độ</th>' +
+      '</tr></thead><tbody>' +
+      items.map(function(r){
+        return '<tr style="border-bottom:.5px solid var(--bdr);">' +
+          '<td style="padding:6px 8px;">'+esc(r.taskName)+'</td>' +
+          '<td style="padding:6px 8px;color:var(--muted);">'+esc(r.projectName)+'</td>' +
+          '<td style="padding:6px 8px;">'+(r.type?esc(r.type):'—')+'</td>' +
+          '<td style="padding:6px 8px;">'+esc(r.execForGroup)+'</td>' +
+          '<td style="padding:6px 8px;white-space:nowrap;"><span class="status-dot" style="background:'+(STATUS_COLORS[r.status]||'#888780')+'"></span>'+esc(r.status)+'</td>' +
+          '<td style="padding:6px 8px;">'+r.progress+'%</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table></div></div>';
+  }).join('');
+}
+function reportSummaryGridHtml(rows, totalLabel) {
+  var typeCounts = {MAIN:0,SUPP:0,OPER:0};
+  rows.forEach(function(r){ if (typeCounts.hasOwnProperty(r.type)) typeCounts[r.type]++; });
+  return '<div class="stats-grid" style="margin-bottom:18px;">' +
+    '<div class="sc total"><div class="sc-lbl">'+esc(totalLabel)+'</div><div class="sc-val">'+rows.length+'</div></div>' +
+    '<div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val">'+typeCounts.MAIN+'</div></div>' +
+    '<div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val">'+typeCounts.SUPP+'</div></div>' +
+    '<div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val">'+typeCounts.OPER+'</div></div>' +
+  '</div>';
+}
+
 // ── Chọn ngày để xem Báo cáo ngày — mặc định là hôm nay, có thể chọn ngày bất kỳ khác ──
 function onDailyReportDateChange() {
   renderDailyReport();
@@ -1699,101 +1859,265 @@ function renderDailyReport() {
   var picker = document.getElementById('dailyReportDatePicker');
   if (!wrap) return;
   var today = todayStr();
-  // Mặc định hiện ngày hôm nay nếu người dùng chưa từng chọn ngày nào trong ô date picker
   if (picker && !picker.value) picker.value = today;
   var viewDate = (picker && picker.value) ? picker.value : today;
   var isToday = (viewDate === today);
   if (titleEl) titleEl.textContent = '📅 Công việc trong ngày ' + fmtDate(viewDate) + (isToday ? ' (hôm nay)' : '');
 
-  // Gom mọi task có khung Bắt đầu→Kết thúc bao trùm ngày đang xem, kể cả task thuộc "Việc không thuộc dự án"
-  var rows = [];
-  Object.entries(projects).forEach(function(pe){
-    var p = pe[1];
-    if (!p.tasks) return;
-    Object.values(p.tasks).forEach(function(t){
-      if (!t.start || !t.end) return;
-      if (!(t.start <= viewDate && t.end >= viewDate)) return;
-      rows.push({
-        taskName: t.name || '(chưa đặt tên)',
-        projectName: p.name || p.id || '',
-        type: t.type || p.type || '',
-        exec: resolveAll(t.exec, 'person', t.dept||p.dept),
-        deptRaw: resolveAll(t.dept || p.dept, 'dept'),
-        progress: parseInt(t.progress,10)||0,
-        status: t.status || 'Chờ xử lý'
+  var rows = collectReportRows(viewDate, viewDate);
+  var html = reportSummaryGridHtml(rows, 'Tổng task trong ngày');
+  var built = groupReportRowsByDept(rows);
+  html += renderReportGroupsHtml(built.groups, built.order, 'Không có task nào đang chạy trong ngày '+fmtDate(viewDate)+'.');
+  wrap.innerHTML = html;
+}
+
+// ── Báo cáo tuần — mặc định tuần hiện tại, có thể xem tuần trước/sau — cấu trúc giống Báo cáo ngày ──
+var weekReportWeekKey = getISOWeekKey(new Date());
+function shiftWeekReportWeek(delta) {
+  weekReportWeekKey = shiftWeekKey(weekReportWeekKey, delta);
+  renderWeekReport();
+}
+function jumpWeekReportThisWeek() {
+  weekReportWeekKey = getISOWeekKey(new Date());
+  renderWeekReport();
+}
+function renderWeekReport() {
+  var wrap = document.getElementById('weekReportWrap');
+  var titleEl = document.getElementById('weekReportLabel');
+  if (!wrap) return;
+  var r = weekKeyRange(weekReportWeekKey);
+  var isThisWeek = weekReportWeekKey === getISOWeekKey(new Date());
+  var wp = weekReportWeekKey.split('-W');
+  if (titleEl) titleEl.textContent = '📆 Công việc trong tuần ' + wp[1] + '/' + wp[0] + ' (' + r.label + ')' + (isThisWeek ? ' — tuần này' : '');
+
+  var rows = collectReportRows(r.start, r.end);
+  var html = reportSummaryGridHtml(rows, 'Tổng task trong tuần');
+  var built = groupReportRowsByDept(rows);
+  html += renderReportGroupsHtml(built.groups, built.order, 'Không có task nào trong tuần '+r.label+'.');
+  wrap.innerHTML = html;
+}
+
+// ── 2. Kế hoạch tuần — nhân sự điền kế hoạch nháp; bấm "Xác nhận" để tự động đưa vào Danh sách dự án ──
+var weekPlanWeekKey = getISOWeekKey(new Date());
+function shiftWeekPlanWeek(delta) {
+  weekPlanWeekKey = shiftWeekKey(weekPlanWeekKey, delta);
+  renderWeekPlan();
+}
+function jumpWeekPlanThisWeek() {
+  weekPlanWeekKey = getISOWeekKey(new Date());
+  renderWeekPlan();
+}
+function openAddWeekPlan() {
+  if (!canStaffOrAdmin()) { showToast('⛔ Bạn cần đăng nhập Nhân sự/Admin để thêm kế hoạch.'); return; }
+  var plan = {linkedProjectKey:'', name:'', type:'', pm:'', exec:'', dept:'', start:todayStr(), end:'', status:'Chờ xử lý', note:'', createdBy:(currentUser?currentUser.name:''), createdAt:Date.now()};
+  fbPost('/weeklyPlans/'+weekPlanWeekKey, plan, function(err,res){
+    if (err || !res || !res.name) { showToast('⚠️ Lỗi khi thêm kế hoạch.'); return; }
+    writeLog('Thêm kế hoạch tuần', weekPlanWeekKey);
+  });
+}
+function updateWeekPlanField(planKey, field, val) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
+  var patch = {}; patch[field] = val;
+  fbPatch('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey, patch);
+}
+function updateWeekPlanLink(planKey, projectKey) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
+  fbPatch('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey, {linkedProjectKey: projectKey||''});
+}
+function deleteWeekPlan(planKey) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền xóa.'); return; }
+  if (!confirm('Xóa kế hoạch nháp này? (chỉ xóa bản nháp, không ảnh hưởng dự án/task đã xác nhận trước đó)')) return;
+  fbDel('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey);
+  writeLog('Xóa kế hoạch tuần', weekPlanWeekKey);
+}
+function addWeekPlanTask(planKey) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền.'); return; }
+  var task = {name:'', exec:'', dept:'', type:'', start:todayStr(), end:'', status:'Chờ xử lý', progress:'0', note:'', linkedTaskKey:'', createdAt:Date.now()};
+  fbPost('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey+'/tasks', task);
+}
+function updateWeekPlanTaskField(planKey, taskKey, field, val) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
+  var patch = {}; patch[field] = val;
+  fbPatch('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey+'/tasks/'+taskKey, patch);
+}
+function deleteWeekPlanTask(planKey, taskKey) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền xóa.'); return; }
+  if (!confirm('Xóa task kế hoạch này?')) return;
+  fbDel('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey+'/tasks/'+taskKey);
+}
+
+// Xác nhận kế hoạch DỰ ÁN MỚI → tạo thật dự án (+ toàn bộ task kế hoạch bên trong) vào Danh sách dự án,
+// rồi xóa bản kế hoạch nháp (dữ liệu thật đã nằm ở /projects, không cần giữ bản nháp trùng nữa)
+function confirmWeekPlanProject(planKey) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền xác nhận.'); return; }
+  var plan = (weeklyPlansData[weekPlanWeekKey]||{})[planKey];
+  if (!plan) return;
+  if (!plan.name || !plan.name.trim()) { showToast('⚠️ Cần nhập Tên dự án trước khi xác nhận.'); return; }
+  var dateForId = plan.start || todayStr();
+  var typeForId = plan.type || 'MAIN';
+  allocateProjectId(dateForId, typeForId, function(err, id){
+    if (err || !id) { showToast('⚠️ Lỗi khi cấp mã dự án. Thử lại.'); return; }
+    var proj = {
+      id: id, name: plan.name.trim(), fullName: '[NAACP] ['+id+'] '+plan.name.trim(),
+      type: typeForId, pm: plan.pm||'', exec: plan.exec||'', dept: plan.dept||'',
+      start: plan.start||'', end: plan.end||'', status: plan.status||'Chờ xử lý',
+      progress: '0', note: plan.note||'', createdAt: Date.now()
+    };
+    fbPost('/projects', proj, function(err2, res2){
+      if (err2 || !res2 || !res2.name) { showToast('⚠️ Lỗi khi tạo dự án.'); return; }
+      var newProjKey = res2.name;
+      var planTasks = plan.tasks ? Object.values(plan.tasks) : [];
+      var pending = planTasks.length;
+      function afterAllTasks() {
+        fbDel('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey);
+        showToast('✅ Đã tạo dự án "'+plan.name+'" ('+id+') cùng '+planTasks.length+' task vào Danh sách dự án.');
+        writeLog('Xác nhận kế hoạch → tạo dự án mới', id+' - '+plan.name);
+      }
+      if (!pending) { afterAllTasks(); return; }
+      planTasks.forEach(function(pt){
+        var task = {name: pt.name||'', exec: pt.exec||'', dept: pt.dept||'', type: pt.type||'', start: pt.start||'', end: pt.end||'', status: pt.status||'Chờ xử lý', progress: pt.progress||'0', note: pt.note||'', createdAt: Date.now()};
+        fbPost('/projects/'+newProjKey+'/tasks', task, function(){
+          pending--; if (pending<=0) afterAllTasks();
+        });
       });
     });
   });
+}
 
-  var typeCounts = {MAIN:0,SUPP:0,OPER:0};
-  rows.forEach(function(r){ if (typeCounts.hasOwnProperty(r.type)) typeCounts[r.type]++; });
-
-  var html = '<div class="stats-grid" style="margin-bottom:18px;">' +
-    '<div class="sc total"><div class="sc-lbl">Tổng task trong ngày</div><div class="sc-val">'+rows.length+'</div></div>' +
-    '<div class="sc main"><div class="sc-lbl">MAIN</div><div class="sc-val">'+typeCounts.MAIN+'</div></div>' +
-    '<div class="sc supp"><div class="sc-lbl">SUPP</div><div class="sc-val">'+typeCounts.SUPP+'</div></div>' +
-    '<div class="sc oper"><div class="sc-lbl">OPER</div><div class="sc-val">'+typeCounts.OPER+'</div></div>' +
-  '</div>';
-
-  // Nhóm theo phòng/bộ phận CHUẨN lấy từ tab Data — 1 task có thể thuộc nhiều phòng nên có thể xuất hiện ở nhiều nhóm.
-  // Trong mỗi nhóm, cột Người thực hiện chỉ hiện đúng người THỰC SỰ thuộc phòng đó (theo Data),
-  // chứ không lặp lại y nguyên toàn bộ danh sách người thực hiện của cả task như ở tab Danh sách dự án.
-  function staffDeptsOf(name) {
-    var s = Object.values(staffData).find(function(x){ return x.name===name; });
-    if (!s || !s.depts) return [];
-    return String(s.depts).split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+// Xác nhận 1 TASK kế hoạch thuộc dự án ĐÃ CÓ SẴN → thêm task mới, hoặc cập nhật task cũ nếu chọn "tiếp tục"
+function confirmWeekPlanTask(planKey, taskKey) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền xác nhận.'); return; }
+  var plan = (weeklyPlansData[weekPlanWeekKey]||{})[planKey];
+  if (!plan || !plan.linkedProjectKey) { showToast('⚠️ Kế hoạch này chưa gắn vào dự án đã có.'); return; }
+  var pt = plan.tasks && plan.tasks[taskKey];
+  if (!pt) return;
+  if (!pt.name || !pt.name.trim()) { showToast('⚠️ Cần nhập Tên task trước khi xác nhận.'); return; }
+  var targetProjKey = plan.linkedProjectKey;
+  if (!projects[targetProjKey]) { showToast('⚠️ Dự án được gắn không còn tồn tại.'); return; }
+  var taskData = {name: pt.name.trim(), exec: pt.exec||'', dept: pt.dept||'', type: pt.type||'', start: pt.start||'', end: pt.end||'', status: pt.status||'Chờ xử lý', progress: pt.progress||'0', note: pt.note||''};
+  function afterConfirm(label) {
+    fbDel('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey+'/tasks/'+taskKey);
+    syncProjectProgress(targetProjKey);
+    showToast('✅ Đã '+label+' vào dự án '+(projects[targetProjKey].id||targetProjKey)+'.');
+    writeLog('Xác nhận kế hoạch task', (projects[targetProjKey].id||targetProjKey)+' — '+pt.name);
   }
-  var canonicalDepts = Object.values(deptsData).map(function(d){ return (d.name||'').trim(); }).filter(Boolean).sort(function(a,b){ return a.localeCompare(b,'vi'); });
-  var UNKNOWN_DEPT_LBL = '❓ Chưa phân loại phòng';
-  var groups = {};
-  canonicalDepts.forEach(function(d){ groups[d]=[]; });
-  groups[UNKNOWN_DEPT_LBL]=[];
-  rows.forEach(function(r){
-    var execNames = r.exec.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
-    var depts = r.deptRaw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
-    if (!depts.length) { groups[UNKNOWN_DEPT_LBL].push(Object.assign({}, r, {execForGroup: r.exec})); return; }
-    depts.forEach(function(d){
-      var target = groups[d] ? d : UNKNOWN_DEPT_LBL;
-      // Chỉ giữ người thực hiện thực sự thuộc phòng d; nếu không xác định được ai (dữ liệu Nhân sự
-      // chưa khai đủ, hoặc tên không khớp) thì fallback hiện đầy đủ để không làm mất thông tin.
-      var filteredExec = execNames.filter(function(n){ return staffDeptsOf(n).indexOf(d)>=0; });
-      var execForGroup = filteredExec.length ? filteredExec.join(', ') : r.exec;
-      groups[target].push(Object.assign({}, r, {execForGroup: execForGroup}));
+  if (pt.linkedTaskKey && projects[targetProjKey].tasks && projects[targetProjKey].tasks[pt.linkedTaskKey]) {
+    fbPatch('/projects/'+targetProjKey+'/tasks/'+pt.linkedTaskKey, taskData, function(err){
+      if (err) { showToast('⚠️ Lỗi khi cập nhật task.'); return; }
+      afterConfirm('cập nhật task tiếp tục');
     });
-  });
-
-  var groupKeys = canonicalDepts.concat([UNKNOWN_DEPT_LBL]).filter(function(g){ return groups[g] && groups[g].length; });
-
-  if (!groupKeys.length) {
-    html += '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">Không có task nào đang chạy trong ngày '+fmtDate(viewDate)+'.</p>';
   } else {
-    groupKeys.forEach(function(g){
-      var items = groups[g];
-      html += '<div class="cc" style="margin-bottom:14px;">' +
-        '<h4>🏢 '+esc(g)+' <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">('+items.length+' task)</span></h4>' +
-        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">' +
-        '<thead><tr style="border-bottom:1.5px solid var(--bdr);">' +
-        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Task</th>' +
-        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Dự án</th>' +
-        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Loại</th>' +
-        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Người thực hiện</th>' +
-        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Trạng thái</th>' +
-        '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:11px;font-weight:600;">Tiến độ</th>' +
-        '</tr></thead><tbody>' +
-        items.map(function(r){
-          return '<tr style="border-bottom:.5px solid var(--bdr);">' +
-            '<td style="padding:6px 8px;">'+esc(r.taskName)+'</td>' +
-            '<td style="padding:6px 8px;color:var(--muted);">'+esc(r.projectName)+'</td>' +
-            '<td style="padding:6px 8px;">'+(r.type?esc(r.type):'—')+'</td>' +
-            '<td style="padding:6px 8px;">'+esc(r.execForGroup)+'</td>' +
-            '<td style="padding:6px 8px;white-space:nowrap;"><span class="status-dot" style="background:'+(STATUS_COLORS[r.status]||'#888780')+'"></span>'+esc(r.status)+'</td>' +
-            '<td style="padding:6px 8px;">'+r.progress+'%</td>' +
-          '</tr>';
-        }).join('') +
-        '</tbody></table></div></div>';
+    taskData.createdAt = Date.now();
+    fbPost('/projects/'+targetProjKey+'/tasks', taskData, function(err,res){
+      if (err || !res || !res.name) { showToast('⚠️ Lỗi khi thêm task.'); return; }
+      afterConfirm('thêm task mới');
     });
   }
-  wrap.innerHTML = html;
+}
+
+function renderWeekPlan() {
+  var wrap = document.getElementById('weekPlanWrap');
+  var lbl = document.getElementById('weekPlanLabel');
+  if (!wrap) return;
+  var r = weekKeyRange(weekPlanWeekKey);
+  var isThisWeek = weekPlanWeekKey === getISOWeekKey(new Date());
+  var wp = weekPlanWeekKey.split('-W');
+  if (lbl) lbl.textContent = '📝 Kế hoạch tuần ' + wp[1] + '/' + wp[0] + ' (' + r.label + ')' + (isThisWeek ? ' — tuần này' : '');
+
+  var plans = Object.entries(weeklyPlansData[weekPlanWeekKey] || {});
+  if (!plans.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">Chưa có kế hoạch nào cho tuần này. Bấm "+ Thêm kế hoạch" để bắt đầu.</p>';
+    return;
+  }
+  wrap.innerHTML = plans.map(function(e){ return renderWeekPlanCard(e[0], e[1]); }).join('');
+}
+
+function renderWeekPlanCard(planKey, plan) {
+  var linked = plan.linkedProjectKey && projects[plan.linkedProjectKey] ? projects[plan.linkedProjectKey] : null;
+  var tasks = plan.tasks ? Object.entries(plan.tasks) : [];
+  var canEdit = canStaffOrAdmin();
+  var dis = canEdit ? '' : ' disabled';
+  var inpStyle = 'width:100%;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12.5px;';
+
+  var projectOptions = '<option value="">➕ Dự án mới</option>' +
+    Object.entries(projects).filter(function(e){ return !e[1].protected; }).sort(function(a,b){ return (b[1].createdAt||0)-(a[1].createdAt||0); }).map(function(e){
+      return '<option value="'+e[0]+'" '+(plan.linkedProjectKey===e[0]?'selected':'')+'>'+esc(e[1].id)+' — '+esc(e[1].name)+'</option>';
+    }).join('');
+
+  var topFieldsHtml = linked ?
+    '<div style="font-size:12.5px;color:var(--muted);padding:6px 0 4px;">📌 Đang lập kế hoạch task cho dự án có sẵn: <b style="color:var(--p800);">'+esc(linked.id)+' — '+esc(linked.name)+'</b></div>'
+    :
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px;">' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Tên dự án</label><input value="'+esc(plan.name||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'name\',this.value)" placeholder="Tên dự án mới..." style="'+inpStyle+'"'+dis+'></div>' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Loại</label><select onchange="updateWeekPlanField(\''+planKey+'\',\'type\',this.value)" style="'+inpStyle+'"'+dis+'>' +
+        '<option value=""'+(!plan.type?' selected':'')+'>—</option><option value="MAIN"'+(plan.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(plan.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(plan.type==='OPER'?' selected':'')+'>OPER</option>' +
+      '</select></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Quản lý DA</label><input value="'+esc(plan.pm||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'pm\',this.value)" placeholder="..." style="'+inpStyle+'"'+dis+'></div>' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Người thực hiện</label><input value="'+esc(plan.exec||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'exec\',this.value)" placeholder="..." style="'+inpStyle+'"'+dis+'></div>' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Phòng/BP</label><input value="'+esc(plan.dept||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'dept\',this.value)" placeholder="..." style="'+inpStyle+'"'+dis+'></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Bắt đầu</label><input type="date" value="'+(plan.start||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'start\',this.value)" style="'+inpStyle+'"'+dis+'></div>' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Kết thúc DK</label><input type="date" value="'+(plan.end||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'end\',this.value)" style="'+inpStyle+'"'+dis+'></div>' +
+      '<div><label style="font-size:10.5px;color:var(--muted);">Trạng thái</label><select onchange="updateWeekPlanField(\''+planKey+'\',\'status\',this.value)" style="'+inpStyle+'"'+dis+'>' +
+        STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(plan.status===s?'selected':'')+'>'+s+'</option>'; }).join('') +
+      '</select></div>' +
+    '</div>' +
+    '<div style="margin-bottom:6px;"><label style="font-size:10.5px;color:var(--muted);">Ghi chú</label><input value="'+esc(plan.note||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'note\',this.value)" placeholder="Ghi chú..." style="'+inpStyle+'"'+dis+'></div>';
+
+  var tasksHtml = tasks.map(function(te){ return renderWeekPlanTaskRow(planKey, te[0], te[1], linked); }).join('');
+
+  return '<div style="background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:14px 16px;margin-bottom:14px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap;">' +
+      '<select onchange="updateWeekPlanLink(\''+planKey+'\',this.value)" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;max-width:340px;"'+dis+'>'+projectOptions+'</select>' +
+      '<div style="display:flex;gap:6px;">' +
+        (linked ? '' : '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanProject(\''+planKey+'\')">✅ Xác nhận tạo dự án</button>') +
+        '<button class="del-btn" onclick="deleteWeekPlan(\''+planKey+'\')" title="Xóa kế hoạch">🗑</button>' +
+      '</div>' +
+    '</div>' +
+    topFieldsHtml +
+    '<div style="border-top:1px dashed var(--bdr);margin-top:6px;padding-top:10px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+        '<b style="font-size:12px;color:var(--muted);">✅ Task kế hoạch ('+tasks.length+')</b>' +
+        '<button class="add-task-btn" onclick="addWeekPlanTask(\''+planKey+'\')">+ Thêm task</button>' +
+      '</div>' +
+      (tasksHtml || '<p style="font-size:11.5px;color:var(--muted);">Chưa có task nào.</p>') +
+    '</div>' +
+  '</div>';
+}
+
+function renderWeekPlanTaskRow(planKey, taskKey, task, linkedProject) {
+  var canEdit = canStaffOrAdmin();
+  var dis = canEdit ? '' : ' disabled';
+  var s = 'padding:5px 7px;border:1px solid var(--bdr);border-radius:5px;font-size:12px;';
+  var existingTaskOptions = '';
+  if (linkedProject && linkedProject.tasks) {
+    existingTaskOptions = '<option value="">➕ Task mới</option>' +
+      Object.entries(linkedProject.tasks).filter(function(te){ return te[1].status!=='Hoàn thành'; }).map(function(te){
+        return '<option value="'+te[0]+'" '+(task.linkedTaskKey===te[0]?'selected':'')+'>↻ Tiếp tục: '+esc(te[1].name||'(chưa đặt tên)')+'</option>';
+      }).join('');
+  }
+  return '<div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
+    (linkedProject ? '<select onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'linkedTaskKey\',this.value)" style="margin-bottom:6px;padding:4px 6px;border:1px solid var(--bdr);border-radius:5px;font-size:11.5px;"'+dis+'>'+existingTaskOptions+'</select>' : '') +
+    '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:6px;">' +
+      '<input value="'+esc(task.name||'')+'" placeholder="Tên task..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'name\',this.value)" style="'+s+'"'+dis+'>' +
+      '<select onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'type\',this.value)" style="'+s+'"'+dis+'><option value=""'+(!task.type?' selected':'')+'>— Loại</option><option value="MAIN"'+(task.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(task.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(task.type==='OPER'?' selected':'')+'>OPER</option></select>' +
+      '<select onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'status\',this.value)" style="'+s+'"'+dis+'>'+STATUS_ORDER.map(function(st){ return '<option value="'+st+'" '+(task.status===st?'selected':'')+'>'+st+'</option>'; }).join('')+'</select>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;">' +
+      '<input value="'+esc(task.exec||'')+'" placeholder="Người thực hiện..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'exec\',this.value)" style="'+s+'"'+dis+'>' +
+      '<input value="'+esc(task.dept||'')+'" placeholder="Phòng/BP..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'dept\',this.value)" style="'+s+'"'+dis+'>' +
+      '<input type="date" value="'+(task.start||'')+'" onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'start\',this.value)" style="'+s+'"'+dis+'>' +
+      '<input type="date" value="'+(task.end||'')+'" onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'end\',this.value)" style="'+s+'"'+dis+'>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px;align-items:center;">' +
+      '<input value="'+esc(task.note||'')+'" placeholder="Ghi chú..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'note\',this.value)" style="flex:1;'+s+'"'+dis+'>' +
+      (linkedProject ? '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')">✅ Xác nhận</button>' : '') +
+      '<button class="del-btn" onclick="deleteWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')" title="Xóa">✕</button>' +
+    '</div>' +
+  '</div>';
 }
 
 // ── CRUD Projects ──
@@ -2652,7 +2976,7 @@ function renderCustomTables() {
 
 // ── Tabs ──
 function switchTab(tab) {
-  var tabs=['table','kanban','daily','stats','data','logs','guide'];
+  var tabs=['table','kanban','daily','weekplan','weekreport','stats','data','logs','guide'];
   document.querySelectorAll('.tab').forEach(function(el,i){ el.classList.toggle('active',tabs[i]===tab); });
   tabs.forEach(function(t){ document.getElementById('section-'+t).classList.toggle('active',t===tab); });
   if (tab==='stats') {
@@ -2663,6 +2987,8 @@ function switchTab(tab) {
   if (tab==='kanban') renderKanban();
   if (tab==='logs') renderLogs();
   if (tab==='daily') renderDailyReport();
+  if (tab==='weekplan') renderWeekPlan();
+  if (tab==='weekreport') renderWeekReport();
 }
 
 // ── Export / Print ──
@@ -3115,67 +3441,55 @@ document.addEventListener('keydown', function(e){
   if (msCtx && e.key === 'Escape') closeMsSelector(false);
 });
 
-// ── Popup input nổi — hiển thị toàn bộ nội dung khi click vào ô ──
+// ── Popup input nổi — hiển thị toàn bộ nội dung, CHỈ mở khi bấm nút ⤢ (không tự chiếm focus khi
+// click bình thường vào ô nữa — trước đây cứ bấm vào ô là bị chuyển focus sang popup và con trỏ
+// luôn nhảy về cuối chữ, khiến việc bấm vào giữa nội dung để sửa/xóa bị "văng" ra không sửa được).
+var popup = document.getElementById('inputPopup');
+var popupSrcInput = null; // input gốc trong bảng đang được edit qua popup
+
+function showPopup(el) {
+  if (!el || el.type === 'date') return; // date có UI riêng
+  popupSrcInput = el;
+  popup.value = el.value;
+  popup.placeholder = el.placeholder || '';
+
+  var rect = el.getBoundingClientRect();
+  popup.style.display = 'block';
+  popup.style.minWidth = Math.max(rect.width, 200) + 'px';
+
+  var cv = document.createElement('canvas');
+  var cx = cv.getContext('2d');
+  cx.font = '13px Segoe UI, system-ui, sans-serif';
+  var tw = cx.measureText(popup.value || popup.placeholder || '').width + 40;
+  var finalWidth = Math.min(Math.max(tw, rect.width), 520);
+  popup.style.width = finalWidth + 'px';
+
+  var top = rect.top - 2;
+  var left = rect.left - 2;
+  if (left + finalWidth > window.innerWidth - 10) left = Math.max(10, window.innerWidth - finalWidth - 10);
+  if (top + 40 > window.innerHeight - 10) top = Math.max(10, window.innerHeight - 50);
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+
+  popup.focus();
+  popup.setSelectionRange(popup.value.length, popup.value.length);
+}
+function hidePopupBox(commit) {
+  if (!popupSrcInput) return;
+  if (commit && popup.value !== popupSrcInput.value) {
+    popupSrcInput.value = popup.value;
+    var evt = new Event('change', {bubbles:true});
+    popupSrcInput.dispatchEvent(evt);
+  }
+  popup.style.display = 'none';
+  popupSrcInput = null;
+}
+// Nút ⤢ cạnh ô Mô tả/Link — bấm để mở popup xem/sửa toàn bộ nội dung thoải mái hơn ô nhỏ trong bảng
+function openExpandPopup(btn) {
+  var input = btn.previousElementSibling;
+  if (input && input.tagName === 'INPUT') showPopup(input);
+}
 (function(){
-  var popup = document.getElementById('inputPopup');
-  var srcInput = null; // input gốc trong bảng đang được edit
-
-  function showPopup(el) {
-    if (el.type === 'date') return; // date có UI riêng
-    srcInput = el;
-    popup.value = el.value;
-    popup.placeholder = el.placeholder || '';
-
-    var rect = el.getBoundingClientRect();
-    popup.style.display = 'block';
-    popup.style.minWidth = Math.max(rect.width, 200) + 'px';
-
-    // Đo độ rộng thực của nội dung bằng canvas
-    var cv = document.createElement('canvas');
-    var cx = cv.getContext('2d');
-    cx.font = '13px Segoe UI, system-ui, sans-serif';
-    var tw = cx.measureText(popup.value || popup.placeholder || '').width + 40;
-    var finalWidth = Math.min(Math.max(tw, rect.width), 520);
-    popup.style.width = finalWidth + 'px';
-
-    // Tính vị trí: căn theo ô gốc (position:fixed dùng viewport coords, không cộng scroll),
-    // nhưng ÉP không cho tràn ra ngoài màn hình bên phải/dưới — đây là lỗi khiến các cột nằm
-    // gần mép phải bảng (như Mô tả/Link) hiện nội dung bị che khuất khi popup mở rộng ra khi gõ.
-    var top = rect.top - 2;
-    var left = rect.left - 2;
-    if (left + finalWidth > window.innerWidth - 10) left = Math.max(10, window.innerWidth - finalWidth - 10);
-    if (top + 40 > window.innerHeight - 10) top = Math.max(10, window.innerHeight - 50);
-    popup.style.top = top + 'px';
-    popup.style.left = left + 'px';
-
-    popup.focus();
-    popup.setSelectionRange(popup.value.length, popup.value.length);
-  }
-
-  function hidePopup(commit) {
-    if (!srcInput) return;
-    if (commit && popup.value !== srcInput.value) {
-      srcInput.value = popup.value;
-      // Kích hoạt event onchange để lưu vào Firebase
-      var evt = new Event('change', {bubbles:true});
-      srcInput.dispatchEvent(evt);
-    }
-    popup.style.display = 'none';
-    srcInput = null;
-  }
-
-  // Click vào td input → mở popup
-  document.addEventListener('focusin', function(e) {
-    var el = e.target;
-    if (el === popup) return;
-    if (el.tagName === 'INPUT' && el.closest('td') && el.type !== 'date' &&
-        !el.classList.contains('ms-person') && !el.classList.contains('ms-dept') && !el.classList.contains('ms-pm')) {
-      // delay nhỏ để tránh conflict focus
-      setTimeout(function(){ showPopup(el); }, 0);
-    }
-  });
-
-  // Popup: gõ → cập nhật width, đồng thời kéo lại vị trí nếu việc mở rộng khiến popup tràn mép phải
   popup.addEventListener('input', function() {
     var cv = document.createElement('canvas');
     var cx = cv.getContext('2d');
@@ -3188,26 +3502,15 @@ document.addEventListener('keydown', function(e){
       popup.style.left = Math.max(10, window.innerWidth - newWidth - 10) + 'px';
     }
   });
-
-  // Enter hoặc Tab → commit và đóng
   popup.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === 'Tab') {
-      e.preventDefault();
-      hidePopup(true);
-    }
-    if (e.key === 'Escape') {
-      hidePopup(false);
-    }
+    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); hidePopupBox(true); }
+    if (e.key === 'Escape') { hidePopupBox(false); }
   });
-
-  // Blur popup → commit
   popup.addEventListener('blur', function() {
-    setTimeout(function(){ hidePopup(true); }, 100);
+    setTimeout(function(){ hidePopupBox(true); }, 100);
   });
-
-  // Scroll/resize → đóng popup
-  document.addEventListener('scroll', function(){ hidePopup(true); }, true);
-  window.addEventListener('resize', function(){ hidePopup(true); });
+  document.addEventListener('scroll', function(){ hidePopupBox(true); }, true);
+  window.addEventListener('resize', function(){ hidePopupBox(true); });
 })();
 
 // ── Tự kiểm tra bản mới (version-check) ──────────────────────────────────
@@ -3262,6 +3565,8 @@ setInterval(function(){
     renderDailyReport();
     safeRenderTable();
     renderKanban();
+    renderWeekPlan();
+    renderWeekReport();
     if (document.getElementById('section-stats').classList.contains('active')) renderStats();
   }
 }, 60 * 1000);
