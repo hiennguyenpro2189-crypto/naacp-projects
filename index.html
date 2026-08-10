@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.09-023442">
+<meta name="app-version" content="2026.08.10-042828">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -56,8 +56,6 @@ td{padding:7px 10px;font-size:12px;vertical-align:middle;word-break:break-word;p
 td input,td select{width:100%;border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--txt);padding:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 td input:focus{outline:none;background:#fff;}
 td select:focus{outline:1px solid var(--p600);border-radius:3px;background:#fff;}
-/* Popup input nổi khi focus */
-#inputPopup{display:none;position:fixed;z-index:9999;background:#fff;border:2px solid var(--p600);border-radius:7px;padding:5px 10px;font-size:13px;font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);box-shadow:0 6px 24px rgba(83,74,183,.22);min-width:200px;max-width:520px;white-space:nowrap;}
 .expand-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px;color:var(--muted);}
 .expand-btn:hover{color:var(--p600);}
 .del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;}
@@ -361,16 +359,16 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <table>
       <colgroup>
         <col style="width:36px"><col style="width:26px"><col style="width:170px">
-        <col style="width:170px"><col style="width:70px"><col style="width:110px">
+        <col style="width:170px"><col style="width:88px"><col style="width:110px">
         <col style="width:130px"><col style="width:120px"><col style="width:92px">
-        <col style="width:92px"><col style="width:110px"><col style="width:160px">
-        <col style="width:110px"><col style="width:30px">
+        <col style="width:92px"><col style="width:110px"><col style="width:78px">
+        <col style="width:160px"><col style="width:110px"><col style="width:30px">
       </colgroup>
       <thead><tr>
         <th>STT</th><th></th>
         <th>Gắn vào dự án đã có</th><th>Tên dự án</th><th>Loại</th><th>Quản lý DA</th>
         <th>Người thực hiện</th><th>Phòng/Bộ phận</th><th>Bắt đầu</th><th>Kết thúc DK</th>
-        <th>Trạng thái</th><th>Ghi chú</th><th></th><th></th>
+        <th>Trạng thái</th><th>Tiến độ</th><th>Ghi chú</th><th></th><th></th>
       </tr></thead>
       <tbody id="weekPlanTbody"></tbody>
     </table>
@@ -660,7 +658,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div class="gi"><strong>✅ Chọn từ danh sách (không gõ tay)</strong>Quản lý DA (chọn 1), Người thực hiện &amp; Phòng/Bộ phận (tick chọn nhiều) đều bấm để hiện danh sách thả xuống lấy đúng từ tab Data — tránh gõ sai/thiếu tên.</div>
       <div class="gi"><strong>🙈 Ẩn đã hoàn thành</strong>Cài đặt chung toàn hệ thống (chỉ Admin bật/tắt) — khi bật, mọi người chỉ thấy dự án đang chạy. Chỉ ẩn khi cả dự án lẫn toàn bộ task con đều đã "Hoàn thành".</div>
       <div class="gi"><strong>📐 Cột tự giãn theo nội dung</strong>Các ô Tên, Người thực hiện, Phòng/BP tự nới rộng vừa đủ khi nội dung dài, tránh bị cắt chữ. Để chuột lên ô (không cần bấm) cũng thấy được toàn bộ nội dung qua tooltip.</div>
-      <div class="gi"><strong>⤢ Mở rộng ô Mô tả/Link</strong>Bấm nút ⤢ cạnh ô Mô tả/Link để mở popup lớn hơn khi cần xem/sửa nội dung dài — việc bấm trực tiếp vào ô để định vị con trỏ giữa chữ (sửa/xóa) vẫn hoạt động bình thường như mọi ô khác.</div>
+      <div class="gi"><strong>⤢ Mở rộng ô Mô tả/Link</strong>Bấm nút ⤢ cạnh ô Mô tả/Link để mở <b>hộp thoại lớn dạng khung văn bản</b> — xem hết toàn bộ nội dung dài, xuống dòng thoải mái, <b>cuộn được bằng chuột</b> (không cần dùng phím mũi tên nữa), sửa xong bấm "💾 Lưu" hoặc "Hủy" để đóng. Bấm trực tiếp vào ô nhỏ trong bảng để định vị con trỏ giữa chữ (sửa/xóa nhanh) vẫn hoạt động bình thường như mọi ô khác.</div>
     </div>
 
     <div style="font-size:12px;font-weight:700;color:var(--p800);margin:14px 0 8px;">📊 Thống kê &amp; báo cáo</div>
@@ -668,7 +666,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" hiện thêm số dự án/task mới tạo đúng ngày đó.</div>
       <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tổng hợp task đang chạy trong 1 ngày (mặc định hôm nay, có thể chọn ngày bất kỳ), nhóm theo phòng/bộ phận (chỉ hiện đúng người của phòng đó). Tự cập nhật sang ngày mới nếu đang xem "Hôm nay".</div>
       <div class="gi"><strong>📆 Báo cáo tuần</strong>Giống Báo cáo ngày nhưng gộp cả tuần — mặc định tuần hiện tại, dùng nút ◀ ▶ để xem tuần trước/sau.</div>
-      <div class="gi"><strong>📝 Kế hoạch tuần</strong>Dạng bảng inline giống Danh sách dự án — Quản lý DA/Người thực hiện/Phòng ban chọn qua danh sách thả xuống (bấm để chọn), nút "✅ Xác nhận" và "🗑 Xóa" nằm cuối dòng. Xác nhận khi đã thực sự triển khai → tự động tạo dự án mới, hoặc thêm/cập nhật đúng task vào đúng dự án trong tab Danh sách dự án.</div>
+      <div class="gi"><strong>📝 Kế hoạch tuần</strong>Dạng bảng inline giống Danh sách dự án — Quản lý DA/Người thực hiện/Phòng ban chọn qua danh sách thả xuống (bấm để chọn), có cột <b>Tiến độ</b> riêng cho từng task kế hoạch, nút "✅ Xác nhận" và "🗑 Xóa" nằm cuối dòng. Khi gắn vào dự án đã có, chọn 1 task cũ ở dòng con (thay vì "➕ Task mới") sẽ <b>tự động điền lại toàn bộ thông tin</b> của task đó (Tên, Người TH, Phòng/BP, Loại, ngày, Trạng thái, Tiến độ, Ghi chú) — không cần gõ lại tay. Xác nhận khi đã thực sự triển khai → tự động tạo dự án mới, hoặc thêm/cập nhật đúng task vào đúng dự án trong tab Danh sách dự án.</div>
       <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án).</div>
       <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch</b> sẽ có nhãn "Quá tải".</div>
     </div>
@@ -766,10 +764,22 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
   </div>
 </div>
 
+<!-- EXPAND NOTE/LINK MODAL -->
+<div class="modal-bg" id="expandModal">
+  <div class="modal" style="max-width:600px;width:92%;">
+    <h3>⤢ Mở rộng Mô tả / Link</h3>
+    <div id="expandModalHint" style="display:none;font-size:11px;color:var(--muted);margin:-8px 0 10px;">👀 Bạn chỉ có quyền xem, không sửa được nội dung này.</div>
+    <textarea id="expandTextarea" style="width:100%;min-height:200px;max-height:55vh;padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;"></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-o" onclick="closeExpandModal(false)">Hủy</button>
+      <button class="btn btn-p" onclick="closeExpandModal(true)">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+
 <datalist id="dlPerson"></datalist>
 <datalist id="dlDept"></datalist>
 <div class="toast" id="toast"></div>
-<input id="inputPopup" type="text" autocomplete="off" spellcheck="false">
 <div id="msPopup">
   <div id="msPopupList"></div>
   <div id="msPopupBtns">
@@ -2053,7 +2063,7 @@ function renderWeekPlan() {
   if (countEl) countEl.textContent = plans.length + ' kế hoạch trong tuần';
   tbody.innerHTML = '';
   if (!plans.length) {
-    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:30px;color:var(--muted);">Chưa có kế hoạch nào cho tuần này. Nhấn "+ Thêm kế hoạch" để bắt đầu.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:30px;color:var(--muted);">Chưa có kế hoạch nào cho tuần này. Nhấn "+ Thêm kế hoạch" để bắt đầu.</td></tr>';
     return;
   }
   var canEdit = canStaffOrAdmin();
@@ -2108,6 +2118,7 @@ function renderWeekPlan() {
         ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.status||'')+'</span>'
         : '<select data-wpkey="'+planKey+'" data-f="status" onchange="wpFieldChange(this)"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(plan.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select>')
       +'</td>'+
+      '<td style="text-align:center;font-size:11px;color:var(--muted);" title="Tiến độ dự án tự tính theo trung bình các task bên trong — xem đầy đủ sau khi có task và đã xác nhận">'+(linked?computeProjectProgress(linked)+'%':'—')+'</td>'+
       '<td><input value="'+esc(plan.note||'')+'" data-wpkey="'+planKey+'" data-f="note" onchange="wpFieldChange(this)" placeholder="Ghi chú..." title="'+esc(plan.note||'')+'"'+dis+'></td>'+
       '<td>'+(linked ? '' : '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanProject(\''+planKey+'\')"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅ Xác nhận</button>')+'</td>'+
       '<td><button class="del-btn" onclick="deleteWeekPlan(\''+planKey+'\')" title="Xóa kế hoạch"'+(canEdit?'':' style="opacity:.25;pointer-events:none;"')+'>🗑</button></td>';
@@ -2127,7 +2138,7 @@ function renderWeekPlan() {
         ttr.innerHTML =
           '<td style="text-align:center;color:var(--muted);font-size:10px;">'+(ti+1)+'</td>'+
           '<td></td>'+
-          '<td>'+(linked ? '<select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="linkedTaskKey" onchange="wpTaskFieldChange(this)" style="font-size:10.5px;width:100%;"'+dis+'><option value="">➕ Task mới</option>'+existingTaskOptions+'</select>' : '')+'</td>'+
+          '<td>'+(linked ? '<select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="linkedTaskKey" onchange="wpTaskLinkChange(this)" style="font-size:10.5px;width:100%;"'+dis+'><option value="">➕ Task mới</option>'+existingTaskOptions+'</select>' : '')+'</td>'+
           '<td><div class="task-indent" style="padding-left:8px;"><div class="task-line"></div><input value="'+esc(task.name||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="name" onchange="wpTaskFieldChange(this)" placeholder="Tên task..." title="'+esc(task.name||'')+'" style="flex:1;"'+dis+'></div></td>'+
           '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="type" onchange="wpTaskFieldChange(this)"'+dis+'><option value=""'+(!task.type?' selected':'')+'>—</option><option value="MAIN"'+(task.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(task.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(task.type==='OPER'?' selected':'')+'>OPER</option></select></td>'+
           '<td></td>'+
@@ -2136,6 +2147,7 @@ function renderWeekPlan() {
           '<td><input type="date" value="'+(task.start||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="start" onchange="wpTaskFieldChange(this)"'+dis+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="end" onchange="wpTaskFieldChange(this)"'+dis+'></td>'+
           '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="status" onchange="wpTaskFieldChange(this)"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(task.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></td>'+
+          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="progress" onchange="wpTaskFieldChange(this)"'+dis+'>'+progressOptions(task.progress||'0')+'</select></td>'+
           '<td><input value="'+esc(task.note||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="note" onchange="wpTaskFieldChange(this)" placeholder="Ghi chú..." title="'+esc(task.note||'')+'"'+dis+'></td>'+
           '<td>'+(linked ? '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅</button>' : '')+'</td>'+
           '<td><button class="del-btn" onclick="deleteWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')" title="Xóa task"'+(canEdit?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
@@ -2143,7 +2155,7 @@ function renderWeekPlan() {
       });
       var atr = document.createElement('tr');
       atr.className = 'task-row';
-      atr.innerHTML = '<td></td><td></td><td colspan="12">'+
+      atr.innerHTML = '<td></td><td></td><td colspan="13">'+
         '<div class="task-indent"><div class="task-line"></div>'+
         (canEdit?'<button class="add-task-btn" onclick="addWeekPlanTask(\''+planKey+'\')">+ Thêm task</button>':'')+
         '<span style="font-size:10px;color:var(--muted);">'+tasks.length+' task</span>'+
@@ -2164,6 +2176,36 @@ function wpFieldChange(el) {
 function wpTaskFieldChange(el) {
   if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
   updateWeekPlanTaskField(el.dataset.wpplankey, el.dataset.wptaskkey, el.dataset.f, el.value);
+}
+// Khi chọn 1 task CÓ SẴN trong dự án đã gắn (thay vì "➕ Task mới") — tự động điền toàn bộ
+// thông tin của task cũ đó (Tên, Người TH, Phòng/BP, Loại, ngày, Trạng thái, Tiến độ, Ghi chú)
+// vào dòng kế hoạch, để không phải gõ lại tay từng ô một. Chọn lại "➕ Task mới" thì chỉ gỡ liên
+// kết (linkedTaskKey rỗng), không tự xóa nội dung đang có trong dòng kế hoạch.
+function wpTaskLinkChange(el) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
+  var planKey = el.dataset.wpplankey, taskKey = el.dataset.wptaskkey, linkedTaskKey = el.value;
+  var plan = (weeklyPlansData[weekPlanWeekKey]||{})[planKey];
+  if (!plan || !plan.linkedProjectKey || !projects[plan.linkedProjectKey]) return;
+  var patch = {linkedTaskKey: linkedTaskKey};
+  if (linkedTaskKey) {
+    var srcTasks = projects[plan.linkedProjectKey].tasks || {};
+    var srcTask = srcTasks[linkedTaskKey];
+    if (srcTask) {
+      patch.name = srcTask.name || '';
+      patch.exec = srcTask.exec || '';
+      patch.dept = srcTask.dept || '';
+      patch.type = srcTask.type || '';
+      patch.start = srcTask.start || '';
+      patch.end = srcTask.end || '';
+      patch.status = srcTask.status || 'Chờ xử lý';
+      patch.progress = srcTask.progress || '0';
+      patch.note = srcTask.note || '';
+    }
+  }
+  fbPatch('/weeklyPlans/'+weekPlanWeekKey+'/'+planKey+'/tasks/'+taskKey, patch, function(err){
+    if (err) { showToast('⚠️ Lỗi khi tự điền dữ liệu task.'); return; }
+    if (linkedTaskKey) showToast('✅ Đã tự điền dữ liệu từ task cũ.');
+  });
 }
 
 // ── CRUD Projects ──
@@ -3487,81 +3529,31 @@ document.addEventListener('keydown', function(e){
   if (msCtx && e.key === 'Escape') closeMsSelector(false);
 });
 
-// ── Popup input nổi — hiển thị toàn bộ nội dung, CHỈ mở khi bấm nút ⤢ (không tự chiếm focus khi
-// click bình thường vào ô nữa — trước đây cứ bấm vào ô là bị chuyển focus sang popup và con trỏ
-// luôn nhảy về cuối chữ, khiến việc bấm vào giữa nội dung để sửa/xóa bị "văng" ra không sửa được).
-var popup = document.getElementById('inputPopup');
-var popupSrcInput = null; // input gốc trong bảng đang được edit qua popup
-
-var popupBlurTimer = null;
-function showPopup(el) {
-  if (!el || el.type === 'date') return; // date có UI riêng
-  // Huỷ bộ đếm giờ đóng popup còn sót lại từ lần mở trước (nếu có) — đây chính là nguyên nhân
-  // khiến bấm nút ⤢ ở 1 dòng khác trong lúc popup dòng trước còn mở bị "mở rồi tự đóng ngay sau đó".
-  if (popupBlurTimer) { clearTimeout(popupBlurTimer); popupBlurTimer = null; }
-  popupSrcInput = el;
-  popup.value = el.value;
-  popup.placeholder = el.placeholder || '';
-
-  var rect = el.getBoundingClientRect();
-  popup.style.display = 'block';
-  popup.style.minWidth = Math.max(rect.width, 200) + 'px';
-
-  var cv = document.createElement('canvas');
-  var cx = cv.getContext('2d');
-  cx.font = '13px Segoe UI, system-ui, sans-serif';
-  var tw = cx.measureText(popup.value || popup.placeholder || '').width + 40;
-  var finalWidth = Math.min(Math.max(tw, rect.width), 520);
-  popup.style.width = finalWidth + 'px';
-
-  var top = rect.top - 2;
-  var left = rect.left - 2;
-  if (left + finalWidth > window.innerWidth - 10) left = Math.max(10, window.innerWidth - finalWidth - 10);
-  if (top + 40 > window.innerHeight - 10) top = Math.max(10, window.innerHeight - 50);
-  popup.style.top = top + 'px';
-  popup.style.left = left + 'px';
-
-  popup.focus();
-  popup.setSelectionRange(popup.value.length, popup.value.length);
-}
-function hidePopupBox(commit) {
-  if (!popupSrcInput) return;
-  if (commit && popup.value !== popupSrcInput.value) {
-    popupSrcInput.value = popup.value;
-    var evt = new Event('change', {bubbles:true});
-    popupSrcInput.dispatchEvent(evt);
-  }
-  popup.style.display = 'none';
-  popupSrcInput = null;
-}
-// Nút ⤢ cạnh ô Mô tả/Link — bấm để mở popup xem/sửa toàn bộ nội dung thoải mái hơn ô nhỏ trong bảng
+// ── Modal mở rộng nội dung (Mô tả/Link) — thay cho popup input 1 dòng trước đây (chỉ cuộn được
+// bằng phím mũi tên, không cuộn được bằng chuột). Giờ dùng <textarea> trong modal chuẩn: cuộn
+// chuột bình thường, xuống dòng thoải mái, thấy hết toàn bộ nội dung dài, có nút Lưu/Hủy rõ ràng.
+var expandModalSrcInput = null; // input gốc trong bảng đang được sửa qua modal
 function openExpandPopup(btn) {
   var input = btn.previousElementSibling;
-  if (input && input.tagName === 'INPUT') showPopup(input);
+  if (!input || input.tagName !== 'INPUT') return;
+  expandModalSrcInput = input;
+  var ta = document.getElementById('expandTextarea');
+  ta.value = input.value;
+  ta.disabled = !!input.disabled;
+  var hint = document.getElementById('expandModalHint');
+  if (hint) hint.style.display = input.disabled ? '' : 'none';
+  openModal('expandModal');
+  setTimeout(function(){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 60);
 }
-(function(){
-  popup.addEventListener('input', function() {
-    var cv = document.createElement('canvas');
-    var cx = cv.getContext('2d');
-    cx.font = '13px Segoe UI, system-ui, sans-serif';
-    var tw = cx.measureText(popup.value).width + 40;
-    var newWidth = Math.min(Math.max(tw, parseInt(popup.style.minWidth)||200), 520);
-    popup.style.width = newWidth + 'px';
-    var curLeft = parseInt(popup.style.left)||0;
-    if (curLeft + newWidth > window.innerWidth - 10) {
-      popup.style.left = Math.max(10, window.innerWidth - newWidth - 10) + 'px';
-    }
-  });
-  popup.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); hidePopupBox(true); }
-    if (e.key === 'Escape') { hidePopupBox(false); }
-  });
-  popup.addEventListener('blur', function() {
-    popupBlurTimer = setTimeout(function(){ popupBlurTimer = null; hidePopupBox(true); }, 100);
-  });
-  document.addEventListener('scroll', function(){ hidePopupBox(true); }, true);
-  window.addEventListener('resize', function(){ hidePopupBox(true); });
-})();
+function closeExpandModal(commit) {
+  var ta = document.getElementById('expandTextarea');
+  if (commit && expandModalSrcInput && !expandModalSrcInput.disabled && ta.value !== expandModalSrcInput.value) {
+    expandModalSrcInput.value = ta.value;
+    expandModalSrcInput.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  closeModal('expandModal');
+  expandModalSrcInput = null;
+}
 
 // ── Tự kiểm tra bản mới (version-check) ──────────────────────────────────
 // Vì trình duyệt/điện thoại hay cache lại file HTML này, ta chủ động fetch lại
