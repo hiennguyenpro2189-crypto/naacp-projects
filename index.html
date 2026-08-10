@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.09-090507">
+<meta name="app-version" content="2026.08.09-023442">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -355,8 +355,26 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     </div>
     <button class="btn btn-p" onclick="openAddWeekPlan()">+ Thêm kế hoạch</button>
   </div>
-  <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">📝 Điền kế hoạch việc dự kiến trong tuần — chọn "➕ Dự án mới" để lập kế hoạch cho 1 dự án chưa từng có, hoặc chọn 1 dự án đã có sẵn để lập kế hoạch task cho dự án đó. Bấm "✅ Xác nhận" khi việc đã thực sự triển khai để tự động đưa vào tab 📊 Danh sách dự án.</div>
-  <div id="weekPlanWrap"></div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📝 Cột "Gắn vào dự án đã có" — để trống (➕ Dự án mới) để lập kế hoạch dự án chưa từng có, hoặc chọn 1 dự án có sẵn để chỉ lập kế hoạch task cho dự án đó. Bấm ▶ để mở rộng thêm/sửa task kế hoạch bên trong. Bấm "✅ Xác nhận" khi việc đã thực sự triển khai để tự động đưa vào tab 📊 Danh sách dự án.</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="weekPlanCount"></div>
+  <div class="tbl-wrap">
+    <table>
+      <colgroup>
+        <col style="width:36px"><col style="width:26px"><col style="width:170px">
+        <col style="width:170px"><col style="width:70px"><col style="width:110px">
+        <col style="width:130px"><col style="width:120px"><col style="width:92px">
+        <col style="width:92px"><col style="width:110px"><col style="width:160px">
+        <col style="width:110px"><col style="width:30px">
+      </colgroup>
+      <thead><tr>
+        <th>STT</th><th></th>
+        <th>Gắn vào dự án đã có</th><th>Tên dự án</th><th>Loại</th><th>Quản lý DA</th>
+        <th>Người thực hiện</th><th>Phòng/Bộ phận</th><th>Bắt đầu</th><th>Kết thúc DK</th>
+        <th>Trạng thái</th><th>Ghi chú</th><th></th><th></th>
+      </tr></thead>
+      <tbody id="weekPlanTbody"></tbody>
+    </table>
+  </div>
 </div>
 
 <div id="section-weekreport" class="section">
@@ -507,7 +525,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📊 Danh sách dự án</b><br>Xem, thêm, sửa, xóa dự án. Mỗi dự án có thể mở rộng (▶) để xem/quản lý các task bên trong. Admin có thể bật "🙈 Ẩn đã hoàn thành" (áp dụng cho tất cả mọi người) để giao diện chỉ còn hiện việc đang chạy. Có sẵn 1 dự án cố định 📌 "Việc không thuộc dự án" — không xóa được, luôn ghim đầu bảng, dùng để chứa các task lẻ/việc vặt.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗂 Kanban</b><br>Xem dự án dạng thẻ theo 4 cột trạng thái, kéo-thả thẻ để đổi trạng thái nhanh — tiện khi họp giao ban.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📅 Báo cáo ngày</b><br>Liệt kê mọi task đang chạy trong 1 ngày (mặc định hôm nay, có thể chọn ngày bất kỳ), nhóm theo phòng/bộ phận, kèm Loại/Người thực hiện/Tiến độ. Tự cập nhật khi sang ngày mới nếu đang xem "Hôm nay".</div>
-      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📝 Kế hoạch tuần</b><br>Nhân sự điền kế hoạch việc dự kiến trong tuần (dự án mới, hoặc task cho dự án đã có). Bấm "✅ Xác nhận" khi việc đã thực sự triển khai để tự động đưa vào tab Danh sách dự án.</div>
+      <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📝 Kế hoạch tuần</b><br>Trình bày dạng bảng như tab Danh sách dự án — điền kế hoạch (dự án mới, hoặc task cho dự án đã có), chọn Quản lý DA/Người thực hiện/Phòng ban qua danh sách thả xuống. Bấm "✅ Xác nhận" (cuối dòng) khi việc đã thực sự triển khai để tự động đưa vào tab Danh sách dự án.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📆 Báo cáo tuần</b><br>Giống Báo cáo ngày nhưng tổng hợp theo cả tuần — mặc định tuần hiện tại, có thể xem tuần trước/sau bằng nút ◀ ▶.</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>📈 Thống kê</b><br>Biểu đồ và số liệu tổng quan, tự cập nhật theo bộ lọc đang chọn ở tab Danh sách và theo khoảng thời gian đang chọn (Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày).</div>
       <div style="background:var(--bg);border-radius:8px;padding:11px 13px;"><b>🗃 Data</b><br>Quản lý danh sách Nhân sự và Phòng/Bộ phận — dùng làm gợi ý khi điền form. Admin có thể tự thêm trường thông tin tùy chỉnh, hoặc tự tạo hẳn 1 bảng dữ liệu tùy chỉnh mới (VD: Thiết bị, Tài sản...).</div>
@@ -650,7 +668,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
       <div class="gi"><strong>📅 Thống kê theo khoảng thời gian</strong>Bộ chọn Tháng này/Tháng trước/Quý này/Theo 1 ngày cụ thể/Tùy chọn khoảng ngày. Chọn "1 ngày cụ thể" hiện thêm số dự án/task mới tạo đúng ngày đó.</div>
       <div class="gi"><strong>📅 Báo cáo ngày</strong>Tab riêng tổng hợp task đang chạy trong 1 ngày (mặc định hôm nay, có thể chọn ngày bất kỳ), nhóm theo phòng/bộ phận (chỉ hiện đúng người của phòng đó). Tự cập nhật sang ngày mới nếu đang xem "Hôm nay".</div>
       <div class="gi"><strong>📆 Báo cáo tuần</strong>Giống Báo cáo ngày nhưng gộp cả tuần — mặc định tuần hiện tại, dùng nút ◀ ▶ để xem tuần trước/sau.</div>
-      <div class="gi"><strong>📝 Kế hoạch tuần</strong>Nhân sự điền kế hoạch việc dự kiến (dự án mới hoặc task cho dự án đã có). Bấm "✅ Xác nhận" khi đã thực sự triển khai → tự động tạo dự án mới, hoặc thêm/cập nhật đúng task vào đúng dự án trong tab Danh sách dự án.</div>
+      <div class="gi"><strong>📝 Kế hoạch tuần</strong>Dạng bảng inline giống Danh sách dự án — Quản lý DA/Người thực hiện/Phòng ban chọn qua danh sách thả xuống (bấm để chọn), nút "✅ Xác nhận" và "🗑 Xóa" nằm cuối dòng. Xác nhận khi đã thực sự triển khai → tự động tạo dự án mới, hoặc thêm/cập nhật đúng task vào đúng dự án trong tab Danh sách dự án.</div>
       <div class="gi"><strong>🏷️ Task cũng chọn Loại</strong>Mỗi task tự chọn Loại MAIN/SUPP/OPER riêng (để trống thì hiểu theo Loại của dự án).</div>
       <div class="gi"><strong>⚠️ Cảnh báo quá tải</strong>Trong tab Thống kê, nếu 1 người (vai trò <b>Người thực hiện</b>, không tính Quản lý DA) có <b>hơn 3 dự án "Đang thực hiện" trùng lịch</b> sẽ có nhãn "Quá tải".</div>
     </div>
@@ -1616,17 +1634,18 @@ function measureTextPx(text, font) {
   cx.font = font || '12px Segoe UI, system-ui, sans-serif';
   return cx.measureText(text||'').width;
 }
-function autoSizeAllCells() {
+function autoSizeAllCells(rootSel) {
+  var root = rootSel || '#tbody';
   var font = '12px Segoe UI, system-ui, sans-serif';
-  document.querySelectorAll('#tbody input[data-f="name"], #tbody input.ms-pm, #tbody input.ms-person').forEach(function(el){
+  document.querySelectorAll(root+' input[data-f="name"], '+root+' input.ms-pm, '+root+' input.ms-person, '+root+' input.ms-dept').forEach(function(el){
     var w = measureTextPx(el.value, font) + 22;
     el.style.minWidth = Math.max(Math.min(w, 300), 90) + 'px';
   });
-  document.querySelectorAll('#tbody input[data-f="note"]').forEach(function(el){
+  document.querySelectorAll(root+' input[data-f="note"]').forEach(function(el){
     var w = measureTextPx(el.value, font) + 22;
     el.style.minWidth = Math.max(Math.min(w, 380), 100) + 'px';
   });
-  document.querySelectorAll('#tbody .ms-dept-rich').forEach(function(el){
+  document.querySelectorAll(root+' .ms-dept-rich').forEach(function(el){
     var w = measureTextPx(el.textContent, font) + 22;
     el.style.minWidth = Math.max(Math.min(w, 300), 90) + 'px';
   });
@@ -1899,6 +1918,11 @@ function renderWeekReport() {
 
 // ── 2. Kế hoạch tuần — nhân sự điền kế hoạch nháp; bấm "Xác nhận" để tự động đưa vào Danh sách dự án ──
 var weekPlanWeekKey = getISOWeekKey(new Date());
+var weekPlanExpanded = {};
+function toggleWeekPlanExpand(planKey) {
+  weekPlanExpanded[planKey] = !weekPlanExpanded[planKey];
+  renderWeekPlan();
+}
 function shiftWeekPlanWeek(delta) {
   weekPlanWeekKey = shiftWeekKey(weekPlanWeekKey, delta);
   renderWeekPlan();
@@ -2016,108 +2040,130 @@ function confirmWeekPlanTask(planKey, taskKey) {
 }
 
 function renderWeekPlan() {
-  var wrap = document.getElementById('weekPlanWrap');
+  var tbody = document.getElementById('weekPlanTbody');
   var lbl = document.getElementById('weekPlanLabel');
-  if (!wrap) return;
+  if (!tbody) return;
   var r = weekKeyRange(weekPlanWeekKey);
   var isThisWeek = weekPlanWeekKey === getISOWeekKey(new Date());
   var wp = weekPlanWeekKey.split('-W');
   if (lbl) lbl.textContent = '📝 Kế hoạch tuần ' + wp[1] + '/' + wp[0] + ' (' + r.label + ')' + (isThisWeek ? ' — tuần này' : '');
 
   var plans = Object.entries(weeklyPlansData[weekPlanWeekKey] || {});
+  var countEl = document.getElementById('weekPlanCount');
+  if (countEl) countEl.textContent = plans.length + ' kế hoạch trong tuần';
+  tbody.innerHTML = '';
   if (!plans.length) {
-    wrap.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:24px 0;text-align:center;">Chưa có kế hoạch nào cho tuần này. Bấm "+ Thêm kế hoạch" để bắt đầu.</p>';
+    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:30px;color:var(--muted);">Chưa có kế hoạch nào cho tuần này. Nhấn "+ Thêm kế hoạch" để bắt đầu.</td></tr>';
     return;
   }
-  wrap.innerHTML = plans.map(function(e){ return renderWeekPlanCard(e[0], e[1]); }).join('');
-}
-
-function renderWeekPlanCard(planKey, plan) {
-  var linked = plan.linkedProjectKey && projects[plan.linkedProjectKey] ? projects[plan.linkedProjectKey] : null;
-  var tasks = plan.tasks ? Object.entries(plan.tasks) : [];
   var canEdit = canStaffOrAdmin();
   var dis = canEdit ? '' : ' disabled';
-  var inpStyle = 'width:100%;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12.5px;';
 
-  var projectOptions = '<option value="">➕ Dự án mới</option>' +
-    Object.entries(projects).filter(function(e){ return !e[1].protected; }).sort(function(a,b){ return (b[1].createdAt||0)-(a[1].createdAt||0); }).map(function(e){
-      return '<option value="'+e[0]+'" '+(plan.linkedProjectKey===e[0]?'selected':'')+'>'+esc(e[1].id)+' — '+esc(e[1].name)+'</option>';
-    }).join('');
+  plans.forEach(function(e, i){
+    var planKey = e[0], plan = e[1];
+    var linked = plan.linkedProjectKey && projects[plan.linkedProjectKey] ? projects[plan.linkedProjectKey] : null;
+    var isExp = weekPlanExpanded[planKey];
+    var tasks = plan.tasks ? Object.entries(plan.tasks) : [];
 
-  var topFieldsHtml = linked ?
-    '<div style="font-size:12.5px;color:var(--muted);padding:6px 0 4px;">📌 Đang lập kế hoạch task cho dự án có sẵn: <b style="color:var(--p800);">'+esc(linked.id)+' — '+esc(linked.name)+'</b></div>'
-    :
-    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px;">' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Tên dự án</label><input value="'+esc(plan.name||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'name\',this.value)" placeholder="Tên dự án mới..." style="'+inpStyle+'"'+dis+'></div>' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Loại</label><select onchange="updateWeekPlanField(\''+planKey+'\',\'type\',this.value)" style="'+inpStyle+'"'+dis+'>' +
-        '<option value=""'+(!plan.type?' selected':'')+'>—</option><option value="MAIN"'+(plan.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(plan.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(plan.type==='OPER'?' selected':'')+'>OPER</option>' +
-      '</select></div>' +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Quản lý DA</label><input value="'+esc(plan.pm||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'pm\',this.value)" placeholder="..." style="'+inpStyle+'"'+dis+'></div>' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Người thực hiện</label><input value="'+esc(plan.exec||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'exec\',this.value)" placeholder="..." style="'+inpStyle+'"'+dis+'></div>' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Phòng/BP</label><input value="'+esc(plan.dept||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'dept\',this.value)" placeholder="..." style="'+inpStyle+'"'+dis+'></div>' +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Bắt đầu</label><input type="date" value="'+(plan.start||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'start\',this.value)" style="'+inpStyle+'"'+dis+'></div>' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Kết thúc DK</label><input type="date" value="'+(plan.end||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'end\',this.value)" style="'+inpStyle+'"'+dis+'></div>' +
-      '<div><label style="font-size:10.5px;color:var(--muted);">Trạng thái</label><select onchange="updateWeekPlanField(\''+planKey+'\',\'status\',this.value)" style="'+inpStyle+'"'+dis+'>' +
-        STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(plan.status===s?'selected':'')+'>'+s+'</option>'; }).join('') +
-      '</select></div>' +
-    '</div>' +
-    '<div style="margin-bottom:6px;"><label style="font-size:10.5px;color:var(--muted);">Ghi chú</label><input value="'+esc(plan.note||'')+'" onchange="updateWeekPlanField(\''+planKey+'\',\'note\',this.value)" placeholder="Ghi chú..." style="'+inpStyle+'"'+dis+'></div>';
-
-  var tasksHtml = tasks.map(function(te){ return renderWeekPlanTaskRow(planKey, te[0], te[1], linked); }).join('');
-
-  return '<div style="background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:14px 16px;margin-bottom:14px;">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap;">' +
-      '<select onchange="updateWeekPlanLink(\''+planKey+'\',this.value)" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;max-width:340px;"'+dis+'>'+projectOptions+'</select>' +
-      '<div style="display:flex;gap:6px;">' +
-        (linked ? '' : '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanProject(\''+planKey+'\')">✅ Xác nhận tạo dự án</button>') +
-        '<button class="del-btn" onclick="deleteWeekPlan(\''+planKey+'\')" title="Xóa kế hoạch">🗑</button>' +
-      '</div>' +
-    '</div>' +
-    topFieldsHtml +
-    '<div style="border-top:1px dashed var(--bdr);margin-top:6px;padding-top:10px;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-        '<b style="font-size:12px;color:var(--muted);">✅ Task kế hoạch ('+tasks.length+')</b>' +
-        '<button class="add-task-btn" onclick="addWeekPlanTask(\''+planKey+'\')">+ Thêm task</button>' +
-      '</div>' +
-      (tasksHtml || '<p style="font-size:11.5px;color:var(--muted);">Chưa có task nào.</p>') +
-    '</div>' +
-  '</div>';
-}
-
-function renderWeekPlanTaskRow(planKey, taskKey, task, linkedProject) {
-  var canEdit = canStaffOrAdmin();
-  var dis = canEdit ? '' : ' disabled';
-  var s = 'padding:5px 7px;border:1px solid var(--bdr);border-radius:5px;font-size:12px;';
-  var existingTaskOptions = '';
-  if (linkedProject && linkedProject.tasks) {
-    existingTaskOptions = '<option value="">➕ Task mới</option>' +
-      Object.entries(linkedProject.tasks).filter(function(te){ return te[1].status!=='Hoàn thành'; }).map(function(te){
-        return '<option value="'+te[0]+'" '+(task.linkedTaskKey===te[0]?'selected':'')+'>↻ Tiếp tục: '+esc(te[1].name||'(chưa đặt tên)')+'</option>';
+    var projectOptions = '<option value="">➕ Dự án mới</option>' +
+      Object.entries(projects).filter(function(pe){ return !pe[1].protected; }).sort(function(a,b){ return (b[1].createdAt||0)-(a[1].createdAt||0); }).map(function(pe){
+        return '<option value="'+pe[0]+'" '+(plan.linkedProjectKey===pe[0]?'selected':'')+'>'+esc(pe[1].id)+' — '+esc(pe[1].name)+'</option>';
       }).join('');
-  }
-  return '<div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
-    (linkedProject ? '<select onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'linkedTaskKey\',this.value)" style="margin-bottom:6px;padding:4px 6px;border:1px solid var(--bdr);border-radius:5px;font-size:11.5px;"'+dis+'>'+existingTaskOptions+'</select>' : '') +
-    '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:6px;">' +
-      '<input value="'+esc(task.name||'')+'" placeholder="Tên task..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'name\',this.value)" style="'+s+'"'+dis+'>' +
-      '<select onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'type\',this.value)" style="'+s+'"'+dis+'><option value=""'+(!task.type?' selected':'')+'>— Loại</option><option value="MAIN"'+(task.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(task.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(task.type==='OPER'?' selected':'')+'>OPER</option></select>' +
-      '<select onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'status\',this.value)" style="'+s+'"'+dis+'>'+STATUS_ORDER.map(function(st){ return '<option value="'+st+'" '+(task.status===st?'selected':'')+'>'+st+'</option>'; }).join('')+'</select>' +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;">' +
-      '<input value="'+esc(task.exec||'')+'" placeholder="Người thực hiện..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'exec\',this.value)" style="'+s+'"'+dis+'>' +
-      '<input value="'+esc(task.dept||'')+'" placeholder="Phòng/BP..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'dept\',this.value)" style="'+s+'"'+dis+'>' +
-      '<input type="date" value="'+(task.start||'')+'" onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'start\',this.value)" style="'+s+'"'+dis+'>' +
-      '<input type="date" value="'+(task.end||'')+'" onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'end\',this.value)" style="'+s+'"'+dis+'>' +
-    '</div>' +
-    '<div style="display:flex;gap:6px;align-items:center;">' +
-      '<input value="'+esc(task.note||'')+'" placeholder="Ghi chú..." onchange="updateWeekPlanTaskField(\''+planKey+'\',\''+taskKey+'\',\'note\',this.value)" style="flex:1;'+s+'"'+dis+'>' +
-      (linkedProject ? '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')">✅ Xác nhận</button>' : '') +
-      '<button class="del-btn" onclick="deleteWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')" title="Xóa">✕</button>' +
-    '</div>' +
-  '</div>';
+
+    var tr = document.createElement('tr');
+    tr.className = 'proj-row' + (linked ? ' row-inprogress' : '');
+    tr.innerHTML =
+      '<td style="text-align:center;color:var(--muted);font-size:11px;">'+(i+1)+'</td>'+
+      '<td style="text-align:center;"><button class="expand-btn" onclick="toggleWeekPlanExpand(\''+planKey+'\')">'+(isExp?'▼':'▶')+'</button></td>'+
+      '<td><select onchange="updateWeekPlanLink(\''+planKey+'\',this.value)" style="font-size:11px;width:100%;"'+dis+'>'+projectOptions+'</select></td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11.5px;color:var(--p800);font-weight:600;" title="'+esc(linked.id)+' — '+esc(linked.name)+'">📌 '+esc(linked.name)+'</span>'
+        : '<input value="'+esc(plan.name||'')+'" data-wpkey="'+planKey+'" data-f="name" onchange="wpFieldChange(this)" placeholder="Tên dự án mới..." title="'+esc(plan.name||'')+'"'+dis+'>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+(linked.type||'—')+'</span>'
+        : '<select data-wpkey="'+planKey+'" data-f="type" onchange="wpFieldChange(this)"'+dis+'><option value=""'+(!plan.type?' selected':'')+'>—</option><option value="MAIN"'+(plan.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(plan.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(plan.type==='OPER'?' selected':'')+'>OPER</option></select>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.pm||'')+'</span>'
+        : '<input value="'+esc(plan.pm||'')+'" data-wpkey="'+planKey+'" data-f="pm" class="ms-pm" readonly title="'+(plan.pm?esc(plan.pm)+' — ':'')+'Bấm để chọn Quản lý dự án" onchange="wpFieldChange(this)"'+dis+'>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.exec||'')+'</span>'
+        : '<input value="'+esc(plan.exec||'')+'" data-wpkey="'+planKey+'" data-f="exec" class="ms-person" readonly title="'+(plan.exec?esc(plan.exec)+' — ':'')+'Bấm để chọn nhiều người thực hiện" onchange="wpFieldChange(this)"'+dis+'>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.dept||'')+'</span>'
+        : '<input value="'+esc(plan.dept||'')+'" data-wpkey="'+planKey+'" data-f="dept" class="ms-dept" readonly title="'+(plan.dept?esc(plan.dept)+' — ':'')+'Bấm để chọn nhiều phòng/bộ phận" onchange="wpFieldChange(this)"'+dis+'>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+fmtDate(linked.start)+'</span>'
+        : '<input type="date" value="'+(plan.start||'')+'" data-wpkey="'+planKey+'" data-f="start" onchange="wpFieldChange(this)"'+dis+'>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+fmtDate(linked.end)+'</span>'
+        : '<input type="date" value="'+(plan.end||'')+'" data-wpkey="'+planKey+'" data-f="end" onchange="wpFieldChange(this)"'+dis+'>')
+      +'</td>'+
+      '<td>'+(linked
+        ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.status||'')+'</span>'
+        : '<select data-wpkey="'+planKey+'" data-f="status" onchange="wpFieldChange(this)"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(plan.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select>')
+      +'</td>'+
+      '<td><input value="'+esc(plan.note||'')+'" data-wpkey="'+planKey+'" data-f="note" onchange="wpFieldChange(this)" placeholder="Ghi chú..." title="'+esc(plan.note||'')+'"'+dis+'></td>'+
+      '<td>'+(linked ? '' : '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanProject(\''+planKey+'\')"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅ Xác nhận</button>')+'</td>'+
+      '<td><button class="del-btn" onclick="deleteWeekPlan(\''+planKey+'\')" title="Xóa kế hoạch"'+(canEdit?'':' style="opacity:.25;pointer-events:none;"')+'>🗑</button></td>';
+    tbody.appendChild(tr);
+
+    if (isExp) {
+      tasks.forEach(function(te, ti){
+        var taskKey = te[0], task = te[1];
+        var existingTaskOptions = '';
+        if (linked && linked.tasks) {
+          existingTaskOptions = Object.entries(linked.tasks).filter(function(lte){ return lte[1].status!=='Hoàn thành'; }).map(function(lte){
+            return '<option value="'+lte[0]+'" '+(task.linkedTaskKey===lte[0]?'selected':'')+'>↻ '+esc(lte[1].name||'(chưa đặt tên)')+'</option>';
+          }).join('');
+        }
+        var ttr = document.createElement('tr');
+        ttr.className = 'task-row';
+        ttr.innerHTML =
+          '<td style="text-align:center;color:var(--muted);font-size:10px;">'+(ti+1)+'</td>'+
+          '<td></td>'+
+          '<td>'+(linked ? '<select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="linkedTaskKey" onchange="wpTaskFieldChange(this)" style="font-size:10.5px;width:100%;"'+dis+'><option value="">➕ Task mới</option>'+existingTaskOptions+'</select>' : '')+'</td>'+
+          '<td><div class="task-indent" style="padding-left:8px;"><div class="task-line"></div><input value="'+esc(task.name||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="name" onchange="wpTaskFieldChange(this)" placeholder="Tên task..." title="'+esc(task.name||'')+'" style="flex:1;"'+dis+'></div></td>'+
+          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="type" onchange="wpTaskFieldChange(this)"'+dis+'><option value=""'+(!task.type?' selected':'')+'>—</option><option value="MAIN"'+(task.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(task.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(task.type==='OPER'?' selected':'')+'>OPER</option></select></td>'+
+          '<td></td>'+
+          '<td><input value="'+esc(task.exec||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="exec" class="ms-person" readonly title="'+(task.exec?esc(task.exec)+' — ':'')+'Bấm để chọn nhiều người thực hiện" onchange="wpTaskFieldChange(this)" placeholder="▾ Người thực hiện..."'+dis+'></td>'+
+          '<td><input value="'+esc(task.dept||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="dept" class="ms-dept" readonly title="'+(task.dept?esc(task.dept)+' — ':'')+'Bấm để chọn nhiều phòng/bộ phận" onchange="wpTaskFieldChange(this)" placeholder="▾ Phòng/bộ phận..."'+dis+'></td>'+
+          '<td><input type="date" value="'+(task.start||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="start" onchange="wpTaskFieldChange(this)"'+dis+'></td>'+
+          '<td><input type="date" value="'+(task.end||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="end" onchange="wpTaskFieldChange(this)"'+dis+'></td>'+
+          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="status" onchange="wpTaskFieldChange(this)"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(task.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></td>'+
+          '<td><input value="'+esc(task.note||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="note" onchange="wpTaskFieldChange(this)" placeholder="Ghi chú..." title="'+esc(task.note||'')+'"'+dis+'></td>'+
+          '<td>'+(linked ? '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅</button>' : '')+'</td>'+
+          '<td><button class="del-btn" onclick="deleteWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')" title="Xóa task"'+(canEdit?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
+        tbody.appendChild(ttr);
+      });
+      var atr = document.createElement('tr');
+      atr.className = 'task-row';
+      atr.innerHTML = '<td></td><td></td><td colspan="12">'+
+        '<div class="task-indent"><div class="task-line"></div>'+
+        (canEdit?'<button class="add-task-btn" onclick="addWeekPlanTask(\''+planKey+'\')">+ Thêm task</button>':'')+
+        '<span style="font-size:10px;color:var(--muted);">'+tasks.length+' task</span>'+
+        '</div></td>';
+      tbody.appendChild(atr);
+    }
+  });
+  autoSizeAllCells('#weekPlanTbody');
+}
+
+// Hàm trung gian đọc data-attribute rồi gọi đúng hàm cập nhật — dùng chung cho cả input thường
+// lẫn input ms-pm/ms-person/ms-dept (cơ chế chọn danh sách thả xuống có sẵn, dispatch event 'change'
+// vào đúng input này sau khi người dùng tick chọn xong trong popup).
+function wpFieldChange(el) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
+  updateWeekPlanField(el.dataset.wpkey, el.dataset.f, el.value);
+}
+function wpTaskFieldChange(el) {
+  if (!canStaffOrAdmin()) { showToast('⛔ Không có quyền sửa.'); return; }
+  updateWeekPlanTaskField(el.dataset.wpplankey, el.dataset.wptaskkey, el.dataset.f, el.value);
 }
 
 // ── CRUD Projects ──
