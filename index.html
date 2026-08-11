@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- APP_VERSION: dùng để tự kiểm tra bản mới — mỗi lần export bản mới, đổi chuỗi này -->
-<meta name="app-version" content="2026.08.10-042828">
+<meta name="app-version" content="2026.08.10-082553">
 <title>Quản Lý Dự Án và Task – NAACP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -39,7 +39,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .ctrl{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
 .search{flex:1;min-width:180px;max-width:300px;padding:7px 11px;border:1px solid var(--bdr);border-radius:7px;font-size:13px;}
 .fsel{padding:7px 11px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;background:var(--sur);cursor:pointer;}
-.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:.15s;}
+.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:.15s;white-space:nowrap;}
 .btn-p{background:var(--p600);color:#fff;}.btn-p:hover{background:var(--p800);}
 .btn-t{background:var(--t600);color:#fff;}.btn-t:hover{background:var(--t800);}
 .btn-o{background:var(--sur);color:var(--txt);border:1px solid var(--bdr);}.btn-o:hover{background:var(--s50);}
@@ -302,7 +302,7 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <table>
       <colgroup>
         <col style="width:36px"><col style="width:26px"><col style="width:145px">
-        <col style="width:180px"><col style="width:230px"><col style="width:62px">
+        <col style="width:180px"><col style="width:230px"><col style="width:90px">
         <col style="width:120px"><col style="width:130px"><col style="width:110px">
         <col style="width:92px"><col style="width:92px"><col style="width:110px"><col style="width:90px"><col style="width:180px"><col style="width:30px">
       </colgroup>
@@ -359,10 +359,10 @@ input.ms-person:disabled,input.ms-dept:disabled,input.ms-pm:disabled{background-
     <table>
       <colgroup>
         <col style="width:36px"><col style="width:26px"><col style="width:170px">
-        <col style="width:170px"><col style="width:88px"><col style="width:110px">
+        <col style="width:170px"><col style="width:96px"><col style="width:110px">
         <col style="width:130px"><col style="width:120px"><col style="width:92px">
-        <col style="width:92px"><col style="width:110px"><col style="width:78px">
-        <col style="width:160px"><col style="width:110px"><col style="width:30px">
+        <col style="width:92px"><col style="width:126px"><col style="width:80px">
+        <col style="width:160px"><col style="width:70px"><col style="width:30px">
       </colgroup>
       <thead><tr>
         <th>STT</th><th></th>
@@ -1553,7 +1553,7 @@ function renderTable() {
       '<td><div style="display:flex;align-items:center;gap:3px;">'+(pOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+'<input value="'+esc(p.id)+'" data-key="'+key+'" data-f="id" onchange="updateField(this)" title="'+esc(p.id)+'" style="font-family:monospace;font-size:11px;"'+dis(canEditP_id)+'></div></td>'+
       '<td><div style="display:flex;align-items:center;gap:4px;">'+(p.protected?'<span title="Dự án cố định, không xóa được" style="font-size:12px;">📌</span>':'')+'<input value="'+esc(p.name)+'" data-key="'+key+'" data-f="name" onchange="updateField(this)" title="'+esc(p.name)+'"'+dis(canEditP_id)+' style="flex:1;"></div></td>'+
       '<td><input value="'+esc(p.fullName)+'" data-key="'+key+'" data-f="fullName" onchange="updateField(this)" style="font-size:11px;" disabled></td>'+
-      '<td><select data-key="'+key+'" data-f="type" onchange="updateField(this)"'+dis(canEditP_id)+'>'+
+      '<td><select data-key="'+key+'" data-f="type" onchange="updateField(this)" style="min-width:76px;"'+dis(canEditP_id)+'>'+
         '<option value="" '+((!p.type)?'selected':'')+'>—</option>'+
         '<option value="MAIN" '+((p.type==='MAIN')?'selected':'')+'>MAIN</option>'+
         '<option value="SUPP" '+((p.type==='SUPP')?'selected':'')+'>SUPP</option>'+
@@ -1591,7 +1591,7 @@ function renderTable() {
           (tOverdue?'<span class="overdue-flag" title="Quá hạn">⚠️</span>':'')+
           '<input value="'+esc(task.name)+'" data-pk="'+key+'" data-tk="'+tk+'" data-f="name" onchange="updateTask(this)" placeholder="Tên task..." title="'+esc(task.name)+'" style="flex:1;"'+dis(canEditT_id)+'></div></td>'+
           '<td></td>'+
-          '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="type" onchange="updateTask(this)" title="Loại task (mặc định theo Loại của dự án nếu để trống)"'+dis(canEditT_id)+'>'+
+          '<td><select data-pk="'+key+'" data-tk="'+tk+'" data-f="type" onchange="updateTask(this)" title="Loại task (mặc định theo Loại của dự án nếu để trống)" style="min-width:76px;"'+dis(canEditT_id)+'>'+
             '<option value="" '+((!task.type)?'selected':'')+'>— (theo dự án)</option>'+
             '<option value="MAIN" '+((task.type==='MAIN')?'selected':'')+'>MAIN</option>'+
             '<option value="SUPP" '+((task.type==='SUPP')?'selected':'')+'>SUPP</option>'+
@@ -2092,7 +2092,7 @@ function renderWeekPlan() {
       +'</td>'+
       '<td>'+(linked
         ? '<span style="font-size:11px;color:var(--muted);">'+(linked.type||'—')+'</span>'
-        : '<select data-wpkey="'+planKey+'" data-f="type" onchange="wpFieldChange(this)"'+dis+'><option value=""'+(!plan.type?' selected':'')+'>—</option><option value="MAIN"'+(plan.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(plan.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(plan.type==='OPER'?' selected':'')+'>OPER</option></select>')
+        : '<select data-wpkey="'+planKey+'" data-f="type" onchange="wpFieldChange(this)" style="min-width:76px;"'+dis+'><option value=""'+(!plan.type?' selected':'')+'>—</option><option value="MAIN"'+(plan.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(plan.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(plan.type==='OPER'?' selected':'')+'>OPER</option></select>')
       +'</td>'+
       '<td>'+(linked
         ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.pm||'')+'</span>'
@@ -2116,11 +2116,11 @@ function renderWeekPlan() {
       +'</td>'+
       '<td>'+(linked
         ? '<span style="font-size:11px;color:var(--muted);">'+esc(linked.status||'')+'</span>'
-        : '<select data-wpkey="'+planKey+'" data-f="status" onchange="wpFieldChange(this)"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(plan.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select>')
+        : '<select data-wpkey="'+planKey+'" data-f="status" onchange="wpFieldChange(this)" style="min-width:104px;"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(plan.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select>')
       +'</td>'+
       '<td style="text-align:center;font-size:11px;color:var(--muted);" title="Tiến độ dự án tự tính theo trung bình các task bên trong — xem đầy đủ sau khi có task và đã xác nhận">'+(linked?computeProjectProgress(linked)+'%':'—')+'</td>'+
       '<td><input value="'+esc(plan.note||'')+'" data-wpkey="'+planKey+'" data-f="note" onchange="wpFieldChange(this)" placeholder="Ghi chú..." title="'+esc(plan.note||'')+'"'+dis+'></td>'+
-      '<td>'+(linked ? '' : '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanProject(\''+planKey+'\')"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅ Xác nhận</button>')+'</td>'+
+      '<td>'+(linked ? '' : '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanProject(\''+planKey+'\')" title="✅ Xác nhận — tạo dự án mới vào Danh sách dự án"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅</button>')+'</td>'+
       '<td><button class="del-btn" onclick="deleteWeekPlan(\''+planKey+'\')" title="Xóa kế hoạch"'+(canEdit?'':' style="opacity:.25;pointer-events:none;"')+'>🗑</button></td>';
     tbody.appendChild(tr);
 
@@ -2140,16 +2140,16 @@ function renderWeekPlan() {
           '<td></td>'+
           '<td>'+(linked ? '<select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="linkedTaskKey" onchange="wpTaskLinkChange(this)" style="font-size:10.5px;width:100%;"'+dis+'><option value="">➕ Task mới</option>'+existingTaskOptions+'</select>' : '')+'</td>'+
           '<td><div class="task-indent" style="padding-left:8px;"><div class="task-line"></div><input value="'+esc(task.name||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="name" onchange="wpTaskFieldChange(this)" placeholder="Tên task..." title="'+esc(task.name||'')+'" style="flex:1;"'+dis+'></div></td>'+
-          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="type" onchange="wpTaskFieldChange(this)"'+dis+'><option value=""'+(!task.type?' selected':'')+'>—</option><option value="MAIN"'+(task.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(task.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(task.type==='OPER'?' selected':'')+'>OPER</option></select></td>'+
+          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="type" onchange="wpTaskFieldChange(this)" style="min-width:76px;"'+dis+'><option value=""'+(!task.type?' selected':'')+'>—</option><option value="MAIN"'+(task.type==='MAIN'?' selected':'')+'>MAIN</option><option value="SUPP"'+(task.type==='SUPP'?' selected':'')+'>SUPP</option><option value="OPER"'+(task.type==='OPER'?' selected':'')+'>OPER</option></select></td>'+
           '<td></td>'+
           '<td><input value="'+esc(task.exec||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="exec" class="ms-person" readonly title="'+(task.exec?esc(task.exec)+' — ':'')+'Bấm để chọn nhiều người thực hiện" onchange="wpTaskFieldChange(this)" placeholder="▾ Người thực hiện..."'+dis+'></td>'+
           '<td><input value="'+esc(task.dept||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="dept" class="ms-dept" readonly title="'+(task.dept?esc(task.dept)+' — ':'')+'Bấm để chọn nhiều phòng/bộ phận" onchange="wpTaskFieldChange(this)" placeholder="▾ Phòng/bộ phận..."'+dis+'></td>'+
           '<td><input type="date" value="'+(task.start||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="start" onchange="wpTaskFieldChange(this)"'+dis+'></td>'+
           '<td><input type="date" value="'+(task.end||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="end" onchange="wpTaskFieldChange(this)"'+dis+'></td>'+
-          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="status" onchange="wpTaskFieldChange(this)"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(task.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></td>'+
-          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="progress" onchange="wpTaskFieldChange(this)"'+dis+'>'+progressOptions(task.progress||'0')+'</select></td>'+
+          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="status" onchange="wpTaskFieldChange(this)" style="min-width:104px;"'+dis+'>'+STATUS_ORDER.map(function(s){ return '<option value="'+s+'" '+(task.status===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></td>'+
+          '<td><select data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="progress" onchange="wpTaskFieldChange(this)" style="min-width:58px;"'+dis+'>'+progressOptions(task.progress||'0')+'</select></td>'+
           '<td><input value="'+esc(task.note||'')+'" data-wpplankey="'+planKey+'" data-wptaskkey="'+taskKey+'" data-f="note" onchange="wpTaskFieldChange(this)" placeholder="Ghi chú..." title="'+esc(task.note||'')+'"'+dis+'></td>'+
-          '<td>'+(linked ? '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅</button>' : '')+'</td>'+
+          '<td>'+(linked ? '<button class="btn btn-t btn-sm" onclick="confirmWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')" title="✅ Xác nhận task này vào dự án"'+(canEdit?'':' style="opacity:.3;pointer-events:none;"')+'>✅</button>' : '')+'</td>'+
           '<td><button class="del-btn" onclick="deleteWeekPlanTask(\''+planKey+'\',\''+taskKey+'\')" title="Xóa task"'+(canEdit?'':' style="opacity:.25;pointer-events:none;"')+'>✕</button></td>';
         tbody.appendChild(ttr);
       });
